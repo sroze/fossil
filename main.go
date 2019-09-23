@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/segmentio/kafka-go"
 	"log"
 	"net/http"
 
@@ -21,8 +22,16 @@ func Routes() *chi.Mux {
 		middleware.Recoverer,                          // Recover from panics without crashing server
 	)
 
+	w := kafka.NewWriter(kafka.WriterConfig{
+		Brokers: []string{"localhost:9092"},
+		Topic:   "topic-A",
+//		Balancer: &kafka.LeastBytes{},
+	})
+
+	c := collector.NewCollector(w)
+
 	router.Route("/v1", func(r chi.Router) {
-		r.Mount("/collect", collector.Routes())
+		r.Mount("/collect", c.Routes())
 	})
 
 	return router

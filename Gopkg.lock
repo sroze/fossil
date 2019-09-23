@@ -20,6 +20,17 @@
   revision = "3215478343fbc559bd3fc08f7031bb134d6bdad5"
   version = "v1.0.1"
 
+[[projects]]
+  digest = "1:e0470cafd12263aff38fbb630d56426e1b0a6a996d3e33cefb0a818ff6828319"
+  name = "github.com/segmentio/kafka-go"
+  packages = [
+    ".",
+    "sasl",
+  ]
+  pruneopts = "UT"
+  revision = "531c50bb11447b43c02f52718f9213631921fad3"
+  version = "v0.3.3"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -27,6 +38,7 @@
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
     "github.com/go-chi/render",
+    "github.com/segmentio/kafka-go",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
