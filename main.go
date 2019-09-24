@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/segmentio/kafka-go"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -22,13 +25,41 @@ func Routes() *chi.Mux {
 		middleware.Recoverer,                          // Recover from panics without crashing server
 	)
 
+	broadcaster := collector.NewStringChannelBroadcaster(0)
+
+	// TODO: acknowledgement-topic to be delete over the last minute or so (i.e. max timeout)
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:   []string{"localhost:9092"},
+		Topic:     "acknowledgement-topic",
+		MaxWait: 20 * time.Millisecond,
+	})
+
+	go func() {
+		for {
+			m, err := r.ReadMessage(context.Background())
+			if err != nil {
+				break
+			}
+
+			fmt.Printf("read ack message: %s\n", string(m.Value))
+			broadcaster.Source <- string(m.Value)
+		}
+
+		err := r.Close()
+		if err != nil {
+			fmt.Printf("Could not close connection: %s", err)
+		}
+
+		fmt.Print("Acknowledgment listener stopped")
+	}()
+
 	w := kafka.NewWriter(kafka.WriterConfig{
 		Brokers: []string{"localhost:9092"},
 		Topic:   "topic-A",
-//		Balancer: &kafka.LeastBytes{},
+		BatchTimeout: 50 * time.Millisecond,
 	})
 
-	c := collector.NewCollector(w)
+	c := collector.NewCollector(w, broadcaster)
 
 	router.Route("/v1", func(r chi.Router) {
 		r.Mount("/collect", c.Routes())
