@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/segmentio/kafka-go"
+	"github.com/sroze/birdie-events-api/acknowledgment"
 	"log"
 	"net/http"
 	"time"
@@ -25,7 +26,7 @@ func Routes() *chi.Mux {
 		middleware.Recoverer,                          // Recover from panics without crashing server
 	)
 
-	broadcaster := collector.NewStringChannelBroadcaster(0)
+	broadcaster := acknowledgment.NewStringChannelBroadcaster(0)
 
 	// TODO: acknowledgement-topic to be delete over the last minute or so (i.e. max timeout)
 	r := kafka.NewReader(kafka.ReaderConfig{

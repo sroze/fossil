@@ -2,13 +2,12 @@ package collector
 
 import (
 	"context"
-	"fmt"
+	"github.com/sroze/birdie-events-api/acknowledgment"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
 
@@ -20,7 +19,7 @@ type Event struct {
 	Payload string `json:"payload"`
 }
 
-func NewCollector(Writer *kafka.Writer, broadcaster *StringChannelBroadcaster) *Collector {
+func NewCollector(Writer *kafka.Writer, broadcaster *acknowledgment.StringChannelBroadcaster) *Collector {
 	return &Collector{
 		Writer,
 		broadcaster,
@@ -30,13 +29,7 @@ func NewCollector(Writer *kafka.Writer, broadcaster *StringChannelBroadcaster) *
 
 type Collector struct {
 	Writer *kafka.Writer
-	broadcaster *StringChannelBroadcaster
-}
-
-func (c *Collector) Routes() *chi.Mux {
-	router := chi.NewRouter()
-	router.Post("/", c.CollectEvent)
-	return router
+	broadcaster *acknowledgment.StringChannelBroadcaster
 }
 
 func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
@@ -76,18 +69,11 @@ func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
 		Headers: Headers,
 	}
 
-	// Setup the ack channel
-	acksChannel := c.broadcaster.NewSubscriber()
-	messageHandled := make(chan bool, 1)
 
+	var listener acknowledgment.AckListener
 	if len(acknowledge) != 0 {
-		go func() {
-			for ackedMessage := range acksChannel {
-				if string(messageId) == ackedMessage {
-					messageHandled <- true
-				}
-			}
-		}()
+		listener = acknowledgment.NewAckListener(c.broadcaster, string(messageId))
+		listener.Listen()
 	}
 
 	err = c.Writer.WriteMessages(context.Background(), message)
@@ -99,24 +85,16 @@ func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(acknowledge) != 0 {
-		select {
-		case <-messageHandled:
-			fmt.Println("yay!")
-		case <-time.After(10 * time.Second):
-			w.WriteHeader(502)
+		err, _ = listener.WaitsFor(10 * time.Second)
 
-			response := make(map[string]string)
-			response["error"] = "Acknowledgment timed out."
-			response["id"] = string(messageId)
-
-			render.JSON(w, r, response)
-
+		if err != nil {
+			log.Printf("Error sending message: %v", err)
+			w.WriteHeader(500)
+			render.JSON(w, r, make(map[string]string));
 			return
 		}
-
 	}
 
-	c.broadcaster.RemoveSubscriber(acksChannel)
 
 	w.WriteHeader(201)
 
