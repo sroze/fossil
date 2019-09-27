@@ -62,10 +62,13 @@ func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	Headers = append(Headers, kafka.Header{
-		Key:   "acknowledge-to",
-		Value: []byte("acknowledgement-topic"),
-	})
+	acknowledge := r.Header["Acknowledge"]
+	if len(acknowledge) != 0 {
+		Headers = append(Headers, kafka.Header{
+			Key:   "acknowledge-to",
+			Value: []byte("acknowledgement-topic"),
+		})
+	}
 
 	message := kafka.Message{
 		Key:   []byte("Key-A"),
@@ -75,29 +78,17 @@ func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Setup the ack channel
 	acksChannel := c.broadcaster.NewSubscriber()
-	messageHandled := make(chan string, 1)
-	shallIStopListeningForAcks := make(chan bool, 1)
+	messageHandled := make(chan bool, 1)
 
-	go func(c chan string, id string) {
-		fmt.Printf("listening for acks for message %s", id)
-		for ackedMessage := range c {
-			fmt.Printf("got a message that said ack: %s", ackedMessage)
-
-			if id == ackedMessage {
-				messageHandled <- "all good"
-				return
+	if len(acknowledge) != 0 {
+		go func() {
+			for ackedMessage := range acksChannel {
+				if string(messageId) == ackedMessage {
+					messageHandled <- true
+				}
 			}
-
-			select {
-			case <- shallIStopListeningForAcks:
-				fmt.Printf("I shall stop listening for acks")
-				return
-			}
-		}
-
-		fmt.Printf("Stopped listening for acks")
-	}(acksChannel, string(messageId))
-
+		}()
+	}
 
 	err = c.Writer.WriteMessages(context.Background(), message)
 	if err != nil {
@@ -107,14 +98,24 @@ func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	select {
-	case res := <-messageHandled:
-		fmt.Printf("message handled!! %s", res)
-	case <-time.After(10 * time.Second):
-		fmt.Println("timeout; was not handled.")
+	if len(acknowledge) != 0 {
+		select {
+		case <-messageHandled:
+			fmt.Println("yay!")
+		case <-time.After(10 * time.Second):
+			w.WriteHeader(502)
+
+			response := make(map[string]string)
+			response["error"] = "Acknowledgment timed out."
+			response["id"] = string(messageId)
+
+			render.JSON(w, r, response)
+
+			return
+		}
+
 	}
 
-	shallIStopListeningForAcks <- true
 	c.broadcaster.RemoveSubscriber(acksChannel)
 
 	w.WriteHeader(201)

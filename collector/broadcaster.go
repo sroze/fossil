@@ -34,6 +34,7 @@ func (b *StringChannelBroadcaster) dispatch() {
 		}
 		b.mutex.Unlock()
 	}
+
 	b.mutex.Lock()
 	for ch := range b.Subscribers {
 		close(ch)
@@ -66,4 +67,3 @@ func (b *StringChannelBroadcaster) RemoveSubscriber(ch chan string) {
 	}
 	b.mutex.Unlock()
 }
-
