@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/segmentio/kafka-go"
-	"github.com/sroze/birdie-events-api/acknowledgment"
+	"github.com/sroze/fossil/acknowledgment"
 	"log"
 	"net/http"
 	"time"
@@ -13,7 +13,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
 
-	"github.com/sroze/birdie-events-api/collector"
+	"github.com/sroze/fossil/collector"
 )
 
 func Routes() *chi.Mux {

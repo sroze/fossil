@@ -2,7 +2,7 @@ package collector
 
 import (
 	"context"
-	"github.com/sroze/birdie-events-api/acknowledgment"
+	"github.com/sroze/fossil/acknowledgment"
 	"io/ioutil"
 	"log"
 	"net/http"
