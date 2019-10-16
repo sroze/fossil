@@ -1,106 +1,51 @@
 package collector
 
 import (
-	"context"
-	"github.com/sroze/fossil/acknowledgment"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"time"
-
-	"github.com/go-chi/render"
-	"github.com/google/uuid"
-
-	"github.com/segmentio/kafka-go"
+	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sroze/fossil/publisher"
+	"github.com/sroze/fossil/storage"
 )
 
-type Event struct {
-	EventType  string `json:"event_type"`
-	Payload string `json:"payload"`
-}
-
-func NewCollector(Writer *kafka.Writer, broadcaster *acknowledgment.StringChannelBroadcaster) *Collector {
-	return &Collector{
-		Writer,
-		broadcaster,
-	}
-}
-
-
 type Collector struct {
-	Writer *kafka.Writer
-	broadcaster *acknowledgment.StringChannelBroadcaster
+	store storage.EventStore
+	publisher publisher.Publisher
 }
 
-func (c *Collector) CollectEvent(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+func NewCollector(store storage.EventStore, publisher publisher.Publisher) *Collector {
+	return &Collector{
+		store,
+		publisher,
+	}
+}
+
+func (c *Collector) Collect(event cloudevents.Event) error {
+	transaction, err := c.store.NewTransaction()
 	if err != nil {
-		log.Printf("Error reading body: %v", err)
-		w.WriteHeader(500)
-		render.JSON(w, r, make(map[string]string));
-		return
+		return err
 	}
-	messageId, err := uuid.New().MarshalText()
+
+	// Store the event in its streams
+	streams, err := EventToStreams(event)
 	if err != nil {
-		log.Printf("Could not generate UUID: %v", err)
-		w.WriteHeader(500)
-		render.JSON(w, r, make(map[string]string));
-		return
+		return err
 	}
 
-	Headers := []kafka.Header{
-		kafka.Header{
-			Key: "message-id",
-			Value: messageId,
-		},
-	}
-
-	acknowledge := r.Header["Acknowledge"]
-	if len(acknowledge) != 0 {
-		Headers = append(Headers, kafka.Header{
-			Key:   "acknowledge-to",
-			Value: []byte("acknowledgement-topic"),
-		})
-	}
-
-	message := kafka.Message{
-		Key:   []byte("Key-A"),
-		Value: body,
-		Headers: Headers,
-	}
-
-
-	var listener acknowledgment.AckListener
-	if len(acknowledge) != 0 {
-		listener = acknowledgment.NewAckListener(c.broadcaster, string(messageId))
-		listener.Listen()
-	}
-
-	err = c.Writer.WriteMessages(context.Background(), message)
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-		w.WriteHeader(500)
-		render.JSON(w, r, make(map[string]string));
-		return
-	}
-
-	if len(acknowledge) != 0 {
-		err, _ = listener.WaitsFor(10 * time.Second)
+	for _, stream := range streams {
+		err := transaction.Store(stream, event)
 
 		if err != nil {
-			log.Printf("Error sending message: %v", err)
-			w.WriteHeader(500)
-			render.JSON(w, r, make(map[string]string));
-			return
+			transaction.Rollback()
+
+			return err
 		}
 	}
 
+	// Publish the message
+	err = c.publisher.Publish(event)
+	if err != nil {
+		return err
+	}
 
-	w.WriteHeader(201)
-
-	response := make(map[string]string)
-	response["message"] = "Successfully collected."
-	response["id"] = string(messageId)
-
-	render.JSON(w, r, response)
+	// Commit
+	return transaction.Commit()
 }

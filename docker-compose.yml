@@ -1,0 +1,10 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:10.9
+    environment:
+      - POSTGRES_USER=fossil
+      - POSTGRES_DB=fossil
+      - POSTGRES_PASSWORD=fossil
+    ports:
+      - 5432:5432

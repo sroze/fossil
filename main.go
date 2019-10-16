@@ -1,22 +1,19 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"github.com/segmentio/kafka-go"
-	"github.com/sroze/fossil/acknowledgment"
-	"log"
-	"net/http"
-	"time"
-
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
+	"github.com/sroze/fossil/publisher"
+	"github.com/sroze/fossil/storage"
+	"log"
+	"net/http"
+	"os"
 
 	"github.com/sroze/fossil/collector"
 )
 
-func Routes() *chi.Mux {
+func NewFossilServer(store storage.EventStore, publisher publisher.Publisher) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(
 		render.SetContentType(render.ContentTypeJSON), // Set content-Type headers as application/json
@@ -26,51 +23,25 @@ func Routes() *chi.Mux {
 		middleware.Recoverer,                          // Recover from panics without crashing server
 	)
 
-	broadcaster := acknowledgment.NewStringChannelBroadcaster(0)
+	c := collector.NewCollector(store, publisher)
 
-	// TODO: acknowledgement-topic to be delete over the last minute or so (i.e. max timeout)
-	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{"localhost:9092"},
-		Topic:     "acknowledgement-topic",
-		MaxWait: 20 * time.Millisecond,
-	})
-
-	go func() {
-		for {
-			m, err := r.ReadMessage(context.Background())
-			if err != nil {
-				break
-			}
-
-			fmt.Printf("read ack message: %s\n", string(m.Value))
-			broadcaster.Source <- string(m.Value)
-		}
-
-		err := r.Close()
-		if err != nil {
-			fmt.Printf("Could not close connection: %s", err)
-		}
-
-		fmt.Print("Acknowledgment listener stopped")
-	}()
-
-	w := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: []string{"localhost:9092"},
-		Topic:   "topic-A",
-		BatchTimeout: 50 * time.Millisecond,
-	})
-
-	c := collector.NewCollector(w, broadcaster)
-
-	router.Route("/v1", func(r chi.Router) {
-		r.Mount("/collect", c.Routes())
-	})
+	router.Mount("/collect", NewRouter(c).Routes())
 
 	return router
 }
 
 func main() {
-	router := Routes()
+	s, err := storage.NewPostgresStorage(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Panicf("Storage err: %s\n", err.Error()) // panic if there is an error
+	}
+
+	p, err := publisher.NewKafkaPublisher()
+	if err != nil {
+		log.Panicf("Publisher err: %s\n", err.Error()) // panic if there is an error
+	}
+
+	router := NewFossilServer(s, p)
 
 	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		log.Printf("%s %s\n", method, route) // Walk and print out all routes
