@@ -41,6 +41,23 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:9ae31ce33b4bab257668963e844d98765b44160be4ee98cafc44637a213e530d"
+  name = "github.com/gobwas/glob"
+  packages = [
+    ".",
+    "compiler",
+    "match",
+    "syntax",
+    "syntax/ast",
+    "syntax/lexer",
+    "util/runes",
+    "util/strings",
+  ]
+  pruneopts = "UT"
+  revision = "5ccd90ef52e1e632236f7326478d4faa74f99438"
+  version = "v0.2.3"
+
+[[projects]]
   branch = "master"
   digest = "1:b7cb6054d3dff43b38ad2e92492f220f57ae6087ee797dca298139776749ace8"
   name = "github.com/golang/groupcache"
@@ -198,6 +215,7 @@
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
     "github.com/go-chi/render",
+    "github.com/gobwas/glob",
     "github.com/jackc/pgx",
     "github.com/segmentio/kafka-go",
     "gopkg.in/confluentinc/confluent-kafka-go.v1/kafka",

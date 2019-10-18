@@ -15,7 +15,7 @@ func NewInMemoryPublisher() *InMemoryPublisher {
 	}
 }
 
-func (p *InMemoryPublisher) Publish(ctx context.Context, event cloudevents.Event) error {
+func (p *InMemoryPublisher) Publish(ctx context.Context, stream string, event cloudevents.Event) error {
 	p.Events = append(p.Events, event)
 
 	return nil

@@ -33,7 +33,6 @@ curl -N --http2 -H "Accept:text/event-stream"  http://localhost:8080/stream?matc
 
 ## TODO
 
-- (Code & Documentation) Stream only on specific patterns
 - (Code & Documentation) Send previous events based on the `Last-Event-Id` header
 - (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
 - (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687

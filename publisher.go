@@ -6,5 +6,5 @@ import (
 )
 
 type Publisher interface {
-	Publish(context context.Context, event cloudevents.Event) error
+	Publish(context context.Context, stream string, event cloudevents.Event) error
 }

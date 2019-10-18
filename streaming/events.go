@@ -2,8 +2,11 @@ package streaming
 
 import (
 	"context"
+	"github.com/gobwas/glob"
 	cloudevents "github.com/cloudevents/sdk-go"
 )
+
+var StreamExtensionName = "fossilStream"
 
 type EventStreamFactory struct {
 	Source chan cloudevents.Event
@@ -28,6 +31,7 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 		<-ctx.Done()
 
 		f.broadcaster.RemoveSubscriber(subscription)
+		close(channel)
 	}()
 
 	// TODO: Load past events to `channel` first.
@@ -35,6 +39,11 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 
 	go func() {
 		for event := range subscription {
+			stream, ok := event.Extensions()[StreamExtensionName].(string)
+			if ok && !streamMatches(stream, matcher) {
+				continue
+			}
+
 			channel <- event
 		}
 
@@ -42,4 +51,8 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 	}()
 
 	return channel
+}
+
+func streamMatches(stream string, matcher string) bool {
+	return glob.MustCompile(matcher).Match(stream)
 }

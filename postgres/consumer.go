@@ -5,7 +5,6 @@ import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/jackc/pgx"
-	"os"
 )
 
 type Consumer struct {
@@ -13,7 +12,7 @@ type Consumer struct {
 }
 
 func NewConsumer(url string) (*Consumer, error) {
-	conn, err := NewPostgresConnection(os.Getenv("DATABASE_URL"))
+	conn, err := NewPostgresConnection(url)
 	if err != nil {
 		return nil, err
 	}

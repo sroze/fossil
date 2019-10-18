@@ -99,7 +99,6 @@ func ReadServerSideEvents(reader *bufio.Reader, events chan Event) {
 	}
 }
 
-
 func TestSimpleEventStreaming(t *testing.T) {
 	streamFactory := streaming.NewEventStreamFactory()
 	server := NewFossilServer(

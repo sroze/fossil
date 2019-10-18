@@ -31,17 +31,17 @@ func (c *DefaultCollector) Collect(context context.Context, event cloudevents.Ev
 	}
 
 	for _, stream := range streams {
+		// Store the message
 		err := c.store.Store(context, stream, event)
-
 		if err != nil {
 			return err
 		}
-	}
 
-	// Publish the message
-	err := c.publisher.Publish(context, event)
-	if err != nil {
-		return err
+		// Publish the message
+		err = c.publisher.Publish(context, stream, event)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
