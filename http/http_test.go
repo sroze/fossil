@@ -1,8 +1,8 @@
-package main
+package http
 
 import (
-	"github.com/sroze/fossil/publisher"
-	"github.com/sroze/fossil/storage"
+	"github.com/sroze/fossil"
+	"github.com/sroze/fossil/in-memory"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,8 +20,10 @@ func ExpectResponseCode(t *testing.T, response *httptest.ResponseRecorder, expec
 
 func TestCollectEvent(t *testing.T) {
 	server := NewFossilServer(
-		storage.NewInMemoryStorage(),
-		publisher.NewInMemoryPublisher(),
+		fossil.NewCollector(
+			in_memory.NewInMemoryStorage(),
+			in_memory.NewInMemoryPublisher(),
+		),
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {

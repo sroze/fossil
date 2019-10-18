@@ -1,4 +1,4 @@
-package publisher
+package kafka
 
 
 import (
@@ -34,7 +34,7 @@ func NewKafkaPublisher() (*KafkaPublisher, error) {
 	}, nil
 }
 
-func (p *KafkaPublisher) Publish(event cloudevents.Event) error {
+func (p *KafkaPublisher) Publish(_, event cloudevents.Event) error {
 	fmt.Println("Publishing...")
 
 	topic := "test-topic"

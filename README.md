@@ -6,6 +6,8 @@ By default, it uses PostgreSQL for consistency, Kafka for messaging.
 
 ## Usage
 
+### Collect an event 
+
 ```
 POST /collect HTTP/1.1
 Host: webhook.example.com
@@ -14,6 +16,7 @@ ce-type: https://acme.com/PersonCreated
 ce-time: 2018-04-05T03:56:24Z
 ce-id: 1234-1234-1234
 ce-source: /mycontext/subcontext
+fossil-stream: /visits/123
 Content-Type: application/cloudevents+json; charset=utf-8
 Content-Length: nnnn
 
@@ -22,15 +25,22 @@ Content-Length: nnnn
 }
 ```
 
+### Stream events
+
+```
+curl -N --http2 -H "Accept:text/event-stream"  http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+```
+
 ## TODO
 
+- (Code & Documentation) Stream only on specific patterns
+- (Code & Documentation) Send previous events based on the `Last-Event-Id` header
+- (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
+- (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687
 - (Code & Documentation) Get & validate schema from event type
-- (Code & Documentation) Publish event to streams from schema
-- (Code & Documentation) Uses the [outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html) to publish messages to Kafka when an event is written.
 - (Code & Documentation) JWT authentication for public-facing API
 - (Code & Documentation) "Type to _streams_" mapping: within the JSON schema?
-- (Documentation) Acknowledgement headers
-- (Code & Documentation) Drift checker
+- (Code & Documentation) Acknowledgement
 
 ## FAQ
 
@@ -47,7 +57,9 @@ $ go test
 ```
 
 ```
-$ watcher
+$ go run cmd/main.go
+(or)
+$ cd cmd && watcher -watch github.com/sroze/fossil
 ```
 
 Run migrations:

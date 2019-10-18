@@ -1,6 +1,9 @@
-package publisher
+package in_memory
 
-import cloudevents "github.com/cloudevents/sdk-go"
+import (
+	"context"
+	cloudevents "github.com/cloudevents/sdk-go"
+)
 
 type InMemoryPublisher struct {
 	Events []cloudevents.Event
@@ -12,7 +15,7 @@ func NewInMemoryPublisher() *InMemoryPublisher {
 	}
 }
 
-func (p *InMemoryPublisher) Publish(event cloudevents.Event) error {
+func (p *InMemoryPublisher) Publish(ctx context.Context, event cloudevents.Event) error {
 	p.Events = append(p.Events, event)
 
 	return nil
