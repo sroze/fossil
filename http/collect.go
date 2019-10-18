@@ -51,7 +51,6 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 
 	ctx = context.WithStreams(ctx, streams)
 
-	fmt.Println("Collecting...")
 	err = r.collector.Collect(ctx, *event)
 
 	if err != nil {
@@ -61,7 +60,6 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fmt.Println("Collected.")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))
 }

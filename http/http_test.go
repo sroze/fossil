@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/sroze/fossil"
 	"github.com/sroze/fossil/in-memory"
+	"github.com/sroze/fossil/streaming"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,6 +25,7 @@ func TestCollectEvent(t *testing.T) {
 			in_memory.NewInMemoryStorage(),
 			in_memory.NewInMemoryPublisher(),
 		),
+		streaming.NewEventStreamFactory(),
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {
@@ -49,6 +51,7 @@ func TestCollectEvent(t *testing.T) {
 		request.Header.Add("ce-time", "2018-04-05T03:56:24Z")
 		request.Header.Add("ce-id", "1234-1234-1234")
 		request.Header.Add("ce-source", "birdie.care")
+		request.Header.Add("fossil-stream", "person/1234")
 		request.Header.Add("Content-Type", "application/json; charset=utf-8")
 
 		response := httptest.NewRecorder()

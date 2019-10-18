@@ -29,9 +29,7 @@ func (r *Router) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	stream := r.eventStreamFactory.NewEventStream(req.Context(), matcher)
 
 	for {
-		fmt.Println("Listen for events from stream")
 		event := <-stream
-		fmt.Println("Got event", event)
 
 		_, err := fmt.Fprintf(rw, "id: %s\n", event.ID())
 		if err != nil {
