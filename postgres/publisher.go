@@ -5,7 +5,6 @@ import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/jackc/pgx"
-	"github.com/sroze/fossil/streaming"
 )
 
 type Publisher struct {
@@ -18,15 +17,11 @@ func NewPublisher(conn *pgx.Conn) *Publisher {
 	}
 }
 
-func (p *Publisher) Publish(ctx context.Context, stream string, event cloudevents.Event) error {
+func (p *Publisher) Publish(ctx context.Context, stream string, event *cloudevents.Event) error {
 	t, ok := ctx.Value(transactionContextKey).(*pgx.Tx)
 	if !ok {
 		return fmt.Errorf("transaction not found in context")
 	}
-
-	// TODO: Maybe remove `stream` from the argument and uses the extension
-	//		 for publisher and storage.
-	event.SetExtension(streaming.StreamExtensionName, stream)
 
 	marshalled, err := event.MarshalJSON()
 	if err != nil {

@@ -6,16 +6,16 @@ import (
 )
 
 type InMemoryPublisher struct {
-	Events []cloudevents.Event
+	Events []*cloudevents.Event
 }
 
 func NewInMemoryPublisher() *InMemoryPublisher {
 	return &InMemoryPublisher{
-		Events: make([]cloudevents.Event, 0),
+		Events: make([]*cloudevents.Event, 0),
 	}
 }
 
-func (p *InMemoryPublisher) Publish(ctx context.Context, stream string, event cloudevents.Event) error {
+func (p *InMemoryPublisher) Publish(ctx context.Context, stream string, event *cloudevents.Event) error {
 	p.Events = append(p.Events, event)
 
 	return nil

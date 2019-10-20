@@ -6,11 +6,16 @@ import (
 )
 
 type EventStore interface {
-	Store(context context.Context, stream string, event cloudevents.Event) error
+	Store(ctx context.Context, stream string, event *cloudevents.Event) error
+}
+
+type EventLoader interface {
+	MatchingStream(ctx context.Context, matcher string) chan cloudevents.Event
 }
 
 // Errors
-type DuplicateEventError struct {}
+type DuplicateEventError struct{}
+
 func (e *DuplicateEventError) Error() string {
 	return "event with such identifier already exists."
 }

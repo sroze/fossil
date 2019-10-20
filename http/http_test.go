@@ -20,12 +20,13 @@ func ExpectResponseCode(t *testing.T, response *httptest.ResponseRecorder, expec
 }
 
 func TestCollectEvent(t *testing.T) {
+	storage := in_memory.NewInMemoryStorage()
 	server := NewFossilServer(
 		fossil.NewCollector(
-			in_memory.NewInMemoryStorage(),
+			storage,
 			in_memory.NewInMemoryPublisher(),
 		),
-		streaming.NewEventStreamFactory(),
+		streaming.NewEventStreamFactory(storage),
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {

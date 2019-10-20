@@ -2,7 +2,8 @@
 
 
 [[projects]]
-  digest = "1:aa092ed39b84265654aad283ec75a241da198fb1acbfc0610493f6a9b946b994"
+  branch = "master"
+  digest = "1:078db1588b2eca641aadbfd9b5b913417d6a49c3af482c84688c9878d2880561"
   name = "github.com/cloudevents/sdk-go"
   packages = [
     ".",
@@ -11,6 +12,7 @@
     "pkg/cloudevents/context",
     "pkg/cloudevents/datacodec",
     "pkg/cloudevents/datacodec/json",
+    "pkg/cloudevents/datacodec/text",
     "pkg/cloudevents/datacodec/xml",
     "pkg/cloudevents/observability",
     "pkg/cloudevents/transport",
@@ -18,8 +20,7 @@
     "pkg/cloudevents/types",
   ]
   pruneopts = "UT"
-  revision = "4cc108a637ff4bf2d1848c60d5fbb0f711fd1b8c"
-  version = "v0.9.2"
+  revision = "b0ed3376c113528ca45911a44eac70307912b318"
 
 [[projects]]
   digest = "1:58c033da727ebd5a6769209e479cac9a6e4dab53c879631af3d8161423099d57"
@@ -95,17 +96,6 @@
   pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
-
-[[projects]]
-  digest = "1:e0470cafd12263aff38fbb630d56426e1b0a6a996d3e33cefb0a818ff6828319"
-  name = "github.com/segmentio/kafka-go"
-  packages = [
-    ".",
-    "sasl",
-  ]
-  pruneopts = "UT"
-  revision = "531c50bb11447b43c02f52718f9213631921fad3"
-  version = "v0.3.3"
 
 [[projects]]
   digest = "1:74accd9945e4e51580cbe9b9428c228c1a7d37180cf2647ac33a1dff7197546a"
@@ -212,12 +202,12 @@
   input-imports = [
     "github.com/cloudevents/sdk-go",
     "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http",
+    "github.com/cloudevents/sdk-go/pkg/cloudevents/types",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
     "github.com/go-chi/render",
     "github.com/gobwas/glob",
     "github.com/jackc/pgx",
-    "github.com/segmentio/kafka-go",
     "gopkg.in/confluentinc/confluent-kafka-go.v1/kafka",
   ]
   solver-name = "gps-cdcl"

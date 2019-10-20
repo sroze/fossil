@@ -6,8 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/sroze/fossil"
+	"github.com/sroze/fossil/fossiltest"
 	in_memory "github.com/sroze/fossil/in-memory"
 	"github.com/sroze/fossil/streaming"
 	"io"
@@ -100,10 +100,11 @@ func ReadServerSideEvents(reader *bufio.Reader, events chan Event) {
 }
 
 func TestSimpleEventStreaming(t *testing.T) {
-	streamFactory := streaming.NewEventStreamFactory()
+	storage := in_memory.NewInMemoryStorage()
+	streamFactory := streaming.NewEventStreamFactory(storage)
 	server := NewFossilServer(
 		fossil.NewCollector(
-			in_memory.NewInMemoryStorage(),
+			storage,
 			in_memory.NewInMemoryPublisher(),
 		),
 		streamFactory,
@@ -129,17 +130,12 @@ func TestSimpleEventStreaming(t *testing.T) {
 		reader := bufio.NewReader(response.Body)
 		go ReadServerSideEvents(reader, events)
 
-		event := cloudevents.NewEvent("0.3")
-		event.SetType("type")
-		event.SetSource("/my/system")
-		event.SetID("123456")
-
 		// Event is consumed
+		event := fossiltest.NewEvent("123456", "/visits/1234", 1, 1)
 		streamFactory.Source <- event
 
 		// Receive an event
 		received := <- events
-
 		if received.ID != event.ID() {
 			t.Errorf("received ID %s is different from sent %s", received.ID, event.ID())
 		}

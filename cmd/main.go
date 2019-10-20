@@ -25,7 +25,7 @@ func main() {
 		log.Panicf("Consumer err: %s\n", err.Error()) // panic if there is an error
 	}
 
-	eventStreamFactory := streaming.NewEventStreamFactory()
+	eventStreamFactory := streaming.NewEventStreamFactory(s)
 	go consumer.ConsumeFor(eventStreamFactory.Source)
 
 	router := http2.NewFossilServer(

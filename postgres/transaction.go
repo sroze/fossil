@@ -21,7 +21,7 @@ func NewCollectorWrappedInTransaction(decorated fossil.Collector, connection *pg
 	}
 }
 
-func (c *CollectorWrappedInTransaction) Collect(ctx context.Context, event cloudevents.Event) error {
+func (c *CollectorWrappedInTransaction) Collect(ctx context.Context, event *cloudevents.Event) error {
 	t, err := c.connection.BeginEx(ctx, nil)
 	if err != nil {
 		return err

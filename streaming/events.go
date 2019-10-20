@@ -2,23 +2,23 @@ package streaming
 
 import (
 	"context"
-	"github.com/gobwas/glob"
 	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sroze/fossil"
 )
-
-var StreamExtensionName = "fossilStream"
 
 type EventStreamFactory struct {
 	Source chan cloudevents.Event
 	broadcaster *ChannelBroadcaster
+	loader fossil.EventLoader
 }
 
-func NewEventStreamFactory() *EventStreamFactory {
+func NewEventStreamFactory(loader fossil.EventLoader) *EventStreamFactory {
 	broadcaster := NewChannelBroadcaster(10)
 
 	return &EventStreamFactory{
 		Source: broadcaster.Source,
 		broadcaster: broadcaster,
+		loader: loader,
 	}
 }
 
@@ -34,13 +34,24 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 		close(channel)
 	}()
 
-	// TODO: Load past events to `channel` first.
-	// 		 (or up to the given "last event ID")
-
+	existingEvents := f.loader.MatchingStream(ctx, matcher)
 	go func() {
+		var lastEventNumberReceived = 0
+
+		for event := range existingEvents {
+			channel <- event
+
+			lastEventNumberReceived = fossil.GetEventNumber(event)
+		}
+
 		for event := range subscription {
-			stream, ok := event.Extensions()[StreamExtensionName].(string)
-			if ok && !streamMatches(stream, matcher) {
+			stream, ok := event.Extensions()[fossil.StreamExtensionName].(string)
+			if ok && !fossil.StreamMatches(stream, matcher) {
+				continue
+			}
+
+			// Ignore already sent events
+			if lastEventNumberReceived >= fossil.GetEventNumber(event) {
 				continue
 			}
 
@@ -51,8 +62,4 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 	}()
 
 	return channel
-}
-
-func streamMatches(stream string, matcher string) bool {
-	return glob.MustCompile(matcher).Match(stream)
 }
