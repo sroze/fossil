@@ -188,14 +188,6 @@
   revision = "342b2e1fbaa52c93f31447ad2c6abc048c63e475"
   version = "v0.3.2"
 
-[[projects]]
-  digest = "1:9169e569b3e6517da7de4476059f8fa889d508007e53fa5fc6a2ea4ffc5ae199"
-  name = "gopkg.in/confluentinc/confluent-kafka-go.v1"
-  packages = ["kafka"]
-  pruneopts = "UT"
-  revision = "48acc03b9ddd85b5c8c268b480d5a9a3d523b9ad"
-  version = "v1.1.0"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -208,7 +200,6 @@
     "github.com/go-chi/render",
     "github.com/gobwas/glob",
     "github.com/jackc/pgx",
-    "gopkg.in/confluentinc/confluent-kafka-go.v1/kafka",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
