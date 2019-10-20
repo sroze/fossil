@@ -18,7 +18,7 @@ jobs:
 
     - name: Get dependencies
       run: |
-        go get -v -t -d ./...
+        GOBIN=$(echo "${EFFECTIVE_GOPATH}/bin" | sed s#//*#/#g)
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         dep ensure
 
