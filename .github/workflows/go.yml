@@ -18,6 +18,8 @@ jobs:
 
     - name: Get dependencies
       run: |
+        GOBIN=$(echo "${EFFECTIVE_GOPATH}/bin" | sed s#//*#/#g)
+        echo "GOBIN: "$GOBIN
         mkdir -p $GOBIN
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         dep ensure
