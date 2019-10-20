@@ -33,5 +33,9 @@ jobs:
 
     - name: Build
       run: |
+        export GOPATH=$HOME/go
+        export GOBIN=$(go env GOPATH)/bin
+        export PATH=$PATH:$GOPATH
+        export PATH=$PATH:$GOBIN
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         go test -v ./...
