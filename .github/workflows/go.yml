@@ -63,3 +63,4 @@ jobs:
 
       env:
         DATABASE_URL: postgres://fossil:fossil@localhost/fossil
+        SERVER_PORT: 8080
