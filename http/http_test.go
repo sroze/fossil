@@ -60,5 +60,10 @@ func TestCollectEvent(t *testing.T) {
 		server.ServeHTTP(response, request)
 
 		ExpectResponseCode(t, response, 200)
+
+		eventNumber := response.Header().Get("fossil-event-number")
+		if eventNumber == "" {
+			t.Error("expected the event number as response but found nothing")
+		}
 	})
 }

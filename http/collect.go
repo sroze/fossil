@@ -7,6 +7,7 @@ import (
 	"github.com/sroze/fossil"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
@@ -53,7 +54,8 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	event.SetExtension(fossil.StreamExtensionName, streams[0])
+	fossil.SetStream(event, streams[0])
+
 	err = r.collector.Collect(ctx, event)
 
 	if err != nil {
@@ -63,6 +65,7 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	w.Header().Set("Fossil-Event-Number", strconv.Itoa(fossil.GetEventNumber(*event)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))
 }

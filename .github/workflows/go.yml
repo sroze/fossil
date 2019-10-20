@@ -59,6 +59,7 @@ jobs:
         export PATH=$PATH:$GOPATH
         export PATH=$PATH:$GOBIN
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
+        go get https://github.com/jackc/tern
         cd migrations && tern migrate && cd ..
         go test -tags=integration -v ./...
 

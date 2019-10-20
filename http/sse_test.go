@@ -57,3 +57,36 @@ func TestSimpleEventStreaming(t *testing.T) {
 		cancel()
 	})
 }
+
+func TestMatcherFromRequest(t *testing.T) {
+	t.Run("it gets the template from query parameters", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/stream?matcher=foo", nil)
+		request.Header.Add("Accept", "text/event-stream")
+
+		matcher, err := matcherFromRequest(request)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if matcher.UriTemplate != "foo" {
+			t.Errorf("expected template to be foo, found %s instead", matcher.UriTemplate)
+		}
+	})
+
+	t.Run("last event id from headers", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/stream?matcher=foo", nil)
+		request.Header.Add("Accept", "text/event-stream")
+		request.Header.Add("Last-Event-Id", "12")
+
+		matcher, err := matcherFromRequest(request)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if matcher.LastEventId != 12 {
+			t.Errorf("expected last event id to be 12, found %d instead", matcher.LastEventId)
+		}
+ 	})
+}

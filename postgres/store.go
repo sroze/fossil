@@ -48,21 +48,18 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 	}
 
 	fossil.SetEventNumber(event, number)
-	event.SetExtension(fossil.StreamExtensionName, stream)
+	fossil.SetStream(event, stream)
 	event.SetExtension(fossil.SequenceNumberInStreamExtensionName, sequenceNumberInStream)
 
 	return err
 }
 
-func (s *Storage) MatchingStream(ctx context.Context, matcher string) chan cloudevents.Event {
+func (s *Storage) MatchingStream(ctx context.Context, matcher fossil.Matcher) chan cloudevents.Event {
 	channel := make(chan cloudevents.Event)
 
 	go func() {
-		// TODO: Integration test for this lovely one!
-		streamAsRegex := "^" + strings.ReplaceAll(matcher, "*", "[^\\/]*") + "$"
-
-		fmt.Println("-- "+streamAsRegex+" --") // ^/visits/[^\/]$
-		rows, err := s.conn.QueryEx(ctx, "select number, stream, sequence_number_in_stream, event from events where stream ~ $1 order by number asc", nil, streamAsRegex)
+		streamAsRegex := "^" + strings.ReplaceAll(matcher.UriTemplate, "*", "[^\\/]*") + "$"
+		rows, err := s.conn.QueryEx(ctx, "select number, stream, sequence_number_in_stream, event from events where number > $1 and stream ~ $2 order by number asc", nil, matcher.LastEventId, streamAsRegex)
 		if err != nil {
 			fmt.Println("error went loading historical events", err)
 			close(channel)
@@ -91,7 +88,7 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher string) chan cloud
 
 			fossil.SetEventNumber(&event, number)
 			event.SetExtension(fossil.SequenceNumberInStreamExtensionName, sequenceNumberInStream)
-			event.SetExtension(fossil.StreamExtensionName, stream)
+			fossil.SetStream(&event, stream)
 
 			channel <- event
 		}

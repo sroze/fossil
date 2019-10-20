@@ -10,7 +10,7 @@ type EventStore interface {
 }
 
 type EventLoader interface {
-	MatchingStream(ctx context.Context, matcher string) chan cloudevents.Event
+	MatchingStream(ctx context.Context, matcher Matcher) chan cloudevents.Event
 }
 
 // Errors

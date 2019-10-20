@@ -22,7 +22,7 @@ func NewEventStreamFactory(loader fossil.EventLoader) *EventStreamFactory {
 	}
 }
 
-func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string) chan cloudevents.Event {
+func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher fossil.Matcher) chan cloudevents.Event {
 	subscription := f.broadcaster.NewSubscriber()
 	channel := make(chan cloudevents.Event)
 
@@ -45,8 +45,7 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher string)
 		}
 
 		for event := range subscription {
-			stream, ok := event.Extensions()[fossil.StreamExtensionName].(string)
-			if ok && !fossil.StreamMatches(stream, matcher) {
+			if !fossil.EventMatches(event, matcher) {
 				continue
 			}
 

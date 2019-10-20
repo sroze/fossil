@@ -13,7 +13,7 @@ func NewEvent(id string, stream string, number int, sequenceNumberInStream int) 
 	event.SetID(id)
 
 	if stream != "" {
-		event.SetExtension(fossil.StreamExtensionName, stream)
+		fossil.SetStream(&event, stream)
 	}
 	if number != 0 {
 		fossil.SetEventNumber(&event, number)

@@ -6,23 +6,18 @@ import (
 	"github.com/sroze/fossil"
 )
 
-type EventInStream struct {
-	event *cloudevents.Event
-	stream string
-}
-
 type InMemoryStorage struct {
-	Events []EventInStream
+	Events []cloudevents.Event
 }
 
 func NewInMemoryStorage() *InMemoryStorage {
 	return &InMemoryStorage{
-		Events: make([]EventInStream, 0),
+		Events: make([]cloudevents.Event, 0),
 	}
 }
 
 func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloudevents.Event) error {
-	s.Events = append(s.Events, EventInStream{event, stream })
+	s.Events = append(s.Events, *event)
 
 	fossil.SetEventNumber(event, len(s.Events))
 	event.SetExtension(fossil.SequenceNumberInStreamExtensionName, s.countEventsInStream(stream))
@@ -30,13 +25,13 @@ func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloud
 	return nil
 }
 
-func (s *InMemoryStorage) MatchingStream(ctx context.Context, matcher string) chan cloudevents.Event {
+func (s *InMemoryStorage) MatchingStream(ctx context.Context, matcher fossil.Matcher) chan cloudevents.Event {
 	c := make(chan cloudevents.Event)
 
 	go func() {
-		for _, record := range s.Events {
-			if fossil.StreamMatches(record.stream, matcher) {
-				c <- *record.event
+		for _, event := range s.Events {
+			if fossil.EventMatches(event, matcher) {
+				c <- event
 			}
 		}
 
@@ -49,8 +44,8 @@ func (s *InMemoryStorage) MatchingStream(ctx context.Context, matcher string) ch
 func (s *InMemoryStorage) countEventsInStream(stream string) int {
 	count := 0
 
-	for _, row := range s.Events {
-		if row.stream == stream {
+	for _, event := range s.Events {
+		if fossil.GetStreamFromEvent(event) == stream {
 			count++
 		}
 	}

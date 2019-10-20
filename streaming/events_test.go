@@ -3,6 +3,7 @@ package streaming
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sroze/fossil"
 	"github.com/sroze/fossil/fossiltest"
 	in_memory "github.com/sroze/fossil/in-memory"
 	"testing"
@@ -20,12 +21,14 @@ func TestEventStream(t *testing.T) {
 		factory := NewEventStreamFactory(in_memory.NewInMemoryStorage())
 
 		go func() {
-			factory.Source <- fossiltest.NewEvent("1234", "", 1, 1)
+			factory.Source <- fossiltest.NewEvent("1234", "a-stream", 1, 1)
 		}()
 
 		ctx, stop := context.WithCancel(context.Background())
 
-		channel := factory.NewEventStream(ctx, "matcher")
+		channel := factory.NewEventStream(ctx, fossil.Matcher{
+			UriTemplate: "a-stream",
+		})
 
 		fossiltest.ExpectEventWithId(t, <- channel, "1234")
 
@@ -40,7 +43,9 @@ func TestEventStream(t *testing.T) {
 		ctx, stop := context.WithCancel(context.Background())
 		defer stop()
 
-		channel := factory.NewEventStream(ctx, "visits/*")
+		channel := factory.NewEventStream(ctx, fossil.Matcher{
+			UriTemplate: "visits/*",
+		})
 
 		go func() {
 			factory.Source <- fossiltest.NewEvent("4afa1588-f1ef-11e9-8ef4-c7e0ad27bf29", "visits/352516cb-f5d1-4a37-8cb3-cbb052fd9e16", 1, 1)
@@ -66,7 +71,9 @@ func TestEventStream(t *testing.T) {
 		err = storage.Store(ctx, "care-recipient/123", &e2)
 		if err != nil { t.Error(err) }
 
-		channel := factory.NewEventStream(ctx, "visits/*")
+		channel := factory.NewEventStream(ctx, fossil.Matcher{
+			UriTemplate: "visits/*",
+		})
 
 		go func() {
 			factory.Source <- fossiltest.NewEvent("699667c6-f1ef-11e9-a28c-1f4de34db928", "visits/352516cb-f5d1-4a37-8cb3-cbb052fd9e16", 3, 1)
@@ -90,7 +97,9 @@ func TestEventStream(t *testing.T) {
 		err = storage.Store(ctx, "visits/123", &e2)
 		if err != nil { t.Error(err) }
 
-		channel := factory.NewEventStream(ctx, "visits/*")
+		channel := factory.NewEventStream(ctx, fossil.Matcher{
+			UriTemplate: "visits/*",
+		})
 
 		go func() {
 			factory.Source <- fossiltest.NewEvent("a8fa4bf6-f25a-11e9-8f97-532348db0b64", "visits/123", 2, 2)

@@ -31,9 +31,16 @@ Content-Length: nnnn
 curl -N --http2 -H "Accept:text/event-stream"  http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
 ```
 
+#### Only get events from a certain number
+
+```
+curl -N --http2 -H "Accept:text/event-stream" -H 'Last-Event-Id: 123' http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+```
+
+(this will exclude the event 123 and sent only what's above)
+
 ## TODO
 
-- (Code & Documentation) Send events only from the `Last-Event-Id`
 - (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
 - (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687
 - (Code & Documentation) Get & validate schema from event type

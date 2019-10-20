@@ -2,7 +2,6 @@ package fossil
 
 import (
 	"context"
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 )
 
@@ -24,10 +23,7 @@ func NewCollector(store EventStore, publisher Publisher) *DefaultCollector {
 
 func (c *DefaultCollector) Collect(context context.Context, event *cloudevents.Event) error {
 	// Store the event in its streams
-	stream, ok := event.Extensions()[StreamExtensionName].(string)
-	if !ok {
-		return fmt.Errorf("no stream associated to the event")
-	}
+	stream := GetStreamFromEvent(*event)
 
 	// Store the message
 	err := c.store.Store(context, stream, event)
