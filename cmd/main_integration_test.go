@@ -17,14 +17,14 @@ import (
 )
 
 func CollectEvent(t *testing.T, id string, stream string, contents interface{}) {
-	url := fmt.Sprintf("http://localhost:%s/collect", os.Getenv("SERVER_PORT"))
+	requestUrl := fmt.Sprintf("http://localhost:%s/collect", os.Getenv("SERVER_PORT"))
 	requestBody, err := json.Marshal(contents)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	request, err := http.NewRequest("POST", requestUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		t.Error(err)
 	}
@@ -40,6 +40,7 @@ func CollectEvent(t *testing.T, id string, stream string, contents interface{}) 
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	if response.StatusCode != 200 {
