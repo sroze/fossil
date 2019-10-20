@@ -41,10 +41,10 @@ func TestSimpleEventStreaming(t *testing.T) {
 		// Wait for the stream listener to be registered
 		time.Sleep(100 * time.Millisecond)
 
-		events := make(chan fossiltest.ServerSideEvent)
+		events := make(chan fossiltest.ServerSentEvent)
 		go fossiltest.ReadServerSideEvents(bufio.NewReader(response.Body), events)
 
-		// ServerSideEvent is consumed
+		// ServerSentEvent is consumed
 		event := fossiltest.NewEvent("123456", "/visits/1234", 1, 1)
 		streamFactory.Source <- event
 

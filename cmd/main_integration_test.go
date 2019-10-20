@@ -53,7 +53,7 @@ func CollectEvent(t *testing.T, id string, stream string, contents interface{}) 
 	return response
 }
 
-func StreamEvents(matcher string, lastEventId int, channel chan fossiltest.ServerSideEvent) {
+func StreamEvents(matcher string, lastEventId int, channel chan fossiltest.ServerSentEvent) {
 	query := url.Values{}
 	query.Set("matcher", matcher)
 
@@ -97,7 +97,7 @@ func TestWithDatabase(t *testing.T) {
 		})
 
 		// Streams the streamedEvents from the `visits/*` streams
-		streamedEvents := make(chan fossiltest.ServerSideEvent)
+		streamedEvents := make(chan fossiltest.ServerSentEvent)
 		go StreamEvents(fmt.Sprintf("/%s/*", prefix), 0, streamedEvents)
 
 		// Collect another event
@@ -136,7 +136,7 @@ func TestWithDatabase(t *testing.T) {
 		})
 
 		// Streams the streamedEvents from the `visits/*` streams
-		streamedEvents := make(chan fossiltest.ServerSideEvent)
+		streamedEvents := make(chan fossiltest.ServerSentEvent)
 		go StreamEvents(fmt.Sprintf("/%s/*", prefix), lastResponseEventNumber, streamedEvents)
 
 		// Expect to receive the one after last

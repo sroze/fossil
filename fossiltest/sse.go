@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// ServerSideEvent represents a Server-Sent ServerSideEvent
-type ServerSideEvent struct {
+// ServerSentEvent represents a Server-Sent ServerSentEvent
+type ServerSentEvent struct {
 	Name string
 	ID   string
 	Data map[string]interface{}
@@ -23,8 +23,8 @@ func hasPrefix(s []byte, prefix string) bool {
 	return bytes.HasPrefix(s, []byte(prefix))
 }
 
-func ReadServerSideEvents(reader *bufio.Reader, events chan ServerSideEvent) {
-	ev := ServerSideEvent{}
+func ReadServerSideEvents(reader *bufio.Reader, events chan ServerSentEvent) {
+	ev := ServerSentEvent{}
 
 	var buf bytes.Buffer
 
@@ -79,7 +79,7 @@ func ReadServerSideEvents(reader *bufio.Reader, events chan ServerSideEvent) {
 					ev.Data = data
 					buf.Reset()
 					events <- ev
-					ev = ServerSideEvent{}
+					ev = ServerSentEvent{}
 				}
 			}
 
@@ -91,7 +91,7 @@ func ReadServerSideEvents(reader *bufio.Reader, events chan ServerSideEvent) {
 	}
 }
 
-func ExpectServerSideEventWithId(t *testing.T, event ServerSideEvent, id string) {
+func ExpectServerSideEventWithId(t *testing.T, event ServerSentEvent, id string) {
 	if event.ID != id {
 		t.Errorf("expected SSE event to have id %s but got %s", id, event.ID)
 	}
