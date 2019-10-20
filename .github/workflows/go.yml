@@ -22,7 +22,7 @@ jobs:
         GOBIN=/home/runner/go/bin
         mkdir -p $GOBIN
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-        $GOBIN dep ensure
+        $GOBIN/dep ensure
 
     - name: Build
       run: go test -v ./...
