@@ -58,11 +58,18 @@ jobs:
         export GOBIN=$(go env GOPATH)/bin
         export PATH=$PATH:$GOPATH
         export PATH=$PATH:$GOBIN
+        go get github.com/jackc/pgx
+        cd $GOPATH/src/github.com/jackc/pgx
+        git checkout v3.6.0
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
-        go install github.com/jackc/tern
-        cd migrations && tern migrate && cd ..
+        go get github.com/jackc/tern
+        cd migrations
+        tern migrate
+        cd ..
         go test -tags=integration -v ./...
 
       env:
-        DATABASE_URL: postgres://fossil:fossil@localhost/fossil
+        DATABASE_URL: postgres://fossil:fossil@localhost:${{ job.services.postgres.ports[5432] }}/fossil
         SERVER_PORT: 8080
+        MIGRATOR_PASSWORD: fossil
+        PGPORT: ${{ job.services.postgres.ports[5432] }}

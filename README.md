@@ -28,20 +28,33 @@ Content-Length: nnnn
 ### Stream events
 
 ```
-curl -N --http2 -H "Accept:text/event-stream"  http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+curl -N --http2 -H "Accept: text/event-stream"  http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
 ```
 
 #### Only get events from a certain number
 
 ```
-curl -N --http2 -H "Accept:text/event-stream" -H 'Last-Event-Id: 123' http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
 ```
 
-(this will exclude the event 123 and sent only what's above)
+(this will exclude the event 123 and send only what's after)
+
+#### As a consumer group
+
+(TODO!!)
+
+```
+curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/stream?matcher=%2Fvisits%2F%2A -vvv
+```
+
+Acknowledges the messages by sending the following request:
+```
+curl -X PUT -H 'Last-Event-Id: 123' http://localhost:8080/consumer/{name}/ack
+```
+
 
 ## TODO
 
-- (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
 - (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687
 - (Code & Documentation) Get & validate schema from event type
 - (Code & Documentation) JWT authentication for public-facing API
