@@ -75,6 +75,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
   digest = "1:a0c8d7eac430b194e7fd601224a44e84cc9eefaf174b4de88863f7086e0cc4e8"
   name = "github.com/jackc/pgx"
   packages = [
@@ -90,12 +98,47 @@
   version = "v3.6.0"
 
 [[projects]]
+  digest = "1:1b47e2f2e8457d47f73c768f3e61c9207d1beb7bfca397d11a5c9fcb39eae7da"
+  name = "github.com/jackc/tern"
+  packages = [
+    ".",
+    "migrate",
+  ]
+  pruneopts = "UT"
+  revision = "342926c66fca7f3a8dab23f7c187959503bc64d2"
+  version = "v1.8.2"
+
+[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
   pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
+
+[[projects]]
+  digest = "1:e096613fb7cf34743d49af87d197663cfccd61876e2219853005a57baedfa562"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f2b07da1e2c38d5f12845a4f607e2e1018cbb1f5"
+  version = "v0.0.5"
+
+[[projects]]
+  digest = "1:524b71991fc7d9246cc7dc2d9e0886ccb97648091c63e30eef619e6862c955dd"
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2e9d26c8c37aae03e3f9d4e90b7116f5accb7cab"
+  version = "v1.0.5"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8f70510b21fd07eba5bd4e0f84d49d932ea74c8b0ea20a5807e9492cc819928c"
+  name = "github.com/vaughan0/go-ini"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1"
 
 [[projects]]
   digest = "1:74accd9945e4e51580cbe9b9428c228c1a7d37180cf2647ac33a1dff7197546a"
@@ -152,11 +195,29 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f92f6956e4059f6a3efc14924d2dd58ba90da25cc57fe07ae3779ef2f5e0c5f2"
+  digest = "1:c1cb8f201cd73391de1a35e57b93e1da6738652029af640f71915b947aa8a923"
   name = "golang.org/x/crypto"
-  packages = ["pbkdf2"]
+  packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
+    "pbkdf2",
+    "poly1305",
+    "ssh",
+    "ssh/agent",
+  ]
   pruneopts = "UT"
   revision = "87dc89f01550277dc22b74ffcf4cd89fa2f40f4c"
+
+[[projects]]
+  branch = "master"
+  digest = "1:95abab3e07422980e85e253e49eb75c05c1dee6e84b50cb0d3353747ef8099eb"
+  name = "golang.org/x/sys"
+  packages = ["cpu"]
+  pruneopts = "UT"
+  revision = "9984515f05623565c49553bf594e265840dd3b19"
 
 [[projects]]
   digest = "1:5f1559c4cee44069f81517430ebba19589869f3d4d4648213a4d5ddd199b11d8"
@@ -201,6 +262,7 @@
     "github.com/gobwas/glob",
     "github.com/google/uuid",
     "github.com/jackc/pgx",
+    "github.com/jackc/tern",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

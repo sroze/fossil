@@ -24,6 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = ["github.com/jackc/tern"]
 
 [prune]
   go-tests = true
