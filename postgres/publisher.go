@@ -8,10 +8,10 @@ import (
 )
 
 type Publisher struct {
-	conn *pgx.Conn
+	conn Execable
 }
 
-func NewPublisher(conn *pgx.Conn) *Publisher {
+func NewPublisher(conn Execable) *Publisher {
 	return &Publisher{
 		conn,
 	}
@@ -28,7 +28,7 @@ func (p *Publisher) Publish(ctx context.Context, stream string, event *cloudeven
 		return err
 	}
 
-	_, err = t.Exec("select pg_notify('messages', $1)", string(marshalled))
+	_, err = t.ExecEx(ctx, "select pg_notify('messages', $1)", nil, string(marshalled))
 
 	return err
 }

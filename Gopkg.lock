@@ -199,6 +199,7 @@
     "github.com/go-chi/chi/middleware",
     "github.com/go-chi/render",
     "github.com/gobwas/glob",
+    "github.com/google/uuid",
     "github.com/jackc/pgx",
   ]
   solver-name = "gps-cdcl"

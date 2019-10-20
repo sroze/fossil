@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/jackc/pgx"
 	"github.com/sroze/fossil"
 )
 
@@ -11,10 +10,10 @@ var transactionContextKey = "pgtx"
 
 type CollectorWrappedInTransaction struct {
 	decorated  fossil.Collector
-	connection *pgx.Conn
+	connection Transactionable
 }
 
-func NewCollectorWrappedInTransaction(decorated fossil.Collector, connection *pgx.Conn) *CollectorWrappedInTransaction {
+func NewCollectorWrappedInTransaction(decorated fossil.Collector, connection Transactionable) *CollectorWrappedInTransaction {
 	return &CollectorWrappedInTransaction{
 		decorated,
 		connection,

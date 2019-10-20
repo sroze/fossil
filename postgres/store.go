@@ -10,10 +10,10 @@ import (
 )
 
 type Storage struct {
-	conn *pgx.Conn
+	conn Queryable
 }
 
-func NewStorage(conn *pgx.Conn) *Storage {
+func NewStorage(conn Queryable) *Storage {
 	return &Storage{
 		conn,
 	}
@@ -25,15 +25,20 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 		return fmt.Errorf("transaction not found in context")
 	}
 
+	marshalled, err := event.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
 	var number int
 	var sequenceNumberInStream int
-	err := t.QueryRowEx(
+	err = t.QueryRowEx(
 		ctx,
 		"insert into events (id, stream, event) values ($1, $2, $3) returning number, sequence_number_in_stream",
 		nil,
 		event.Context.GetID(),
 		stream,
-		event.Data,
+		marshalled,
 	).Scan(&number, &sequenceNumberInStream)
 
 	if err != nil {
@@ -54,8 +59,9 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher string) chan cloud
 
 	go func() {
 		// TODO: Integration test for this lovely one!
-		streamAsRegex := "^" + strings.ReplaceAll(matcher, "*", "[^\\/]") + "$"
+		streamAsRegex := "^" + strings.ReplaceAll(matcher, "*", "[^\\/]*") + "$"
 
+		fmt.Println("-- "+streamAsRegex+" --") // ^/visits/[^\/]$
 		rows, err := s.conn.QueryEx(ctx, "select number, stream, sequence_number_in_stream, event from events where stream ~ $1 order by number asc", nil, streamAsRegex)
 		if err != nil {
 			fmt.Println("error went loading historical events", err)
@@ -69,11 +75,18 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher string) chan cloud
 			var number int
 			var sequenceNumberInStream int
 			var stream string
-			var event cloudevents.Event
+			var eventAsBytes []byte
 
-			err = rows.Scan(&number, &stream, &sequenceNumberInStream, &event)
+			err = rows.Scan(&number, &stream, &sequenceNumberInStream, &eventAsBytes)
 			if err != nil {
 				break
+			}
+
+			event := cloudevents.Event{}
+			err = event.UnmarshalJSON(eventAsBytes)
+			if err != nil {
+				fmt.Println(err)
+				return
 			}
 
 			fossil.SetEventNumber(&event, number)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/sroze/fossil"
 	http2 "github.com/sroze/fossil/http"
@@ -9,20 +10,21 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 )
 
-func main() {
-	conn, err := postgres.NewPostgresConnection(os.Getenv("DATABASE_URL"))
+func StartServer() error {
+	pool, err := postgres.NewPostgresPool(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Panicf("Storage err: %s\n", err.Error()) // panic if there is an error
+		return err
 	}
 
-	s := postgres.NewStorage(conn)
-	p := postgres.NewPublisher(conn)
+	s := postgres.NewStorage(pool)
+	p := postgres.NewPublisher(pool)
 
 	consumer, err := postgres.NewConsumer(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Panicf("Consumer err: %s\n", err.Error()) // panic if there is an error
+		return err
 	}
 
 	eventStreamFactory := streaming.NewEventStreamFactory(s)
@@ -31,7 +33,7 @@ func main() {
 	router := http2.NewFossilServer(
 		postgres.NewCollectorWrappedInTransaction(
 			fossil.NewCollector(s, p),
-			conn,
+			pool,
 		),
 		eventStreamFactory,
 	)
@@ -41,8 +43,21 @@ func main() {
 		return nil
 	}
 	if err := chi.Walk(router, walkFunc); err != nil {
-		log.Panicf("Logging err: %s\n", err.Error()) // panic if there is an error
+		return err
 	}
 
-	log.Fatal(http.ListenAndServe(":8080", router)) // Note, the port is usually gotten from the environment.
+	port, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
+	if err != nil {
+		return err
+	}
+
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), router)
+}
+
+func main() {
+	err := StartServer()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

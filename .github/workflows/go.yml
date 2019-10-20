@@ -5,8 +5,20 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    steps:
 
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_USER: fossil
+          POSTGRES_PASSWORD: fossil
+          POSTGRES_DB: fossil
+        ports:
+          - 5432/tcp
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
@@ -31,7 +43,7 @@ jobs:
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         dep ensure
 
-    - name: Build
+    - name: Test
       run: |
         export GOPATH=$HOME/go
         export GOBIN=$(go env GOPATH)/bin
@@ -39,3 +51,15 @@ jobs:
         export PATH=$PATH:$GOBIN
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         go test -v ./...
+
+    - name: Integration tests
+      run: |
+        export GOPATH=$HOME/go
+        export GOBIN=$(go env GOPATH)/bin
+        export PATH=$PATH:$GOPATH
+        export PATH=$PATH:$GOBIN
+        cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
+        go test -tags=integration -v ./...
+
+      env:
+        DATABASE_URL: postgres://fossil:fossil@localhost/fossil
