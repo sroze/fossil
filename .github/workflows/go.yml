@@ -18,6 +18,7 @@ jobs:
 
     - name: Get dependencies
       run: |
+        go get -v -t -d ./...
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         dep ensure
 
