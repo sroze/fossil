@@ -78,6 +78,7 @@ func TestWithDatabase(t *testing.T) {
 			request, err := http.NewRequest("GET", requestUrl, nil)
 			if err != nil {
 				t.Error(err)
+				return
 			}
 
 			request.Header.Set("Accept", "text/event-stream")
@@ -85,6 +86,7 @@ func TestWithDatabase(t *testing.T) {
 			response, err := http.DefaultClient.Do(request)
 			if err != nil {
 				t.Error(err)
+				return
 			}
 
 			// defer request.Body.Close()
