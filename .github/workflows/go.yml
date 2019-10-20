@@ -20,7 +20,8 @@ jobs:
       run: |
         GOBIN=$(echo "${EFFECTIVE_GOPATH}/bin" | sed s#//*#/#g)
         echo "GOBIN: "$GOBIN
-        mkdir -p $GOBIN
+        echo "GOPATH: "$GOPATH
+        mkdir -p /home/runner/go/bin
         curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
         dep ensure
 
