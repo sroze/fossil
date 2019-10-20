@@ -69,10 +69,3 @@ $ tern migrate
 ```
 
 **Note:** You need `pgx@v3.6.0`: `cd $GOPATH/src/github.com/jackc/pgx && git checkout v3.6.0`
-
-## OSX
-
-You need to install Kafka's library, `librdkafka`
-```
-brew install librdkafka pkg-config
-```
