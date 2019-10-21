@@ -9,6 +9,7 @@ import (
 )
 
 var fossilStreamHeader = "Fossil-Stream"
+var fossilReplaceHeader = "Fossil-Replace"
 
 type Router struct {
 	collector fossil.Collector

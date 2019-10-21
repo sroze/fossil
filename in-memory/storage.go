@@ -17,10 +17,31 @@ func NewInMemoryStorage() *InMemoryStorage {
 }
 
 func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloudevents.Event) error {
-	s.Events = append(s.Events, *event)
+	err := s.addOrReplace(*event)
+	if err != nil {
+		return err
+	}
 
 	fossil.SetEventNumber(event, len(s.Events))
-	event.SetExtension(fossil.SequenceNumberInStreamExtensionName, s.countEventsInStream(stream))
+	fossil.SetSequenceNumberInStream(event, s.countEventsInStream(stream))
+
+	return nil
+}
+
+func (s* InMemoryStorage) addOrReplace(event cloudevents.Event) error {
+	for index, e := range s.Events {
+		if e.ID() == event.ID() {
+			if fossil.IsReplacingAnotherEvent(event) {
+				s.Events[index] = event
+
+				return nil
+			}
+
+			return &fossil.DuplicateEventError{}
+		}
+	}
+
+	s.Events = append(s.Events, event)
 
 	return nil
 }

@@ -11,6 +11,7 @@ type Transactionable interface {
 
 type Queryable interface {
 	QueryEx(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) (rows *pgx.Rows, err error)
+	QueryRowEx(ctx context.Context, sql string, options *pgx.QueryExOptions, args ...interface{}) *pgx.Row
 }
 
 type Execable interface {

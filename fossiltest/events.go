@@ -19,7 +19,7 @@ func NewEvent(id string, stream string, number int, sequenceNumberInStream int) 
 		fossil.SetEventNumber(&event, number)
 	}
 	if sequenceNumberInStream != 0 {
-		event.SetExtension(fossil.SequenceNumberInStreamExtensionName, sequenceNumberInStream)
+		fossil.SetSequenceNumberInStream(&event, sequenceNumberInStream)
 	}
 
 	return event

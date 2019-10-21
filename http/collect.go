@@ -54,14 +54,24 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	// Add event extensions
 	fossil.SetStream(event, streams[0])
+	if request.Header.Get(fossilReplaceHeader) == "true" {
+		fossil.SetEventToReplaceExistingOne(event)
+	}
 
 	err = r.collector.Collect(ctx, event)
 
 	if err != nil {
-		fmt.Printf("failed to collect event: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
+		_, ok := err.(*fossil.DuplicateEventError)
+		if ok {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"Event with such identifier already exists."}`))
+		} else {
+			fmt.Printf("failed to collect event: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
+		}
 		return
 	}
 

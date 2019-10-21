@@ -10,6 +10,7 @@ import (
 var SequenceNumberInStreamExtensionName = "fossilsequenceinstream"
 var eventNumberExtensionName = "fossileventnumber"
 var streamExtensionName = "fossilstream"
+var toReplaceExistingEventExtensionName = "fossiltoreplaceexistingevent"
 
 func GetStreamFromEvent(event cloudevents.Event) string {
 	return getStringFromExtension(event, streamExtensionName)
@@ -25,6 +26,22 @@ func SetEventNumber(event *cloudevents.Event, number int) {
 
 func GetEventNumber(event cloudevents.Event) int {
 	return getIntegerFromExtension(event, eventNumberExtensionName)
+}
+
+func SetSequenceNumberInStream(event *cloudevents.Event, number int) {
+	event.SetExtension(SequenceNumberInStreamExtensionName, number)
+}
+
+func GetSequenceNumberInStream(event cloudevents.Event) int {
+	return getIntegerFromExtension(event, SequenceNumberInStreamExtensionName)
+}
+
+func SetEventToReplaceExistingOne(event *cloudevents.Event) {
+	event.SetExtension(toReplaceExistingEventExtensionName, 1)
+}
+
+func IsReplacingAnotherEvent(event cloudevents.Event) bool {
+	return getIntegerFromExtension(event, toReplaceExistingEventExtensionName) == 1
 }
 
 func getStringFromExtension(event cloudevents.Event, extensionName string) string {
@@ -44,7 +61,7 @@ func getStringFromExtension(event cloudevents.Event, extensionName string) strin
 
 	s, err := types.ToString(extension)
 	if err != nil {
-		panic(fmt.Errorf("event did not have a number: %s | %s", event, err))
+		panic(fmt.Errorf("could not get string for extension %s | %s | %s", extensionName, event, err))
 	}
 
 	return s
@@ -67,7 +84,7 @@ func getIntegerFromExtension(event cloudevents.Event, extensionName string) int 
 
 	number, err := types.ToInteger(extension)
 	if err != nil {
-		panic(fmt.Errorf("event did not have a number: %s | %s", event, err))
+		return 0
 	}
 
 	return int(number)

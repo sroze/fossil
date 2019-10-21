@@ -10,7 +10,7 @@ By default, it uses PostgreSQL for consistency, Kafka for messaging.
 
 ```
 POST /collect HTTP/1.1
-Host: webhook.example.com
+Host: fossil.example.com
 ce-specversion: 1.0
 ce-type: https://acme.com/PersonCreated
 ce-time: 2018-04-05T03:56:24Z
@@ -41,7 +41,7 @@ curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://lo
 
 #### As a consumer group
 
-(TODO!!)
+_Note: this remains to do_
 
 ```
 curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/stream?matcher=%2Fvisits%2F%2A -vvv
@@ -52,10 +52,26 @@ Acknowledges the messages by sending the following request:
 curl -X PUT -H 'Last-Event-Id: 123' http://localhost:8080/consumer/{name}/ack
 ```
 
+### Delete or replace an event
+
+For multiple valid reasons (GDPR for example) it is important to be able to delete an event. Fossil does not support
+deletion but handles replacement. In order to delete, you would therefore replace an existing event with another
+value, meaning deletion.
+
+```
+curl -X POST -H 'Last-Event-Id: 123' \
+     -H 'Fossil-Replace: true' \
+     ...all other headers... \
+     --data '...replacement value...'
+     http://localhost:8080/collect
+```
 
 ## TODO
 
-- (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687
+- (Code & Documentation) Outbox to Kafka
+- (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
+- (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687 | Or use PgSQL's advisory lock to load-balance
+- (Code & Documentation) Set expected version number when collecting
 - (Code & Documentation) Get & validate schema from event type
 - (Code & Documentation) JWT authentication for public-facing API
 - (Code & Documentation) "Type to _streams_" mapping: within the JSON schema?
