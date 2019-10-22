@@ -2,7 +2,7 @@ package fossiltest
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/sroze/fossil"
+	"github.com/sroze/fossil/streaming"
 	"testing"
 )
 
@@ -13,13 +13,13 @@ func NewEvent(id string, stream string, number int, sequenceNumberInStream int) 
 	event.SetID(id)
 
 	if stream != "" {
-		fossil.SetStream(&event, stream)
+		streaming.SetStream(&event, stream)
 	}
 	if number != 0 {
-		fossil.SetEventNumber(&event, number)
+		streaming.SetEventNumber(&event, number)
 	}
 	if sequenceNumberInStream != 0 {
-		fossil.SetSequenceNumberInStream(&event, sequenceNumberInStream)
+		streaming.SetSequenceNumberInStream(&event, sequenceNumberInStream)
 	}
 
 	return event

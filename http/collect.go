@@ -4,13 +4,30 @@ import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	httpcloudevents "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
-	"github.com/sroze/fossil"
+	"github.com/go-chi/chi"
+	"github.com/sroze/fossil/collector"
+	"github.com/sroze/fossil/postgres"
+	"github.com/sroze/fossil/streaming"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
 
-func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
+type CollectorRouter struct {
+	collector collector.Collector
+}
+
+func NewCollectorRouter(collector collector.Collector) *CollectorRouter {
+	return &CollectorRouter{
+		collector,
+	}
+}
+
+func (r *CollectorRouter) Mount(router *chi.Mux) {
+	router.Post("/collect", r.CollectEvent)
+}
+
+func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 	t, err := cloudevents.NewHTTPTransport()
 
@@ -55,15 +72,15 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 	}
 
 	// Add event extensions
-	fossil.SetStream(event, streams[0])
+	streaming.SetStream(event, streams[0])
 	if request.Header.Get(fossilReplaceHeader) == "true" {
-		fossil.SetEventToReplaceExistingOne(event)
+		streaming.SetEventToReplaceExistingOne(event)
 	}
 
 	err = r.collector.Collect(ctx, event)
 
 	if err != nil {
-		_, ok := err.(*fossil.DuplicateEventError)
+		_, ok := err.(*postgres.DuplicateEventError)
 		if ok {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"Event with such identifier already exists."}`))
@@ -75,7 +92,7 @@ func (r *Router) CollectEvent(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	w.Header().Set("Fossil-Event-Number", strconv.Itoa(fossil.GetEventNumber(*event)))
+	w.Header().Set("Fossil-Event-Number", strconv.Itoa(streaming.GetEventNumber(*event)))
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))
 }

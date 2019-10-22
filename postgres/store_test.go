@@ -1,10 +1,12 @@
+// +build integration
+
 package postgres
 
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil"
 	"github.com/sroze/fossil/fossiltest"
+	"github.com/sroze/fossil/streaming"
 	"os"
 	"strings"
 	"testing"
@@ -34,15 +36,15 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		if fossil.GetEventNumber(event) == 0 {
+		if streaming.GetEventNumber(event) == 0 {
 			t.Error("expected event number, found 0")
 		}
 	})
-	
+
 	t.Run("returns a duplicate error if same event exists", func(t *testing.T) {
 		id := uuid.New().String()
-		event1 := fossiltest.NewEvent(id, "foo/bar",1, 1)
-		event2 := fossiltest.NewEvent(id, "foo/bar",2, 2)
+		event1 := fossiltest.NewEvent(id, "foo/bar", 1, 1)
+		event2 := fossiltest.NewEvent(id, "foo/bar", 2, 2)
 
 		err := storage.Store(context.Background(), "foo/bar", &event1)
 		if err != nil {
@@ -51,16 +53,16 @@ func TestStorage(t *testing.T) {
 		}
 
 		err = storage.Store(context.Background(), "foo/bar", &event2)
-		if _, ok := err.(*fossil.DuplicateEventError); !ok {
+		if _, ok := err.(*DuplicateEventError); !ok {
 			t.Error("expected a duplicate event error")
 		}
 	})
-	
+
 	t.Run("overrides the event if explicitly stated", func(t *testing.T) {
 		id := uuid.New().String()
-		event1 := fossiltest.NewEvent(id, "foo/bar",1, 1)
+		event1 := fossiltest.NewEvent(id, "foo/bar", 1, 1)
 		event1.SetData("first")
-		event2 := fossiltest.NewEvent(id, "foo/bar",2, 2)
+		event2 := fossiltest.NewEvent(id, "foo/bar", 2, 2)
 		event2.SetData("second")
 
 		err := storage.Store(context.Background(), "foo/bar", &event1)
@@ -69,7 +71,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		fossil.SetEventToReplaceExistingOne(&event2)
+		streaming.SetEventToReplaceExistingOne(&event2)
 
 		err = storage.Store(context.Background(), "foo/bar", &event2)
 		if err != nil {

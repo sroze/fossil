@@ -23,6 +23,8 @@ func TestSimpleEventStreaming(t *testing.T) {
 			in_memory.NewInMemoryPublisher(),
 		),
 		streamFactory,
+		storage,
+		storage,
 	)
 
 	t.Run("streams consumed events", func(t *testing.T) {
@@ -49,7 +51,7 @@ func TestSimpleEventStreaming(t *testing.T) {
 		streamFactory.Source <- event
 
 		// Receive an event
-		received := <- events
+		received := <-events
 		if received.ID != event.ID() {
 			t.Errorf("received ID %s is different from sent %s", received.ID, event.ID())
 		}
@@ -88,5 +90,5 @@ func TestMatcherFromRequest(t *testing.T) {
 		if matcher.LastEventId != 12 {
 			t.Errorf("expected last event id to be 12, found %d instead", matcher.LastEventId)
 		}
- 	})
+	})
 }

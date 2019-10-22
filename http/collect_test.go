@@ -27,6 +27,8 @@ func TestCollectEvent(t *testing.T) {
 			in_memory.NewInMemoryPublisher(),
 		),
 		streaming.NewEventStreamFactory(storage),
+		storage,
+		storage,
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {
@@ -66,7 +68,7 @@ func TestCollectEvent(t *testing.T) {
 			t.Error("expected the event number as response but found nothing")
 		}
 	})
-	
+
 	t.Run("error when the event already exists", func(t *testing.T) {
 		body := strings.NewReader("{\"mood\": \"happy again\"}")
 
@@ -85,7 +87,7 @@ func TestCollectEvent(t *testing.T) {
 
 		ExpectResponseCode(t, response, 400)
 	})
-	
+
 	t.Run("can override an event", func(t *testing.T) {
 		body := strings.NewReader("{\"mood\": \"happy again; replaced this time\"}")
 

@@ -41,8 +41,6 @@ curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://lo
 
 #### As a consumer group
 
-_Note: this remains to do_
-
 ```
 curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/stream?matcher=%2Fvisits%2F%2A -vvv
 ```
@@ -69,7 +67,6 @@ curl -X POST -H 'Last-Event-Id: 123' \
 ## TODO
 
 - (Code & Documentation) Outbox to Kafka
-- (Code & Documentation) Consumer group (i.e. automated `Last-Event-Id` with name)
 - (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687 | Or use PgSQL's advisory lock to load-balance
 - (Code & Documentation) Set expected version number when collecting
 - (Code & Documentation) Get & validate schema from event type

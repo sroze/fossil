@@ -3,13 +3,25 @@ package http
 import (
 	"errors"
 	"fmt"
-	"github.com/sroze/fossil"
+	"github.com/go-chi/chi"
+	"github.com/sroze/fossil/collector"
+	"github.com/sroze/fossil/streaming"
 	"net/http"
 	"strconv"
 )
 
-func matcherFromRequest(req *http.Request) (fossil.Matcher, error) {
-	matcher := fossil.Matcher{}
+type SSERouter struct {
+	eventStreamFactory *streaming.EventStreamFactory
+}
+
+func NewSSERouter(eventStreamFactory *streaming.EventStreamFactory) *SSERouter {
+	return &SSERouter{
+		eventStreamFactory,
+	}
+}
+
+func matcherFromRequest(req *http.Request) (collector.Matcher, error) {
+	matcher := collector.Matcher{}
 	matcher.UriTemplate = req.URL.Query().Get("matcher")
 
 	if matcher.UriTemplate == "" {
@@ -30,7 +42,11 @@ func matcherFromRequest(req *http.Request) (fossil.Matcher, error) {
 	return matcher, nil
 }
 
-func (r *Router) StreamEvents(rw http.ResponseWriter, req *http.Request) {
+func (r *SSERouter) Mount(router *chi.Mux) {
+	router.Get("/stream", r.StreamEvents)
+}
+
+func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	// Make sure that the writer supports flushing.
 	flusher, ok := rw.(http.Flusher)
 	if !ok {
@@ -47,7 +63,9 @@ func (r *Router) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	matcher, err := matcherFromRequest(req)
 	if err != nil {
 		http.Error(rw, "You need to give a matcher.", http.StatusBadRequest)
+		return
 	}
+
 	stream := r.eventStreamFactory.NewEventStream(req.Context(), matcher)
 
 	for {

@@ -17,7 +17,7 @@ func NewConsumer(url string) (*Consumer, error) {
 		return nil, err
 	}
 
-	return &Consumer{conn }, nil
+	return &Consumer{conn}, nil
 }
 
 func (c *Consumer) ConsumeFor(channel chan cloudevents.Event) {

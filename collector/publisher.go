@@ -1,9 +1,17 @@
-package fossil
+package collector
 
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
 )
+
+type Publisher interface {
+	Publish(context context.Context, stream string, event *cloudevents.Event) error
+}
+
+type Collector interface {
+	Collect(context context.Context, event *cloudevents.Event) error
+}
 
 type EventStore interface {
 	Store(ctx context.Context, stream string, event *cloudevents.Event) error
@@ -11,11 +19,4 @@ type EventStore interface {
 
 type EventLoader interface {
 	MatchingStream(ctx context.Context, matcher Matcher) chan cloudevents.Event
-}
-
-// Errors
-type DuplicateEventError struct{}
-
-func (e *DuplicateEventError) Error() string {
-	return "event with such identifier already exists."
 }
