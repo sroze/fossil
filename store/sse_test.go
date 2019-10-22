@@ -1,12 +1,9 @@
-package http
+package store
 
 import (
 	"bufio"
 	"context"
-	"github.com/sroze/fossil"
-	"github.com/sroze/fossil/fossiltest"
-	in_memory "github.com/sroze/fossil/in-memory"
-	"github.com/sroze/fossil/streaming"
+	fossiltesting "github.com/sroze/fossil/testing"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -15,12 +12,12 @@ import (
 )
 
 func TestSimpleEventStreaming(t *testing.T) {
-	storage := in_memory.NewInMemoryStorage()
-	streamFactory := streaming.NewEventStreamFactory(storage)
+	storage := NewInMemoryStorage()
+	streamFactory := NewEventStreamFactory(storage)
 	server := NewFossilServer(
-		fossil.NewCollector(
+		NewCollector(
 			storage,
-			in_memory.NewInMemoryPublisher(),
+			NewInMemoryPublisher(),
 		),
 		streamFactory,
 		storage,
@@ -43,11 +40,11 @@ func TestSimpleEventStreaming(t *testing.T) {
 		// Wait for the stream listener to be registered
 		time.Sleep(100 * time.Millisecond)
 
-		events := make(chan fossiltest.ServerSentEvent)
-		go fossiltest.ReadServerSideEvents(bufio.NewReader(response.Body), events)
+		events := make(chan fossiltesting.ServerSentEvent)
+		go fossiltesting.ReadServerSideEvents(bufio.NewReader(response.Body), events)
 
 		// ServerSentEvent is consumed
-		event := fossiltest.NewEvent("123456", "/visits/1234", 1, 1)
+		event := fossiltesting.NewEvent("123456", "/visits/1234", 1, 1)
 		streamFactory.Source <- event
 
 		// Receive an event

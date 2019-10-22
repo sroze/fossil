@@ -1,26 +1,24 @@
-package http
+package store
 
 import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/streaming"
 )
 
 var fossilStreamHeader = "Fossil-Stream"
 var fossilReplaceHeader = "Fossil-Replace"
 
 type Router struct {
-	collector          collector.Collector
-	eventStreamFactory *streaming.EventStreamFactory
+	collector          Collector
+	eventStreamFactory *EventStreamFactory
 }
 
 func NewFossilServer(
-	collector collector.Collector,
-	factory *streaming.EventStreamFactory,
-	store collector.EventStore,
-	loader collector.EventLoader,
+	collector Collector,
+	factory *EventStreamFactory,
+	store EventStore,
+	loader EventLoader,
 ) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(

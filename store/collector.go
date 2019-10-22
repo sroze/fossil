@@ -1,18 +1,17 @@
-package fossil
+package store
 
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
 )
 
 type DefaultCollector struct {
-	store     collector.EventStore
-	publisher collector.Publisher
+	store     EventStore
+	publisher Publisher
 }
 
-func NewCollector(store collector.EventStore, publisher collector.Publisher) *DefaultCollector {
+func NewCollector(store EventStore, publisher Publisher) *DefaultCollector {
 	return &DefaultCollector{
 		store,
 		publisher,
@@ -21,7 +20,7 @@ func NewCollector(store collector.EventStore, publisher collector.Publisher) *De
 
 func (c *DefaultCollector) Collect(context context.Context, event *cloudevents.Event) error {
 	// Store the event in its streams
-	stream := streaming.GetStreamFromEvent(*event)
+	stream := events.GetStreamFromEvent(*event)
 
 	// Store the message
 	err := c.store.Store(context, stream, event)

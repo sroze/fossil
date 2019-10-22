@@ -1,12 +1,11 @@
-package main
+package fossil
 
 import (
-	"github.com/sroze/fossil/http"
 	"log"
 )
 
 func main() {
-	err := http.StartServer()
+	err := StartServer()
 
 	if err != nil {
 		log.Fatal(err)

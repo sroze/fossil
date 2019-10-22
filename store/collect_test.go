@@ -1,9 +1,6 @@
-package http
+package store
 
 import (
-	"github.com/sroze/fossil"
-	"github.com/sroze/fossil/in-memory"
-	"github.com/sroze/fossil/streaming"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,13 +17,13 @@ func ExpectResponseCode(t *testing.T, response *httptest.ResponseRecorder, expec
 }
 
 func TestCollectEvent(t *testing.T) {
-	storage := in_memory.NewInMemoryStorage()
+	storage := NewInMemoryStorage()
 	server := NewFossilServer(
-		fossil.NewCollector(
+		NewCollector(
 			storage,
-			in_memory.NewInMemoryPublisher(),
+			NewInMemoryPublisher(),
 		),
-		streaming.NewEventStreamFactory(storage),
+		NewEventStreamFactory(storage),
 		storage,
 		storage,
 	)

@@ -1,6 +1,6 @@
 // +build integration
 
-package http
+package fossil
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/fossiltest"
+	fossiltesting "github.com/sroze/fossil/testing"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,7 +53,7 @@ func CollectEvent(t *testing.T, id string, stream string, contents interface{}) 
 	return response
 }
 
-func StreamEventsFromUrl(url string, lastEventId int, channel chan fossiltest.ServerSentEvent) {
+func StreamEventsFromUrl(url string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err)
@@ -69,10 +69,10 @@ func StreamEventsFromUrl(url string, lastEventId int, channel chan fossiltest.Se
 		panic(err)
 	}
 
-	fossiltest.ReadServerSideEvents(bufio.NewReader(response.Body), channel)
+	fossiltesting.ReadServerSideEvents(bufio.NewReader(response.Body), channel)
 }
 
-func StreamEvents(matcher string, lastEventId int, channel chan fossiltest.ServerSentEvent) {
+func StreamEvents(matcher string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
 	query := url.Values{}
 	query.Set("matcher", matcher)
 	requestUrl := fmt.Sprintf("http://localhost:%s/stream?%s", os.Getenv("SERVER_PORT"), query.Encode())
@@ -101,7 +101,7 @@ func TestWithDatabase(t *testing.T) {
 		})
 
 		// Streams the streamedEvents from the `visits/*` streams
-		streamedEvents := make(chan fossiltest.ServerSentEvent)
+		streamedEvents := make(chan fossiltesting.ServerSentEvent)
 		go StreamEvents(fmt.Sprintf("/%s/*", prefix), 0, streamedEvents)
 
 		// Collect another event
@@ -111,8 +111,8 @@ func TestWithDatabase(t *testing.T) {
 		})
 
 		// Expect streamedEvents to be two
-		fossiltest.ExpectServerSideEventWithId(t, <-streamedEvents, firstId)
-		fossiltest.ExpectServerSideEventWithId(t, <-streamedEvents, secondId)
+		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, firstId)
+		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, secondId)
 	})
 
 	t.Run("get events up to a certain point only", func(t *testing.T) {
@@ -140,11 +140,11 @@ func TestWithDatabase(t *testing.T) {
 		})
 
 		// Streams the streamedEvents from the `visits/*` streams
-		streamedEvents := make(chan fossiltest.ServerSentEvent)
+		streamedEvents := make(chan fossiltesting.ServerSentEvent)
 		go StreamEvents(fmt.Sprintf("/%s/*", prefix), lastResponseEventNumber, streamedEvents)
 
 		// Expect to receive the one after last
-		fossiltest.ExpectServerSideEventWithId(t, <-streamedEvents, afterLastId)
+		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, afterLastId)
 	})
 
 	t.Run("consume, ack and re-consume", func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestWithDatabase(t *testing.T) {
 		}
 
 		// Listen to events, we should only have the 2nd one
-		streamedEvents := make(chan fossiltest.ServerSentEvent)
+		streamedEvents := make(chan fossiltesting.ServerSentEvent)
 		query := url.Values{}
 		query.Set("matcher", fmt.Sprintf("/%s/*", prefix))
 		requestUrl = fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
@@ -195,6 +195,6 @@ func TestWithDatabase(t *testing.T) {
 		go StreamEventsFromUrl(requestUrl, 0, streamedEvents)
 
 		// Expect to receive the one after last
-		fossiltest.ExpectServerSideEventWithId(t, <-streamedEvents, secondEventId)
+		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, secondEventId)
 	})
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/cloudevents/sdk-go"
 	"github.com/jackc/pgx"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
+	"github.com/sroze/fossil/store"
 	"strings"
 )
 
@@ -41,9 +41,9 @@ func rowToEvent(result ReadableQueryResult) (*cloudevents.Event, error) {
 		return nil, err
 	}
 
-	streaming.SetEventNumber(&event, number)
-	streaming.SetSequenceNumberInStream(&event, sequenceNumberInStream)
-	streaming.SetStream(&event, stream)
+	events.SetEventNumber(&event, number)
+	events.SetSequenceNumberInStream(&event, sequenceNumberInStream)
+	events.SetStream(&event, stream)
 
 	return &event, nil
 }
@@ -62,7 +62,7 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 
 	// By default we don't upsert
 	upsert := ""
-	if streaming.IsReplacingAnotherEvent(*event) {
+	if events.IsReplacingAnotherEvent(*event) {
 		upsert = "ON CONFLICT (id) DO UPDATE SET event = EXCLUDED.event"
 	}
 
@@ -79,18 +79,18 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
-			return &DuplicateEventError{}
+			return &store.DuplicateEventError{}
 		}
 	}
 
-	streaming.SetEventNumber(event, number)
-	streaming.SetStream(event, stream)
-	streaming.SetSequenceNumberInStream(event, sequenceNumberInStream)
+	events.SetEventNumber(event, number)
+	events.SetStream(event, stream)
+	events.SetSequenceNumberInStream(event, sequenceNumberInStream)
 
 	return err
 }
 
-func (s *Storage) MatchingStream(ctx context.Context, matcher collector.Matcher) chan cloudevents.Event {
+func (s *Storage) MatchingStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
 	channel := make(chan cloudevents.Event)
 
 	go func() {

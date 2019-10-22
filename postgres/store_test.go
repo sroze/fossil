@@ -5,8 +5,9 @@ package postgres
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/fossiltest"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
+	"github.com/sroze/fossil/store"
+	fossiltesting "github.com/sroze/fossil/testing"
 	"os"
 	"strings"
 	"testing"
@@ -25,7 +26,7 @@ func TestStorage(t *testing.T) {
 	storage := NewStorage(conn)
 
 	t.Run("stores and returns the event and sequence numbers", func(t *testing.T) {
-		event := fossiltest.NewEvent(
+		event := fossiltesting.NewEvent(
 			uuid.New().String(),
 			"foo/bar",
 			1, 1)
@@ -36,15 +37,15 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		if streaming.GetEventNumber(event) == 0 {
+		if events.GetEventNumber(event) == 0 {
 			t.Error("expected event number, found 0")
 		}
 	})
 
 	t.Run("returns a duplicate error if same event exists", func(t *testing.T) {
 		id := uuid.New().String()
-		event1 := fossiltest.NewEvent(id, "foo/bar", 1, 1)
-		event2 := fossiltest.NewEvent(id, "foo/bar", 2, 2)
+		event1 := fossiltesting.NewEvent(id, "foo/bar", 1, 1)
+		event2 := fossiltesting.NewEvent(id, "foo/bar", 2, 2)
 
 		err := storage.Store(context.Background(), "foo/bar", &event1)
 		if err != nil {
@@ -53,16 +54,16 @@ func TestStorage(t *testing.T) {
 		}
 
 		err = storage.Store(context.Background(), "foo/bar", &event2)
-		if _, ok := err.(*DuplicateEventError); !ok {
+		if _, ok := err.(*store.DuplicateEventError); !ok {
 			t.Error("expected a duplicate event error")
 		}
 	})
 
 	t.Run("overrides the event if explicitly stated", func(t *testing.T) {
 		id := uuid.New().String()
-		event1 := fossiltest.NewEvent(id, "foo/bar", 1, 1)
+		event1 := fossiltesting.NewEvent(id, "foo/bar", 1, 1)
 		event1.SetData("first")
-		event2 := fossiltest.NewEvent(id, "foo/bar", 2, 2)
+		event2 := fossiltesting.NewEvent(id, "foo/bar", 2, 2)
 		event2.SetData("second")
 
 		err := storage.Store(context.Background(), "foo/bar", &event1)
@@ -71,7 +72,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		streaming.SetEventToReplaceExistingOne(&event2)
+		events.SetEventToReplaceExistingOne(&event2)
 
 		err = storage.Store(context.Background(), "foo/bar", &event2)
 		if err != nil {

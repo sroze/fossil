@@ -1,18 +1,18 @@
-package streaming
+package store
 
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/sroze/fossil/collector"
+	"github.com/sroze/fossil/events"
 )
 
 type EventStreamFactory struct {
 	Source      chan cloudevents.Event
 	broadcaster *ChannelBroadcaster
-	loader      collector.EventLoader
+	loader      EventLoader
 }
 
-func NewEventStreamFactory(loader collector.EventLoader) *EventStreamFactory {
+func NewEventStreamFactory(loader EventLoader) *EventStreamFactory {
 	broadcaster := NewChannelBroadcaster(10)
 
 	return &EventStreamFactory{
@@ -22,7 +22,7 @@ func NewEventStreamFactory(loader collector.EventLoader) *EventStreamFactory {
 	}
 }
 
-func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher collector.Matcher) chan cloudevents.Event {
+func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
 	subscription := f.broadcaster.NewSubscriber()
 	channel := make(chan cloudevents.Event)
 
@@ -41,16 +41,16 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher collect
 		for event := range existingEvents {
 			channel <- event
 
-			lastEventNumberReceived = GetEventNumber(event)
+			lastEventNumberReceived = events.GetEventNumber(event)
 		}
 
 		for event := range subscription {
-			if !EventMatches(event, matcher) {
+			if !events.EventMatches(event, matcher) {
 				continue
 			}
 
 			// Ignore already sent events
-			if lastEventNumberReceived >= GetEventNumber(event) {
+			if lastEventNumberReceived >= events.GetEventNumber(event) {
 				continue
 			}
 

@@ -1,8 +1,9 @@
-package collector
+package store
 
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sroze/fossil/events"
 )
 
 type Publisher interface {
@@ -18,5 +19,5 @@ type EventStore interface {
 }
 
 type EventLoader interface {
-	MatchingStream(ctx context.Context, matcher Matcher) chan cloudevents.Event
+	MatchingStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event
 }

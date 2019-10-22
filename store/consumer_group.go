@@ -1,4 +1,4 @@
-package http
+package store
 
 import (
 	"encoding/json"
@@ -6,8 +6,7 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
 	"net/http"
 )
 
@@ -29,11 +28,11 @@ func getLastEvent(channel chan cloudevents.Event) *cloudevents.Event {
 
 type ConsumerGroup struct {
 	sseRouter *SSERouter
-	store     collector.EventStore
-	loader    collector.EventLoader
+	store     EventStore
+	loader    EventLoader
 }
 
-func NewConsumerGroup(sseRouter *SSERouter, store collector.EventStore, loader collector.EventLoader) *ConsumerGroup {
+func NewConsumerGroup(sseRouter *SSERouter, store EventStore, loader EventLoader) *ConsumerGroup {
 	return &ConsumerGroup{
 		sseRouter,
 		store,
@@ -49,7 +48,7 @@ func (cg *ConsumerGroup) Mount(router *chi.Mux) {
 func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
 	consumerName := chi.URLParam(req, "name")
 	acknowledgment := getLastEvent(
-		cg.loader.MatchingStream(req.Context(), collector.Matcher{
+		cg.loader.MatchingStream(req.Context(), events.Matcher{
 			UriTemplate: acknowledgmentStreamFromConsumerName(consumerName),
 		}),
 	)
@@ -93,7 +92,7 @@ func (cg *ConsumerGroup) Ack(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	streaming.SetEventToReplaceExistingOne(&event)
+	events.SetEventToReplaceExistingOne(&event)
 
 	err = cg.store.Store(req.Context(), acknowledgmentStreamFromConsumerName(consumerName), &event)
 	if err != nil {

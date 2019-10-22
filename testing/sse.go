@@ -1,4 +1,4 @@
-package fossiltest
+package testing
 
 import (
 	"bufio"

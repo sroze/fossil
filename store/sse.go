@@ -1,27 +1,26 @@
-package http
+package store
 
 import (
 	"errors"
 	"fmt"
 	"github.com/go-chi/chi"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
 	"net/http"
 	"strconv"
 )
 
 type SSERouter struct {
-	eventStreamFactory *streaming.EventStreamFactory
+	eventStreamFactory *EventStreamFactory
 }
 
-func NewSSERouter(eventStreamFactory *streaming.EventStreamFactory) *SSERouter {
+func NewSSERouter(eventStreamFactory *EventStreamFactory) *SSERouter {
 	return &SSERouter{
 		eventStreamFactory,
 	}
 }
 
-func matcherFromRequest(req *http.Request) (collector.Matcher, error) {
-	matcher := collector.Matcher{}
+func matcherFromRequest(req *http.Request) (events.Matcher, error) {
+	matcher := events.Matcher{}
 	matcher.UriTemplate = req.URL.Query().Get("matcher")
 
 	if matcher.UriTemplate == "" {

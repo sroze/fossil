@@ -1,4 +1,4 @@
-package streaming
+package events
 
 import (
 	"encoding/json"
@@ -6,13 +6,17 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
 	"github.com/gobwas/glob"
-	"github.com/sroze/fossil/collector"
 )
 
 var SequenceNumberInStreamExtensionName = "fossilsequenceinstream"
 var eventNumberExtensionName = "fossileventnumber"
 var streamExtensionName = "fossilstream"
 var toReplaceExistingEventExtensionName = "fossiltoreplaceexistingevent"
+
+type Matcher struct {
+	UriTemplate string
+	LastEventId int
+}
 
 func GetStreamFromEvent(event cloudevents.Event) string {
 	return getStringFromExtension(event, streamExtensionName)
@@ -92,7 +96,7 @@ func getIntegerFromExtension(event cloudevents.Event, extensionName string) int 
 	return int(number)
 }
 
-func EventMatches(event cloudevents.Event, matcher collector.Matcher) bool {
+func EventMatches(event cloudevents.Event, matcher Matcher) bool {
 	stream := GetStreamFromEvent(event)
 
 	if !glob.MustCompile(matcher.UriTemplate).Match(stream) {

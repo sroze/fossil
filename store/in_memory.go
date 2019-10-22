@@ -1,12 +1,26 @@
-package in_memory
+package store
 
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/sroze/fossil/collector"
-	"github.com/sroze/fossil/postgres"
-	"github.com/sroze/fossil/streaming"
+	"github.com/sroze/fossil/events"
 )
+
+type InMemoryPublisher struct {
+	Events []*cloudevents.Event
+}
+
+func NewInMemoryPublisher() *InMemoryPublisher {
+	return &InMemoryPublisher{
+		Events: make([]*cloudevents.Event, 0),
+	}
+}
+
+func (p *InMemoryPublisher) Publish(ctx context.Context, stream string, event *cloudevents.Event) error {
+	p.Events = append(p.Events, event)
+
+	return nil
+}
 
 type InMemoryStorage struct {
 	Events []cloudevents.Event
@@ -24,8 +38,8 @@ func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloud
 		return err
 	}
 
-	streaming.SetEventNumber(event, len(s.Events))
-	streaming.SetSequenceNumberInStream(event, s.countEventsInStream(stream))
+	events.SetEventNumber(event, len(s.Events))
+	events.SetSequenceNumberInStream(event, s.countEventsInStream(stream))
 
 	return nil
 }
@@ -33,13 +47,13 @@ func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloud
 func (s *InMemoryStorage) addOrReplace(event cloudevents.Event) error {
 	for index, e := range s.Events {
 		if e.ID() == event.ID() {
-			if streaming.IsReplacingAnotherEvent(event) {
+			if events.IsReplacingAnotherEvent(event) {
 				s.Events[index] = event
 
 				return nil
 			}
 
-			return &postgres.DuplicateEventError{}
+			return &DuplicateEventError{}
 		}
 	}
 
@@ -48,12 +62,12 @@ func (s *InMemoryStorage) addOrReplace(event cloudevents.Event) error {
 	return nil
 }
 
-func (s *InMemoryStorage) MatchingStream(ctx context.Context, matcher collector.Matcher) chan cloudevents.Event {
+func (s *InMemoryStorage) MatchingStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
 	c := make(chan cloudevents.Event)
 
 	go func() {
 		for _, event := range s.Events {
-			if streaming.EventMatches(event, matcher) {
+			if events.EventMatches(event, matcher) {
 				c <- event
 			}
 		}
@@ -68,7 +82,7 @@ func (s *InMemoryStorage) countEventsInStream(stream string) int {
 	count := 0
 
 	for _, event := range s.Events {
-		if streaming.GetStreamFromEvent(event) == stream {
+		if events.GetStreamFromEvent(event) == stream {
 			count++
 		}
 	}

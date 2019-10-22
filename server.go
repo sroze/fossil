@@ -1,12 +1,10 @@
-package http
+package fossil
 
 import (
 	"fmt"
 	"github.com/go-chi/chi"
-	"github.com/sroze/fossil"
 	"github.com/sroze/fossil/postgres"
-	"github.com/sroze/fossil/streaming"
-
+	"github.com/sroze/fossil/store"
 	"log"
 	"net/http"
 	"os"
@@ -27,12 +25,12 @@ func StartServer() error {
 		return err
 	}
 
-	eventStreamFactory := streaming.NewEventStreamFactory(s)
+	eventStreamFactory := store.NewEventStreamFactory(s)
 	go consumer.ConsumeFor(eventStreamFactory.Source)
 
-	router := NewFossilServer(
+	router := store.NewFossilServer(
 		postgres.NewCollectorWrappedInTransaction(
-			fossil.NewCollector(s, p),
+			store.NewCollector(s, p),
 			pool,
 		),
 		eventStreamFactory,
