@@ -67,9 +67,7 @@ func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 
 	stream := r.eventStreamFactory.NewEventStream(req.Context(), matcher)
 
-	for {
-		event := <-stream
-
+	for event := range stream {
 		_, err := fmt.Fprintf(rw, "id: %s\n", event.ID())
 		if err != nil {
 			fmt.Println("error writing id", err)

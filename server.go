@@ -36,6 +36,7 @@ func StartServer() error {
 		eventStreamFactory,
 		s,
 		s,
+		postgres.NewLock(pool),
 	)
 
 	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {

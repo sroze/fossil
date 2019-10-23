@@ -5,6 +5,7 @@ package fossil
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -53,7 +54,7 @@ func CollectEvent(t *testing.T, id string, stream string, contents interface{}) 
 	return response
 }
 
-func StreamEventsFromUrl(url string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
+func StreamEventsFromUrl(ctx context.Context, url string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err)
@@ -64,7 +65,7 @@ func StreamEventsFromUrl(url string, lastEventId int, channel chan fossiltesting
 		request.Header.Set("Last-Event-Id", strconv.Itoa(lastEventId))
 	}
 
-	response, err := http.DefaultClient.Do(request)
+	response, err := http.DefaultClient.Do(request.WithContext(ctx))
 	if err != nil {
 		panic(err)
 	}
@@ -77,7 +78,52 @@ func StreamEvents(matcher string, lastEventId int, channel chan fossiltesting.Se
 	query.Set("matcher", matcher)
 	requestUrl := fmt.Sprintf("http://localhost:%s/stream?%s", os.Getenv("SERVER_PORT"), query.Encode())
 
-	StreamEventsFromUrl(requestUrl, lastEventId, channel)
+	StreamEventsFromUrl(context.Background(), requestUrl, lastEventId, channel)
+}
+
+func StreamAndAcknowledge(ctx context.Context, consumerName string, matcher string, channel chan fossiltesting.ServerSentEvent) error {
+	query := url.Values{}
+	query.Set("matcher", matcher)
+	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
+
+	events := make(chan fossiltesting.ServerSentEvent)
+	go StreamEventsFromUrl(ctx, requestUrl, 0, events)
+
+	for sse := range events {
+		eventNumber, ok := sse.Data["fossileventnumber"].(float64)
+		if !ok {
+			return fmt.Errorf("could not get event number from SSE: %s", sse.Data)
+		}
+
+		err := AcknowledgeConsumer(consumerName, strconv.Itoa(int(eventNumber)))
+		if err != nil {
+			return err
+		}
+
+		channel <- sse
+	}
+
+	return nil
+}
+
+func AcknowledgeConsumer(consumerName string, eventNumber string) error {
+	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/ack", os.Getenv("SERVER_PORT"), consumerName)
+	request, err := http.NewRequest("PUT", requestUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set("Last-Event-Id", eventNumber)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("expected status 200, got %d", response.StatusCode)
+	}
+
+	return nil
 }
 
 func TestWithDatabase(t *testing.T) {
@@ -167,22 +213,9 @@ func TestWithDatabase(t *testing.T) {
 
 		// Ack the 1st one
 		consumerName := "testing-" + uuid.New().String()
-		requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/ack", os.Getenv("SERVER_PORT"), consumerName)
-		request, err := http.NewRequest("PUT", requestUrl, nil)
+		err := AcknowledgeConsumer(consumerName, firstResponseEventNumber)
 		if err != nil {
 			t.Error(err)
-			return
-		}
-
-		request.Header.Set("Last-Event-Id", firstResponseEventNumber)
-		response, err := http.DefaultClient.Do(request)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		if response.StatusCode != 200 {
-			t.Errorf("expected status 200, got %d", response.StatusCode)
 			return
 		}
 
@@ -190,11 +223,59 @@ func TestWithDatabase(t *testing.T) {
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
 		query := url.Values{}
 		query.Set("matcher", fmt.Sprintf("/%s/*", prefix))
-		requestUrl = fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
+		requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
 
-		go StreamEventsFromUrl(requestUrl, 0, streamedEvents)
+		go StreamEventsFromUrl(context.Background(), requestUrl, 0, streamedEvents)
 
 		// Expect to receive the one after last
 		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, secondEventId)
+	})
+
+	t.Run("events don't get duplicated on multiple named consumers connections", func(t *testing.T) {
+		allEvents := make(chan fossiltesting.ServerSentEvent)
+
+		consumerName := "testing-" + uuid.New().String()
+		prefix := uuid.New().String()
+		matcher := fmt.Sprintf("/%s/*", prefix)
+
+		// Start two listeners
+		firstContext, cancelFirst := context.WithCancel(context.Background())
+
+		go func() {
+			err := StreamAndAcknowledge(firstContext, consumerName, matcher, allEvents)
+			if err != nil {
+				fmt.Println("medre", err)
+				t.Error(err)
+			}
+		}()
+		time.Sleep(50 * time.Millisecond)
+		go func() {
+			err := StreamAndAcknowledge(context.Background(), consumerName, matcher, allEvents)
+			if err != nil {
+				fmt.Println("medre", err)
+				t.Error(err)
+			}
+		}()
+
+		// Collect an event
+		firstEventId := uuid.New().String()
+		CollectEvent(t, firstEventId, fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "sad",
+		})
+
+		// Kill the 1st listener
+		time.Sleep(100 * time.Millisecond)
+		cancelFirst()
+		time.Sleep(100 * time.Millisecond)
+
+		// Collect an event
+		secondEventId := uuid.New().String()
+		CollectEvent(t, secondEventId, fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		})
+
+		// Expect only 2 events to have been received
+		fossiltesting.ExpectServerSideEventWithId(t, <-allEvents, firstEventId)
+		fossiltesting.ExpectServerSideEventWithId(t, <-allEvents, secondEventId)
 	})
 }

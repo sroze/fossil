@@ -19,6 +19,7 @@ func NewFossilServer(
 	factory *EventStreamFactory,
 	store EventStore,
 	loader EventLoader,
+	lock DistributedLock,
 ) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(
@@ -32,7 +33,7 @@ func NewFossilServer(
 	sseRouter := NewSSERouter(factory)
 	sseRouter.Mount(router)
 	NewCollectorRouter(collector).Mount(router)
-	NewConsumerGroup(sseRouter, store, loader).Mount(router)
+	NewConsumerGroup(sseRouter, store, loader, lock).Mount(router)
 
 	return router
 }

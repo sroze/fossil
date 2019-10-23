@@ -59,9 +59,8 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 	// Add more to the context
 	streams := request.Header[fossilStreamHeader]
 	if len(streams) == 0 {
-		fmt.Printf("do not have stream name: %s", request.Header)
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"error":"You need to set a stream"}`))
+		_, _ = w.Write([]byte(`{"error":"You need to set a stream in the header"}`))
 		return
 	} else if len(streams) > 1 {
 		w.WriteHeader(http.StatusBadRequest)

@@ -40,6 +40,7 @@ func ReadServerSideEvents(reader *bufio.Reader, events chan ServerSentEvent) {
 			fmt.Fprintf(os.Stderr, "error during resp.Body read:%s\n", err)
 
 			close(events)
+			return
 		}
 
 		switch {

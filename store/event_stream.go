@@ -3,17 +3,18 @@ package store
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sroze/fossil/concurrency"
 	"github.com/sroze/fossil/events"
 )
 
 type EventStreamFactory struct {
 	Source      chan cloudevents.Event
-	broadcaster *ChannelBroadcaster
+	broadcaster *concurrency.ChannelBroadcaster
 	loader      EventLoader
 }
 
 func NewEventStreamFactory(loader EventLoader) *EventStreamFactory {
-	broadcaster := NewChannelBroadcaster(10)
+	broadcaster := concurrency.NewChannelBroadcaster(10)
 
 	return &EventStreamFactory{
 		Source:      broadcaster.Source,

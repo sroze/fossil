@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/sroze/fossil/concurrency"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -26,6 +27,7 @@ func TestCollectEvent(t *testing.T) {
 		NewEventStreamFactory(storage),
 		storage,
 		storage,
+		concurrency.NewInMemoryLock(),
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {

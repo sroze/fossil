@@ -3,6 +3,7 @@ package store
 import (
 	"bufio"
 	"context"
+	"github.com/sroze/fossil/concurrency"
 	fossiltesting "github.com/sroze/fossil/testing"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +23,7 @@ func TestSimpleEventStreaming(t *testing.T) {
 		streamFactory,
 		storage,
 		storage,
+		concurrency.NewInMemoryLock(),
 	)
 
 	t.Run("streams consumed events", func(t *testing.T) {

@@ -82,7 +82,6 @@ curl -X POST -H 'Last-Event-Id: 123' \
 
 ## TODO
 
-- (Code & Documentation) Lock the websocket client per "consumer group" (so guarantee ordering in receiver - because no partition = one consumer) | https://stackoverflow.com/a/26081687 | Or use PgSQL's advisory lock to load-balance
 - (Code & Documentation) Set expected version number when collecting
 - (Code & Documentation) JWT authentication for public-facing API
 - (Code & Documentation) Get & validate schema from event type
