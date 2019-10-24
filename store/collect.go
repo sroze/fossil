@@ -74,22 +74,41 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 		events.SetEventToReplaceExistingOne(event)
 	}
 
+	expectedEventNumber := request.Header.Get(fossilExpectedSequenceNumberHeader)
+	if expectedEventNumber != "" {
+		expectedEventNumberAsInt, err := strconv.Atoi(expectedEventNumber)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"Expected sequence number is invalid."}`))
+			return
+		}
+
+		events.SetExpectedSequenceNumber(event, expectedEventNumberAsInt)
+	}
+
 	err = r.collector.Collect(ctx, event)
 
 	if err != nil {
-		_, ok := err.(*DuplicateEventError)
-		if ok {
+		if _, isDuplicate := err.(*DuplicateEventError); isDuplicate {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"Event with such identifier already exists."}`))
-		} else {
-			fmt.Printf("failed to collect event: %s", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
+			return
 		}
-		return
+
+		if _, isSequenceError := err.(*SequenceNumberDoNotMatchError); isSequenceError {
+			w.WriteHeader(http.StatusConflict)
+			_, _ = w.Write([]byte(`{"error":"Event sequence did not match."}`))
+			return
+		}
+
+		fmt.Printf("failed to collect event: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
 	}
 
-	w.Header().Set("Fossil-Event-Number", strconv.Itoa(events.GetEventNumber(*event)))
+	w.Header().Set(fossilEventNumberHeader, strconv.Itoa(events.GetEventNumber(*event)))
+	w.Header().Set(fossilSequenceNumberHeader, strconv.Itoa(events.GetSequenceNumberInStream(*event)))
+
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))
 }

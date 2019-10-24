@@ -57,6 +57,11 @@ func (s *InMemoryStorage) addOrReplace(event cloudevents.Event) error {
 		}
 	}
 
+	expectedNumber := events.GetExpectedSequenceNumber(event)
+	if expectedNumber > 0 && (len(s.Events)+1) != expectedNumber {
+		return &SequenceNumberDoNotMatchError{}
+	}
+
 	s.Events = append(s.Events, event)
 
 	return nil

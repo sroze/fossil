@@ -73,20 +73,36 @@ deletion but handles replacement. In order to delete, you would therefore replac
 value, meaning deletion.
 
 ```
-curl -X POST -H 'Last-Event-Id: 123' \
-     -H 'Fossil-Replace: true' \
+curl -X POST -H 'Fossil-Replace: true' \
      ...all other headers... \
      --data '...replacement value...'
      http://localhost:8080/collect
 ```
 
+### Consistency
+
+What separates a message bus to an event store is its ability to ensure consistency (within a stream, at least).
+Fossil allows you to expect a sequence number when collecting an event, using the `Fossil-Expected-Sequence-Number` header.
+It will returns a 409 if the sequence number is invalid.
+
+```
+curl -X POST -H 'Fossil-Expected-Sequence-Number: 12' \
+     ...all other headers... \
+     --data '...replacement value...'
+     http://localhost:8080/collect
+```
+
+**Note:** you can get the event and sequence numbers from the events when streaming them or in the following HTTP headers
+returned when collecting an event:
+- `Fossil-Event-Number` The globally unique event number.
+- `Fossil-Sequence-Number` The sequential event number in its stream.
+
 ## TODO
 
-- (Code & Documentation) Set expected version number when collecting
+- (Code & Documentation) Acknowledgement
 - (Code & Documentation) JWT authentication for public-facing API
 - (Code & Documentation) Get & validate schema from event type
 - (Code & Documentation) "Type to _streams_" mapping: within the JSON schema?
-- (Code & Documentation) Acknowledgement
 - (Code & Documentation) Outbox to Kafka
 
 ## FAQ

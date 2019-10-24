@@ -8,6 +8,9 @@ import (
 
 var fossilStreamHeader = "Fossil-Stream"
 var fossilReplaceHeader = "Fossil-Replace"
+var fossilSequenceNumberHeader = "Fossil-Sequence-Number"
+var fossilExpectedSequenceNumberHeader = "Fossil-Expected-Sequence-Number"
+var fossilEventNumberHeader = "Fossil-Event-Number"
 
 type Router struct {
 	collector          Collector

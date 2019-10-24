@@ -48,6 +48,16 @@ func rowToEvent(result ReadableQueryResult) (*cloudevents.Event, error) {
 	return &event, nil
 }
 
+func (s *Storage) hasEvent(t Queryable, ctx context.Context, stream string, sequenceNumber int) (bool, error) {
+	rows, err := t.QueryEx(ctx, "SELECT 1 FROM events WHERE stream = $1 AND sequence_number_in_stream = $2", nil, stream, sequenceNumber)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+	return rows.Next(), nil
+}
+
 func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.Event) error {
 	var t Queryable
 	t, ok := ctx.Value(transactionContextKey).(*pgx.Tx)
@@ -68,17 +78,49 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 
 	var number int
 	var sequenceNumberInStream int
-	err = t.QueryRowEx(
-		ctx,
-		"insert into events (id, stream, event) values ($1, $2, $3) "+upsert+" returning number, sequence_number_in_stream",
-		nil,
-		event.Context.GetID(),
-		stream,
-		marshalled,
-	).Scan(&number, &sequenceNumberInStream)
+	var row *pgx.Row
+
+	if expectedSequenceNumber := events.GetExpectedSequenceNumber(*event); expectedSequenceNumber > 0 {
+		if expectedSequenceNumber > 1 {
+			// We need to check for an event just before.
+			hasPreviousEvent, err := s.hasEvent(t, ctx, stream, expectedSequenceNumber-1)
+			if err != nil {
+				return err
+			}
+
+			if !hasPreviousEvent {
+				return &store.SequenceNumberDoNotMatchError{}
+			}
+
+		}
+
+		row = t.QueryRowEx(
+			ctx,
+			"insert into events (id, stream, sequence_number_in_stream, event) values ($1, $2, $3, $4) "+upsert+" returning number, sequence_number_in_stream",
+			nil,
+			event.Context.GetID(),
+			stream,
+			expectedSequenceNumber,
+			marshalled,
+		)
+	} else {
+		row = t.QueryRowEx(
+			ctx,
+			"insert into events (id, stream, event) values ($1, $2, $3) "+upsert+" returning number, sequence_number_in_stream",
+			nil,
+			event.Context.GetID(),
+			stream,
+			marshalled,
+		)
+	}
+	err = row.Scan(&number, &sequenceNumberInStream)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "SQLSTATE 23505") {
+			if strings.Contains(err.Error(), "events_unique_sequence_per_stream") {
+				return &store.SequenceNumberDoNotMatchError{}
+			}
+
 			return &store.DuplicateEventError{}
 		}
 	}

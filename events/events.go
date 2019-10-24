@@ -12,6 +12,7 @@ var SequenceNumberInStreamExtensionName = "fossilsequenceinstream"
 var eventNumberExtensionName = "fossileventnumber"
 var streamExtensionName = "fossilstream"
 var toReplaceExistingEventExtensionName = "fossiltoreplaceexistingevent"
+var expectedSequenceNumberExtensionName = "fossilexpectedsequencenumber"
 
 type Matcher struct {
 	UriTemplate string
@@ -44,6 +45,14 @@ func GetSequenceNumberInStream(event cloudevents.Event) int {
 
 func SetEventToReplaceExistingOne(event *cloudevents.Event) {
 	event.SetExtension(toReplaceExistingEventExtensionName, 1)
+}
+
+func SetExpectedSequenceNumber(event *cloudevents.Event, number int) {
+	event.SetExtension(expectedSequenceNumberExtensionName, number)
+}
+
+func GetExpectedSequenceNumber(event cloudevents.Event) int {
+	return getIntegerFromExtension(event, expectedSequenceNumberExtensionName)
 }
 
 func IsReplacingAnotherEvent(event cloudevents.Event) bool {
