@@ -97,13 +97,35 @@ returned when collecting an event:
 - `Fossil-Event-Number` The globally unique event number.
 - `Fossil-Sequence-Number` The sequential event number in its stream.
 
+### Wait for consumer acknowledgment
+
+Eventual consistency means that your _frontends_ will have to handle the fact that some projections or processes might
+not be done straight away. It usually means moving a lot of complexity on the _front-end_ (other APIs or SPAs) for them
+to deal with this. However, in most of the case, your system will behave correctly and you can expect consumers to process
+the messages within a certain time period. 
+
+Fossil allows you to wait a certain amount of time for a given named consumer to have processed a message. If it times
+out you will receive a `202 Accepted` HTTP response (instead of `200`). The `Fossil-Wait-Consumer` header allows you
+to use this feature: 
+
+```
+curl -X POST -H 'Fossil-Wait-Consumer: <firstConsumerName>; timeout=1000, <secondConsumerName>; timeout=500' \
+     ...all other headers... \
+     --data '...replacement value...'
+     http://localhost:8080/collect
+```
+
+**Note:** The format of the header matches the [`Link` HTTP header](https://tools.ietf.org/html/rfc8288#section-3).
+Use the `timeout` parameter to explicit how many milliseconds will Fossil wait for the acknowledgment for this consumer.
+
 ## TODO
 
-- (Code & Documentation) Acknowledgement
+- (Code & Documentation) Load-testing
+- (Code & Documentation) Outbox to Kafka or SQS
 - (Code & Documentation) JWT authentication for public-facing API
+- (Code & Documentation) BigTable as storage system?
 - (Code & Documentation) Get & validate schema from event type
 - (Code & Documentation) "Type to _streams_" mapping: within the JSON schema?
-- (Code & Documentation) Outbox to Kafka
 
 ## FAQ
 
@@ -128,7 +150,7 @@ $ cd cmd && watcher -watch github.com/sroze/fossil
 Run migrations:
 
 ```
-$ cd migrations
+$ cd postgres/migrations
 $ tern migrate
 ```
 

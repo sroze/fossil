@@ -13,11 +13,13 @@ import (
 
 type CollectorRouter struct {
 	collector Collector
+	waiter    *ConsumerWaiter
 }
 
-func NewCollectorRouter(collector Collector) *CollectorRouter {
+func NewCollectorRouter(collector Collector, waiter *ConsumerWaiter) *CollectorRouter {
 	return &CollectorRouter{
 		collector,
+		waiter,
 	}
 }
 
@@ -86,8 +88,22 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 		events.SetExpectedSequenceNumber(event, expectedEventNumberAsInt)
 	}
 
-	err = r.collector.Collect(ctx, event)
+	var waitFor chan error
+	waitForConsumers := request.Header.Get(fossilWaitConsumerHeader)
+	if waitForConsumers != "" {
+		waitConfigurations, err := parseWaitConsumerHeader(waitForConsumers, event.ID())
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error":"Cannot parse wait headers."}`))
+			return
+		}
 
+		if len(waitForConsumers) > 0 {
+			waitFor = r.waiter.WaitFor(ctx, waitConfigurations)
+		}
+	}
+
+	err = r.collector.Collect(ctx, event)
 	if err != nil {
 		if _, isDuplicate := err.(*DuplicateEventError); isDuplicate {
 			w.WriteHeader(http.StatusBadRequest)
@@ -108,6 +124,24 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 
 	w.Header().Set(fossilEventNumberHeader, strconv.Itoa(events.GetEventNumber(*event)))
 	w.Header().Set(fossilSequenceNumberHeader, strconv.Itoa(events.GetSequenceNumberInStream(*event)))
+
+	if waitFor != nil {
+		err = <-waitFor
+
+		if err != nil {
+			if timeout, isTimeout := err.(*ConsumerTimedOut); isTimeout {
+				w.Header().Set("fossil-timeout", timeout.ConsumerName)
+
+				w.WriteHeader(http.StatusAccepted)
+				_, _ = w.Write([]byte(`{}`))
+				return
+			}
+
+			fmt.Printf("failed to wait for consumer: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
+		}
+	}
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{}`))

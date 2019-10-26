@@ -9,7 +9,7 @@ import (
 
 type EventStreamFactory struct {
 	Source      chan cloudevents.Event
-	broadcaster *concurrency.ChannelBroadcaster
+	Broadcaster *concurrency.ChannelBroadcaster
 	loader      EventLoader
 }
 
@@ -18,20 +18,20 @@ func NewEventStreamFactory(loader EventLoader) *EventStreamFactory {
 
 	return &EventStreamFactory{
 		Source:      broadcaster.Source,
-		broadcaster: broadcaster,
+		Broadcaster: broadcaster,
 		loader:      loader,
 	}
 }
 
 func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
-	subscription := f.broadcaster.NewSubscriber()
+	subscription := f.Broadcaster.NewSubscriber()
 	channel := make(chan cloudevents.Event)
 
 	// Make sure to cancel the subscription when the client finished
 	go func() {
 		<-ctx.Done()
 
-		f.broadcaster.RemoveSubscriber(subscription)
+		f.Broadcaster.RemoveSubscriber(subscription)
 		close(channel)
 	}()
 
@@ -58,7 +58,7 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.
 			channel <- event
 		}
 
-		f.broadcaster.RemoveSubscriber(subscription)
+		f.Broadcaster.RemoveSubscriber(subscription)
 	}()
 
 	return channel

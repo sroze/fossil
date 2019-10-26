@@ -133,6 +133,14 @@
   version = "v1.0.5"
 
 [[projects]]
+  digest = "1:2d4fb9b356677993030586c4f45809943769647e3f863327ebdabe80f3dc768c"
+  name = "github.com/tomnomnom/linkheader"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6953a30d444317754766fccdd3f7f000edc874f6"
+  version = "0.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:8f70510b21fd07eba5bd4e0f84d49d932ea74c8b0ea20a5807e9492cc819928c"
   name = "github.com/vaughan0/go-ini"
@@ -263,6 +271,7 @@
     "github.com/google/uuid",
     "github.com/jackc/pgx",
     "github.com/jackc/tern",
+    "github.com/tomnomnom/linkheader",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

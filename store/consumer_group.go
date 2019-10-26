@@ -11,10 +11,10 @@ import (
 )
 
 var consumerGroupNamespace = uuid.MustParse("69bf702a-9525-4a41-9c95-a8ae37a1360d")
-var consumerGroupEventType = "fossil.consumer_acknowledgement"
+var consumerGroupEventType = "fossil.consumer_offset"
 
-func acknowledgmentStreamFromConsumerName(consumerName string) string {
-	return fmt.Sprintf("fossil/consumer/%s/acknowledgments", consumerName)
+func commitOffsetStreamFromConsumerName(consumerName string) string {
+	return fmt.Sprintf("fossil/consumer/%s/commit-offsets", consumerName)
 }
 
 func getLastEvent(channel chan cloudevents.Event) *cloudevents.Event {
@@ -44,7 +44,7 @@ func NewConsumerGroup(sseRouter *SSERouter, store EventStore, loader EventLoader
 
 func (cg *ConsumerGroup) Mount(router *chi.Mux) {
 	router.Get("/consumer/{name}/stream", cg.Stream)
-	router.Put("/consumer/{name}/ack", cg.Ack)
+	router.Put("/consumer/{name}/commit", cg.CommitOffset)
 }
 
 func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
@@ -58,23 +58,23 @@ func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
 	// Release lock when streaming is finished
 	defer cg.lock.Release(consumerName)
 
-	acknowledgment := getLastEvent(
+	offset := getLastEvent(
 		cg.loader.MatchingStream(req.Context(), events.Matcher{
-			UriTemplate: acknowledgmentStreamFromConsumerName(consumerName),
+			UriTemplate: commitOffsetStreamFromConsumerName(consumerName),
 		}),
 	)
 
-	if acknowledgment != nil {
-		dataAsBytes, ok := acknowledgment.Data.([]byte)
+	if offset != nil {
+		dataAsBytes, ok := offset.Data.([]byte)
 		if !ok {
-			http.Error(rw, "Could not read last acknowledgment", http.StatusInternalServerError)
+			http.Error(rw, "Could not read last offset", http.StatusInternalServerError)
 			return
 		}
 
 		var lastEventId string
 		err := json.Unmarshal(dataAsBytes, &lastEventId)
 		if err != nil {
-			http.Error(rw, "Could not decode last acknowledgment", http.StatusInternalServerError)
+			http.Error(rw, "Could not decode last offset", http.StatusInternalServerError)
 			return
 		}
 
@@ -84,7 +84,7 @@ func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
 	cg.sseRouter.StreamEvents(rw, req)
 }
 
-func (cg *ConsumerGroup) Ack(rw http.ResponseWriter, req *http.Request) {
+func (cg *ConsumerGroup) CommitOffset(rw http.ResponseWriter, req *http.Request) {
 	consumerName := chi.URLParam(req, "name")
 	lastEventId := req.Header.Get("Last-Event-Id")
 	if lastEventId == "" {
@@ -104,7 +104,7 @@ func (cg *ConsumerGroup) Ack(rw http.ResponseWriter, req *http.Request) {
 
 	events.SetEventToReplaceExistingOne(&event)
 
-	err = cg.store.Store(req.Context(), acknowledgmentStreamFromConsumerName(consumerName), &event)
+	err = cg.store.Store(req.Context(), commitOffsetStreamFromConsumerName(consumerName), &event)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

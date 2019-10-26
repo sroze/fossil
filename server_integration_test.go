@@ -19,6 +19,16 @@ import (
 )
 
 func CollectEvent(t *testing.T, id string, stream string, contents interface{}) *http.Response {
+	response := CollectEventWithHeaders(t, id, stream, contents, map[string]string{})
+
+	if response.StatusCode != 200 {
+		t.Errorf("expected status 200 but got %d", response.StatusCode)
+	}
+
+	return response
+}
+
+func CollectEventWithHeaders(t *testing.T, id string, stream string, contents interface{}, headers map[string]string) *http.Response {
 	requestUrl := fmt.Sprintf("http://localhost:%s/collect", os.Getenv("SERVER_PORT"))
 	requestBody, err := json.Marshal(contents)
 
@@ -41,14 +51,13 @@ func CollectEvent(t *testing.T, id string, stream string, contents interface{}) 
 	request.Header.Set("ce-source", "birdie.care")
 	request.Header.Set("fossil-stream", stream)
 
+	for key, value := range headers {
+		request.Header.Set(key, value)
+	}
+
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Error(err)
-		return response
-	}
-
-	if response.StatusCode != 200 {
-		t.Errorf("expected status 200 but got %d", response.StatusCode)
 	}
 
 	return response
@@ -81,7 +90,7 @@ func StreamEvents(matcher string, lastEventId int, channel chan fossiltesting.Se
 	StreamEventsFromUrl(context.Background(), requestUrl, lastEventId, channel)
 }
 
-func StreamAndAcknowledge(ctx context.Context, consumerName string, matcher string, channel chan fossiltesting.ServerSentEvent) error {
+func StreamAndCommit(ctx context.Context, consumerName string, matcher string, channel chan fossiltesting.ServerSentEvent) error {
 	query := url.Values{}
 	query.Set("matcher", matcher)
 	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
@@ -95,7 +104,7 @@ func StreamAndAcknowledge(ctx context.Context, consumerName string, matcher stri
 			return fmt.Errorf("could not get event number from SSE: %s", sse.Data)
 		}
 
-		err := AcknowledgeConsumer(consumerName, strconv.Itoa(int(eventNumber)))
+		err := CommitConsumerOffset(consumerName, strconv.Itoa(int(eventNumber)))
 		if err != nil {
 			return err
 		}
@@ -106,8 +115,8 @@ func StreamAndAcknowledge(ctx context.Context, consumerName string, matcher stri
 	return nil
 }
 
-func AcknowledgeConsumer(consumerName string, eventNumber string) error {
-	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/ack", os.Getenv("SERVER_PORT"), consumerName)
+func CommitConsumerOffset(consumerName string, eventNumber string) error {
+	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/commit", os.Getenv("SERVER_PORT"), consumerName)
 	request, err := http.NewRequest("PUT", requestUrl, nil)
 	if err != nil {
 		return err
@@ -121,6 +130,33 @@ func AcknowledgeConsumer(consumerName string, eventNumber string) error {
 
 	if response.StatusCode != 200 {
 		return fmt.Errorf("expected status 200, got %d", response.StatusCode)
+	}
+
+	return nil
+}
+
+func AcknowledgeEvent(consumerName string, event fossiltesting.ServerSentEvent) error {
+	contents := map[string]string{
+		"consumer_name": consumerName,
+	}
+	requestBody, err := json.Marshal(contents)
+	if err != nil {
+		return err
+	}
+
+	requestUrl := fmt.Sprintf("http://localhost:%s/events/%s/ack", os.Getenv("SERVER_PORT"), event.ID)
+	request, err := http.NewRequest("POST", requestUrl, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return err
+	}
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return fmt.Errorf("expected status 200 but got %d", response.StatusCode)
 	}
 
 	return nil
@@ -193,7 +229,7 @@ func TestWithDatabase(t *testing.T) {
 		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, afterLastId)
 	})
 
-	t.Run("consume, ack and re-consume", func(t *testing.T) {
+	t.Run("consume, commit and re-consume", func(t *testing.T) {
 		prefix := uuid.New().String()
 
 		// Collect two events
@@ -211,9 +247,9 @@ func TestWithDatabase(t *testing.T) {
 			"mood": "happy",
 		})
 
-		// Ack the 1st one
+		// CommitOffset the 1st one
 		consumerName := "testing-" + uuid.New().String()
-		err := AcknowledgeConsumer(consumerName, firstResponseEventNumber)
+		err := CommitConsumerOffset(consumerName, firstResponseEventNumber)
 		if err != nil {
 			t.Error(err)
 			return
@@ -242,7 +278,7 @@ func TestWithDatabase(t *testing.T) {
 		firstContext, cancelFirst := context.WithCancel(context.Background())
 
 		go func() {
-			err := StreamAndAcknowledge(firstContext, consumerName, matcher, allEvents)
+			err := StreamAndCommit(firstContext, consumerName, matcher, allEvents)
 			if err != nil {
 				fmt.Println("medre", err)
 				t.Error(err)
@@ -250,7 +286,7 @@ func TestWithDatabase(t *testing.T) {
 		}()
 		time.Sleep(50 * time.Millisecond)
 		go func() {
-			err := StreamAndAcknowledge(context.Background(), consumerName, matcher, allEvents)
+			err := StreamAndCommit(context.Background(), consumerName, matcher, allEvents)
 			if err != nil {
 				fmt.Println("medre", err)
 				t.Error(err)
@@ -277,5 +313,62 @@ func TestWithDatabase(t *testing.T) {
 		// Expect only 2 events to have been received
 		fossiltesting.ExpectServerSideEventWithId(t, <-allEvents, firstEventId)
 		fossiltesting.ExpectServerSideEventWithId(t, <-allEvents, secondEventId)
+	})
+
+	t.Run("times out if message is not acknowledged", func(t *testing.T) {
+		consumerName := uuid.New().String()
+		prefix := uuid.New().String()
+
+		collectResponse := CollectEventWithHeaders(t, uuid.New().String(), fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		}, map[string]string{
+			"Fossil-Wait-Consumer": fmt.Sprintf("<%s>; timeout=50", consumerName),
+		})
+
+		if collectResponse.StatusCode != 202 {
+			t.Errorf("expected status 202 but got %d", collectResponse.StatusCode)
+		}
+	})
+
+	t.Run("wait for message acknowledgment", func(t *testing.T) {
+		consumerName := uuid.New().String()
+		prefix := uuid.New().String()
+
+		var collectResponse *http.Response
+		requestHasStarted := make(chan bool, 1)
+
+		go func() {
+			requestHasStarted <- true
+
+			collectResponse = CollectEventWithHeaders(t, uuid.New().String(), fmt.Sprintf("/%s/123", prefix), map[string]string{
+				"mood": "happy",
+			}, map[string]string{
+				"Fossil-Wait-Consumer": fmt.Sprintf("<%s>; timeout=200", consumerName),
+			})
+
+			if collectResponse.StatusCode > 300 {
+				fmt.Println("Collect error", collectResponse)
+				t.Errorf("Collect returned response code %d", collectResponse.StatusCode)
+			}
+		}()
+
+		<-requestHasStarted
+
+		streamedEvents := make(chan fossiltesting.ServerSentEvent)
+		go StreamEvents(fmt.Sprintf("/%s/*", prefix), 0, streamedEvents)
+		event := <-streamedEvents
+
+		// Do acknowledge
+		err := AcknowledgeEvent(consumerName, event)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		time.Sleep(50 * time.Millisecond)
+
+		if collectResponse == nil {
+			t.Error("Request was not finished.")
+		}
 	})
 }
