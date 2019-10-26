@@ -63,9 +63,9 @@ jobs:
         git checkout v3.6.0
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         go get github.com/jackc/tern
-        cd migrations
+        cd postgres/migrations
         tern migrate
-        cd ..
+        cd ../..
         go test -tags=integration -v ./...
 
       env:
