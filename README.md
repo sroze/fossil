@@ -1,8 +1,8 @@
 # Fossil
 
 Fossil is an event store built on top of PostgreSQL. It has built-in consistency proofs, named consumers (tracking which
-messages have been processed), consumer acknowledgment and schema validation. It is built on industry standards such as 
-the [CloudEvents spec](https://github.com/cloudevents/spec) & [JSON schema](https://json-schema.org/). 
+messages have been processed), consumer acknowledgment and schema validation. It uses the industry standard [CloudEvents specification](https://github.com/cloudevents/spec)
+for its exposed APIs.
 
 ## Usage
 
