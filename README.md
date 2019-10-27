@@ -142,11 +142,6 @@ curl -X POST -H 'Authorization: Bearer <token>' \
      http://localhost:8080/collect
 ```
 
-## TODO
-
-- (Code & Documentation) Node.js client (using SSE) that commits offsets and supports acknowledgments
-- (Code & Documentation) Outbox to Kafka or SQS
-
 ## Development
 
 ```
@@ -178,6 +173,10 @@ goreleaser --snapshot --skip-publish --rm-dist
 
 As it stands, Fossil has enough features to be used as a complete event store. The focus going forward should be 
 around changes giving operational confidence and better performances.
+
+- **Node.js client** (using SSE) that commits offsets and supports acknowledgments.
+
+- **Outbox to Kafka or SQS** to enable consumers to use alternatives to SSE.
 
 - **Protobuf interfaces** instead of these HTTP endpoints. This should enable faster collection, commits, acks and
   streaming.
