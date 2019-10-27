@@ -60,10 +60,10 @@ and use the `/consumer/{name}/stream` endpoint. This will only get you the messa
 curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/stream?matcher=%2Fvisits%2F%2A -vvv
 ```
 
-When the consumer is done with one (or multiple if you want to batch), acknowledges the message(s) by sending 
-the latest known event number to the `/consumer/{name}/ack` endpoint:
+When the consumer is done with one (or multiple if you want to batch), commit its offset by sending 
+the latest known event number to the `/consumer/{name}/commit` endpoint:
 ```
-curl -X PUT -H 'Last-Event-Id: 123' http://localhost:8080/consumer/{name}/ack
+curl -X PUT -H 'Last-Event-Id: 123' http://localhost:8080/consumer/{name}/commit
 ```
 
 ### Delete or replace an event
@@ -118,22 +118,23 @@ curl -X POST -H 'Fossil-Wait-Consumer: <firstConsumerName>; timeout=1000, <secon
 **Note:** The format of the header matches the [`Link` HTTP header](https://tools.ietf.org/html/rfc8288#section-3).
 Use the `timeout` parameter to explicit how many milliseconds will Fossil wait for the acknowledgment for this consumer.
 
+In order to get the acknowledgement, the consumers needs to actually acknowledge this specific message. The consumer 
+will receive a message with a `fossilexpectack` extension to know that it needs to do so. It will have to send a ack
+request like this:
+```
+curl -X POST  \
+     ...all other headers... \
+     --data '{"consumer_name": "firstConsumerName"}'
+     http://localhost:8080/events/{id}/ack
+```
+
+**Why not using named consumers' offset?** The point of the consumers' offset is that it can be batched together by
+
+
 ## TODO
 
-- (Code & Documentation) Load-testing
 - (Code & Documentation) Outbox to Kafka or SQS
 - (Code & Documentation) JWT authentication for public-facing API
-- (Code & Documentation) BigTable as storage system?
-- (Code & Documentation) Get & validate schema from event type
-- (Code & Documentation) "Type to _streams_" mapping: within the JSON schema?
-
-## FAQ
-
-### Why is the `type` a URI in the example?
-
-When the `type` is a URI, Fossil is able to fetch the JSON schema at this URL (using the `Accept: application/json+schema` header). 
-The schema is then used to validates the contents of the event (when applicable) and to know which stream(s)
-should the event be published to.
 
 ## Development
 
@@ -161,3 +162,24 @@ $ tern migrate
 ```
 goreleaser --snapshot --skip-publish --rm-dist
 ```
+
+## Roadmap
+
+As it stands, Fossil has enough features to be used as a complete event store. The focus going forward should be 
+around changes giving operational confidence and better performances.
+
+- **Protobuf interfaces** instead of these HTTP endpoints. This should enable faster collection, commits, acks and
+  streaming.
+   
+- **Automated Event Schema validation.**
+  This could be very nicely done with types as resolvable URIs pointing to JSON schemas.
+
+- **BigTable as distributed storage?**
+  A PostgreSQL database can go very far (hundreds of millions of events). However, would it make sense to have an even bigger store
+  such as BigTable, rather than splitting the store into multiple of them?
+
+As usual with open source, _help is more than welcome._ Thank you.
+
+## Credits
+
+Created by [Samuel Rozé](https://twitter.com/samuelroze).

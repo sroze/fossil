@@ -1,0 +1,8 @@
+{
+  "name": "InfluxDB",
+  "type": "influxdb",
+  "url": "http://influxdb:8086",
+  "access": "proxy",
+  "database": "$INFLUX_DB",
+  "basicAuth": false
+}

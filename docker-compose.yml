@@ -8,14 +8,3 @@ services:
       - POSTGRES_PASSWORD=fossil
     ports:
       - 5432:5432
-
-  fossil:
-    image: sroze/fossil:latest
-    ports:
-      - 8080:80
-    environment:
-      SERVER_PORT: 80
-      DATABASE_URL: postgres://fossil:fossil@postgres/fossil
-
-#  loadtesting:
-#    build: load-testing/

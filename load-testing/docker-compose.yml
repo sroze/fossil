@@ -1,0 +1,62 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:10.9
+    environment:
+      - POSTGRES_USER=fossil
+      - POSTGRES_DB=fossil
+      - POSTGRES_PASSWORD=fossil
+
+  fossil:
+    image: sroze/fossil:latest
+    environment:
+      SERVER_PORT: 80
+      DATABASE_URL: postgres://fossil:fossil@postgres/fossil
+    depends_on:
+      - postgres
+
+  influxdb:
+    build: influxdb
+    environment:
+      - INFLUXDB_GRAPHITE_ENABLED=true
+      - INFLUX_DB=gatlingdb
+
+  grafana:
+    build: grafana
+    environment:
+      #- GF_SECURITY_ADMIN_USER=admin
+      #- GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-worldmap-panel,grafana-piechart-panel
+    volumes:
+      - /var/lib/grafana
+    links:
+      - influxdb
+    ports:
+      - '3000:3000'
+
+  gatling:
+    image: denvazh/gatling:3.2.1
+    volumes:
+      - ./gatling/conf:/opt/gatling/conf
+      - ./results:/opt/gatling/results
+      - ./:/opt/gatling/user-files/simulations
+    depends_on:
+      - fossil
+    links:
+      - influxdb
+    environment:
+      - FOSSIL_URL=http://fossil
+      - TOTAL_NUMBER_OF_EVENTS=1000
+      - CONCURRENT_COLLECTIONS=10
+      - NUMBER_OF_EVENTS_PER_STREAM=10
+
+  cadvisor:
+    image: google/cadvisor
+    command: -storage_driver=influxdb -storage_driver_db=cadvisor -storage_driver_host=influxdb:8086
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    links:
+      - influxdb
