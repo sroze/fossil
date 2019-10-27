@@ -37,6 +37,7 @@ func StartServer() error {
 		s,
 		s,
 		postgres.NewLock(pool),
+		os.Getenv("JWT_SECRET"),
 	)
 
 	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {

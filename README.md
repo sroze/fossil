@@ -130,11 +130,21 @@ curl -X POST  \
 
 **Why not using named consumers' offset?** The point of the consumers' offset is that it can be batched together by
 
+### Authentication
+
+If you set the `JWT_SECRET` environment variable, Fossil will expect each HTTP request to be sent with a JWT token
+signed with this secret in each HTTP request.
+
+```
+curl -X POST -H 'Authorization: Bearer <token>' \
+     ...all other headers... \
+     --data '...replacement value...'
+     http://localhost:8080/collect
+```
 
 ## TODO
 
 - (Code & Documentation) Outbox to Kafka or SQS
-- (Code & Documentation) JWT authentication for public-facing API
 
 ## Development
 

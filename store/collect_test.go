@@ -30,6 +30,7 @@ func TestCollectEvent(t *testing.T) {
 		storage,
 		storage,
 		concurrency.NewInMemoryLock(),
+		"",
 	)
 
 	t.Run("rejects invalid events", func(t *testing.T) {

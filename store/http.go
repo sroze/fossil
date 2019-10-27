@@ -5,9 +5,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
+	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/jwtauth"
 	"github.com/tomnomnom/linkheader"
 )
 
@@ -29,6 +31,7 @@ func NewFossilServer(
 	store EventStore,
 	loader EventLoader,
 	lock DistributedLock,
+	jwtTokenSecret string,
 ) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(
@@ -39,11 +42,21 @@ func NewFossilServer(
 		middleware.Recoverer,       // Recover from panics without crashing server
 	)
 
+	if jwtTokenSecret != "" {
+		tokenAuth := jwtauth.New("HS256", []byte(jwtTokenSecret), nil)
+		router.Use(jwtauth.Verifier(tokenAuth))
+		router.Use(jwtauth.Authenticator)
+	}
+
 	sseRouter := NewSSERouter(factory)
 	sseRouter.Mount(router)
 	NewCollectorRouter(collector, NewConsumerWaiter(factory.Broadcaster)).Mount(router)
 	NewConsumerGroup(sseRouter, store, loader, lock).Mount(router)
 	NewConsumerWaiterRouter(collector).Mount(router)
+
+	router.Get("/about", func(writer http.ResponseWriter, request *http.Request) {
+		http.Redirect(writer, request, "https://github.com/sroze/fossil", http.StatusFound)
+	})
 
 	return router
 }

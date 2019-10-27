@@ -24,6 +24,7 @@ func TestSimpleEventStreaming(t *testing.T) {
 		storage,
 		storage,
 		concurrency.NewInMemoryLock(),
+		"",
 	)
 
 	t.Run("streams consumed events", func(t *testing.T) {
