@@ -64,3 +64,11 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     links:
       - influxdb
+
+  telegraf:
+    image: telegraf:1.12
+    depends_on:
+      - influxdb
+      - postgres
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
