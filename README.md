@@ -144,6 +144,7 @@ curl -X POST -H 'Authorization: Bearer <token>' \
 
 ## TODO
 
+- (Code & Documentation) Node.js client (using SSE) that commits offsets and supports acknowledgments
 - (Code & Documentation) Outbox to Kafka or SQS
 
 ## Development

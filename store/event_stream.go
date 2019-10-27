@@ -32,7 +32,6 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.
 		<-ctx.Done()
 
 		f.Broadcaster.RemoveSubscriber(subscription)
-		close(channel)
 	}()
 
 	existingEvents := f.loader.MatchingStream(ctx, matcher)
@@ -59,6 +58,7 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.
 		}
 
 		f.Broadcaster.RemoveSubscriber(subscription)
+		close(channel)
 	}()
 
 	return channel

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	fossiltesting "github.com/sroze/fossil/testing"
@@ -76,6 +77,10 @@ func StreamEventsFromUrl(ctx context.Context, url string, lastEventId int, chann
 
 	response, err := http.DefaultClient.Do(request.WithContext(ctx))
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+
 		panic(err)
 	}
 
