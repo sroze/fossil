@@ -12,7 +12,7 @@ object Collector {
 
   private val sentHeaders = Map("ce-type" -> "https://acme.com/PersonCreated", "ce-specversion" -> "0.3")
 
-  val collectEvent = exec(
+  private val collectEvent = exec(
     http("Collect")
       .post("/collect")
       .header("ce-type", "https://acme.com/PersonCreated")
@@ -24,4 +24,11 @@ object Collector {
       .check(status.is(200))
       .check(header("Fossil-Event-Number").saveAs("eventNumber"))
   )
+
+
+  // Scenarios
+  val collectMultipleEventsScenario = scenario("Collect multiple events on a stream")
+    .repeat(Config.NumberOfEventsPerStream) {
+        Collector.collectEvent
+    }
 }

@@ -1,8 +1,8 @@
 {
-  "name": "InfluxDB",
+  "name": "InfluxDB (vAdvisor)",
   "type": "influxdb",
   "url": "http://influxdb:8086",
   "access": "proxy",
-  "database": "gatlingdb",
+  "database": "cadvisor",
   "basicAuth": false
 }

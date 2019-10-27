@@ -6,6 +6,13 @@ services:
       - POSTGRES_USER=fossil
       - POSTGRES_DB=fossil
       - POSTGRES_PASSWORD=fossil
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   fossil:
     image: sroze/fossil:latest
@@ -46,9 +53,6 @@ services:
       - influxdb
     environment:
       - FOSSIL_URL=http://fossil
-      - TOTAL_NUMBER_OF_EVENTS=1000
-      - CONCURRENT_COLLECTIONS=10
-      - NUMBER_OF_EVENTS_PER_STREAM=10
 
   cadvisor:
     image: google/cadvisor

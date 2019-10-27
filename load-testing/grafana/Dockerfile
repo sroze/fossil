@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y procps gettext-base && rm -rf /var/lib/
 WORKDIR /etc/grafana
 
 COPY datasources ./datasources
-COPY dashboard/* /etc/grafana/provisioning/dashboards
+COPY dashboard/* /etc/grafana/provisioning/dashboards/
 
 WORKDIR /app
 COPY entrypoint.sh ./

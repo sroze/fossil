@@ -25,5 +25,7 @@ docker-compose run gatling -rd Fossil
 
 ## Monitoring
 
-When running the load-testing, you can see the tests & containers metrics in Grafana:
+When running the load-testing, you can see the load tests and containers health metrics in Grafana:
 http://localhost:3000
+
+![](assets/dashboard-example.png)
