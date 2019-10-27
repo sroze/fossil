@@ -10,6 +10,7 @@ if [ ! -f "/var/lib/influxdb/.init" ]; then
     influx -host=localhost -port=8086 -execute="CREATE DATABASE ${INFLUX_DB}"
     influx -host=localhost -port=8086 -execute="CREATE DATABASE cadvisor"
     influx -host=localhost -port=8086 -execute="CREATE DATABASE telegraf"
+    influx -host=localhost -port=8086 -execute="CREATE DATABASE fossil"
 
     touch "/var/lib/influxdb/.init"
 

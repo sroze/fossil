@@ -6,13 +6,13 @@ services:
       - POSTGRES_USER=fossil
       - POSTGRES_DB=fossil
       - POSTGRES_PASSWORD=fossil
-    ports:
-      - 5432:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "5432:5432"
 
   fossil:
     image: sroze/fossil:latest
@@ -27,6 +27,9 @@ services:
     environment:
       - INFLUXDB_GRAPHITE_ENABLED=true
       - INFLUX_DB=gatlingdb
+    ports:
+      - "2003:2003"
+      - "8086:8086"
 
   grafana:
     build: grafana

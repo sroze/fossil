@@ -17,7 +17,7 @@
   "gnetId": 355,
   "graphTooltip": 1,
   "id": 4,
-  "iteration": 1572194979533,
+  "iteration": 1572206192638,
   "links": [],
   "panels": [
     {
@@ -413,6 +413,7 @@
             }
           ],
           "measurement": "postgresql",
+          "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
           "resultFormat": "time_series",
@@ -460,6 +461,7 @@
             }
           ],
           "measurement": "postgresql",
+          "orderByTime": "ASC",
           "policy": "default",
           "refId": "B",
           "resultFormat": "time_series",
@@ -1295,6 +1297,10 @@
               {
                 "params": [],
                 "type": "sum"
+              },
+              {
+                "params": [],
+                "type": "difference"
               }
             ]
           ],
@@ -1328,7 +1334,7 @@
       },
       "yaxes": [
         {
-          "format": "short",
+          "format": "bytes",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -1544,7 +1550,7 @@
       {
         "allValue": null,
         "current": {
-          "tags": [],
+          "selected": true,
           "text": "prod",
           "value": "prod"
         },
@@ -1585,8 +1591,9 @@
       {
         "allValue": null,
         "current": {
-          "text": "9377c250cad1",
-          "value": "9377c250cad1"
+          "tags": [],
+          "text": "828f79112639",
+          "value": "828f79112639"
         },
         "datasource": "InfluxDB (Telegraf)",
         "definition": "",
@@ -1610,7 +1617,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -1641,5 +1648,5 @@
   "timezone": "browser",
   "title": "Postgres Overview",
   "uid": "8a5S_v0Zz",
-  "version": 2
+  "version": 4
 }

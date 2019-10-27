@@ -18,12 +18,16 @@ class FossilSimulation extends Simulation {
     Collector.collectMultipleEventsScenario.inject(rampUsers(Config.NumberOfStreams) during duration)
       .protocols(httpProtocol)
       .throttle(
-        reachRps(100) in (30 seconds),
+        reachRps(50) in (30 seconds),
         holdFor(1 minute),
-        reachRps(200) in (5 minutes),
+        reachRps(100) in (5 minutes),
         holdFor(10 minutes),
-        reachRps(300) in (5 minutes),
+        reachRps(200) in (5 minutes),
         holdFor(10 minutes)
-      )
+      ),
+    Consumer.listenEventsFor2Minutes.inject(
+      rampUsers(50) during duration
+    )
+      .protocols(httpProtocol)
   )
 }
