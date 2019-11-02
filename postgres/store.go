@@ -137,7 +137,7 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher events.Matcher) ch
 
 	go func() {
 		streamAsRegex := "^" + strings.ReplaceAll(matcher.UriTemplate, "*", "[^\\/]*") + "$"
-		rows, err := s.conn.QueryEx(ctx, "select number, stream, sequence_number_in_stream, event from events where number > $1 and stream ~ $2 order by number asc", nil, matcher.LastEventId, streamAsRegex)
+		rows, err := s.conn.QueryEx(ctx, "select number, stream, sequence_number_in_stream, event from events where number > $1 and stream ~ $2 order by number asc", nil, matcher.LastEventNumber, streamAsRegex)
 		if err != nil {
 			fmt.Println("error went loading historical events", err)
 			close(channel)
@@ -168,7 +168,7 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher events.Matcher) ch
 	return channel
 }
 
-func (s *Storage) Get(ctx context.Context, id string) (*cloudevents.Event, error) {
+func (s *Storage) Find(ctx context.Context, id string) (*cloudevents.Event, error) {
 	row := s.conn.QueryRowEx(ctx, "select number, stream, sequence_number_in_stream, event from events where id = $1", nil, id)
 
 	return rowToEvent(row)

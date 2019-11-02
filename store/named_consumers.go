@@ -2,12 +2,14 @@ package store
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/events"
 	"net/http"
+	"strconv"
 )
 
 var consumerGroupNamespace = uuid.MustParse("69bf702a-9525-4a41-9c95-a8ae37a1360d")
@@ -26,15 +28,15 @@ func getLastEvent(channel chan cloudevents.Event) *cloudevents.Event {
 	return lastEvent
 }
 
-type ConsumerGroup struct {
+type NamedConsumers struct {
 	sseRouter *SSERouter
 	store     EventStore
 	loader    EventLoader
 	lock      DistributedLock
 }
 
-func NewConsumerGroup(sseRouter *SSERouter, store EventStore, loader EventLoader, lock DistributedLock) *ConsumerGroup {
-	return &ConsumerGroup{
+func NewNamedConsumers(sseRouter *SSERouter, store EventStore, loader EventLoader, lock DistributedLock) *NamedConsumers {
+	return &NamedConsumers{
 		sseRouter,
 		store,
 		loader,
@@ -42,12 +44,27 @@ func NewConsumerGroup(sseRouter *SSERouter, store EventStore, loader EventLoader
 	}
 }
 
-func (cg *ConsumerGroup) Mount(router *chi.Mux) {
+func (cg *NamedConsumers) Mount(router *chi.Mux) {
 	router.Get("/consumer/{name}/stream", cg.Stream)
 	router.Put("/consumer/{name}/commit", cg.CommitOffset)
 }
 
-func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
+func getCommittedOffsetFromEvent(event *cloudevents.Event) (int, error) {
+	dataAsBytes, ok := event.Data.([]byte)
+	if !ok {
+		return 0, errors.New("could not read last offset")
+	}
+
+	var lastEventNumber int
+	err := json.Unmarshal(dataAsBytes, &lastEventNumber)
+	if err != nil {
+		return 0, err
+	}
+
+	return lastEventNumber, nil
+}
+
+func (cg *NamedConsumers) Stream(rw http.ResponseWriter, req *http.Request) {
 	consumerName := chi.URLParam(req, "name")
 	err := cg.lock.Lock(req.Context(), consumerName)
 	if err != nil {
@@ -65,30 +82,46 @@ func (cg *ConsumerGroup) Stream(rw http.ResponseWriter, req *http.Request) {
 	)
 
 	if offset != nil {
-		dataAsBytes, ok := offset.Data.([]byte)
-		if !ok {
-			http.Error(rw, "Could not read last offset", http.StatusInternalServerError)
-			return
-		}
-
-		var lastEventId string
-		err := json.Unmarshal(dataAsBytes, &lastEventId)
+		lastEventNumber, err := getCommittedOffsetFromEvent(offset)
 		if err != nil {
-			http.Error(rw, "Could not decode last offset", http.StatusInternalServerError)
+			http.Error(rw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		req.Header.Set("Last-Event-Id", lastEventId)
+		req.Header.Set("Last-Fossil-Event-Number", strconv.Itoa(lastEventNumber))
 	}
 
 	cg.sseRouter.StreamEvents(rw, req)
 }
 
-func (cg *ConsumerGroup) CommitOffset(rw http.ResponseWriter, req *http.Request) {
+func (cg *NamedConsumers) CommitOffset(rw http.ResponseWriter, req *http.Request) {
 	consumerName := chi.URLParam(req, "name")
 	lastEventId := req.Header.Get("Last-Event-Id")
-	if lastEventId == "" {
-		http.Error(rw, "Missing 'Last-Event-Id' header.", http.StatusBadRequest)
+	lastEventNumber := req.Header.Get("Last-Fossil-Event-Number")
+	if lastEventId == "" && lastEventNumber == "" {
+		http.Error(rw, "Missing 'Last-Event-Id' or 'Last-Fossil-Event-Number' header.", http.StatusBadRequest)
+		return
+	}
+
+	if lastEventNumber == "" {
+		event, err := cg.store.Find(req.Context(), lastEventId)
+		if err != nil {
+			_, eventIsNotFound := err.(*EventNotFound)
+			if eventIsNotFound {
+				http.Error(rw, "Event is not found", http.StatusNotFound)
+			} else {
+				http.Error(rw, err.Error(), http.StatusInternalServerError)
+			}
+
+			return
+		}
+
+		lastEventNumber = strconv.Itoa(events.GetEventNumber(*event))
+	}
+
+	lastEventNumberAsInteger, err := strconv.Atoi(lastEventNumber)
+	if err != nil {
+		http.Error(rw, "'Last-Fossil-Event-Number' header must be an integer.", http.StatusBadRequest)
 		return
 	}
 
@@ -96,7 +129,7 @@ func (cg *ConsumerGroup) CommitOffset(rw http.ResponseWriter, req *http.Request)
 	event.SetID(uuid.NewMD5(consumerGroupNamespace, []byte(consumerName)).String())
 	event.SetSource("fossil")
 	event.SetType(consumerGroupEventType)
-	err := event.SetData(lastEventId)
+	err = event.SetData(lastEventNumberAsInteger)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

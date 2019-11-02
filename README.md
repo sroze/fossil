@@ -61,10 +61,13 @@ curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{n
 ```
 
 When the consumer is done with one (or multiple if you want to batch), commit its offset by sending 
-the latest known event number to the `/consumer/{name}/commit` endpoint:
+the latest known event identifier to the `/consumer/{name}/commit` endpoint:
 ```
 curl -X PUT -H 'Last-Event-Id: 123' http://localhost:8080/consumer/{name}/commit
 ```
+
+**Note:** You can also commit with the `Last-Fossil-Event-Number` header if you want to use the event number rather
+than their identifiers. This would actually be faster than using `Last-Event-Id` which is exposed for SSE compatibility.
 
 ### Delete or replace an event
 

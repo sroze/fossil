@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+type EventNotFound struct{}
+
+func (e *EventNotFound) Error() string {
+	return "event with such identifier is not found."
+}
+
 type DuplicateEventError struct{}
 
 func (e *DuplicateEventError) Error() string {

@@ -11,15 +11,17 @@ import (
 
 type SSERouter struct {
 	eventStreamFactory *EventStreamFactory
+	store              EventStore
 }
 
-func NewSSERouter(eventStreamFactory *EventStreamFactory) *SSERouter {
+func NewSSERouter(eventStreamFactory *EventStreamFactory, store EventStore) *SSERouter {
 	return &SSERouter{
 		eventStreamFactory,
+		store,
 	}
 }
 
-func matcherFromRequest(req *http.Request) (events.Matcher, error) {
+func matcherFromRequest(store EventStore, req *http.Request) (events.Matcher, error) {
 	matcher := events.Matcher{}
 	matcher.UriTemplate = req.URL.Query().Get("matcher")
 
@@ -27,15 +29,27 @@ func matcherFromRequest(req *http.Request) (events.Matcher, error) {
 		return matcher, errors.New("no matcher found in URL")
 	}
 
-	lastEventId := req.Header.Get("Last-Event-Id")
-	if lastEventId != "" {
-		asInteger, err := strconv.Atoi(lastEventId)
+	lastEventNumber := req.Header.Get("Last-Fossil-Event-Number")
+	if lastEventNumber != "" {
+		asInteger, err := strconv.Atoi(lastEventNumber)
 
 		if err != nil {
 			return matcher, fmt.Errorf("last event id is not a valid integer: %s", err.Error())
 		}
 
-		matcher.LastEventId = asInteger
+		matcher.LastEventNumber = asInteger
+	} else if lastEventId := req.Header.Get("Last-Event-Id"); lastEventId != "" {
+		event, err := store.Find(req.Context(), lastEventId)
+		if err != nil {
+			_, eventIsNotFound := err.(*EventNotFound)
+			if eventIsNotFound {
+				return matcher, fmt.Errorf("event %s is not found", lastEventId)
+			}
+
+			return matcher, err
+		}
+
+		matcher.LastEventNumber = events.GetEventNumber(*event)
 	}
 
 	return matcher, nil
@@ -59,9 +73,9 @@ func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Connection", "keep-alive")
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
 
-	matcher, err := matcherFromRequest(req)
+	matcher, err := matcherFromRequest(r.store, req)
 	if err != nil {
-		http.Error(rw, "You need to give a matcher.", http.StatusBadRequest)
+		http.Error(rw, fmt.Sprintf("Stream matcher was invalid: %s.", err.Error()), http.StatusBadRequest)
 		return
 	}
 
