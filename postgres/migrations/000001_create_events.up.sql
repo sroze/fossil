@@ -1,11 +1,12 @@
 create table events(
-  id uuid primary key,
-  number serial not null,
+  number bigserial not null primary key,
+  id uuid not null,
   stream varchar not null,
   sequence_number_in_stream integer not null,
   event json not null
 );
 
+ALTER TABLE events ADD CONSTRAINT events_unique_id UNIQUE(id);
 ALTER TABLE events ADD CONSTRAINT events_unique_sequence_per_stream UNIQUE(stream, sequence_number_in_stream);
 
 CREATE OR REPLACE FUNCTION generate_stream_sequence_number(_stream varchar) RETURNS integer AS
@@ -28,10 +29,3 @@ CREATE TRIGGER automatically_generate_stream_sequence_number BEFORE INSERT ON ev
     FOR EACH ROW
     WHEN (NEW.sequence_number_in_stream IS NULL)
     EXECUTE PROCEDURE generate_stream_sequence_number_for_new_event();
-
----- create above / drop below ----
-
-drop trigger automatically_generate_stream_sequence_number ON events;
-drop function generate_stream_sequence_number_for_new_event;
-drop function generate_stream_sequence_number;
-drop table events;

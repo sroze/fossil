@@ -157,8 +157,7 @@ $ cd cmd && watcher -watch github.com/sroze/fossil
 Run migrations:
 
 ```
-$ cd postgres/migrations
-$ tern migrate
+$ go run cmd/migrate.go
 ```
 
 **Note:** You need `pgx@v3.6.0`: `cd $GOPATH/src/github.com/jackc/pgx && git checkout v3.6.0`

@@ -62,14 +62,11 @@ jobs:
         cd $GOPATH/src/github.com/jackc/pgx
         git checkout v3.6.0
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
-        go get github.com/jackc/tern
-        cd postgres/migrations
-        tern migrate
+        go run cmd/migrate.go
         cd ../..
         go test -tags=integration -v ./...
 
       env:
         DATABASE_URL: postgres://fossil:fossil@localhost:${{ job.services.postgres.ports[5432] }}/fossil
         SERVER_PORT: 8080
-        MIGRATOR_PASSWORD: fossil
         PGPORT: ${{ job.services.postgres.ports[5432] }}
