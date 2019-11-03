@@ -175,6 +175,11 @@ around changes giving operational confidence and better performances.
 
 - **Node.js client** (using SSE) that commits offsets and supports acknowledgments.
 
+- **JWT tokens with `claims`** so that we can create tokens that allow to stream or collect on a specific
+  set of streams.
+  
+- **Use URI templates** rather than a custom `*`-based Kafka matcher. This would therefore be inline with the RFC6570.
+
 - **Outbox to Kafka or SQS** to enable consumers to use alternatives to SSE.
 
 - **Protobuf interfaces** instead of these HTTP endpoints. This should enable faster collection, commits, acks and
