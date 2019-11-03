@@ -149,15 +149,15 @@ $ go test
 ```
 
 ```
-$ go run cmd/main.go
+$ go run main.go server
 (or)
-$ cd cmd && watcher -watch github.com/sroze/fossil
+$ watcher -watch github.com/sroze/fossil
 ```
 
 Run migrations:
 
 ```
-$ go run cmd/migrate.go
+$ go run main.go migrate
 ```
 
 **Note:** You need `pgx@v3.6.0`: `cd $GOPATH/src/github.com/jackc/pgx && git checkout v3.6.0`
