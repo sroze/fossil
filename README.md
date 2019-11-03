@@ -163,8 +163,6 @@ Run migrations:
 $ go run main.go migrate
 ```
 
-**Note:** You need `pgx@v3.6.0`: `cd $GOPATH/src/github.com/jackc/pgx && git checkout v3.6.0`
-
 ### Docker
 
 ```
