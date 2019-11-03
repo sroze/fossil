@@ -145,6 +145,14 @@ curl -X POST -H 'Authorization: Bearer <token>' \
      http://localhost:8080/collect
 ```
 
+### Clients
+
+Even though Fossil don't necessary require clients (because exposes SSE and sends via its outboxes), the Fossil-specific
+features such as consumer offset commits and explicit consumer acknowledgement require some instrumentalisation on the
+consumer side.
+
+- [NodeJS](https://github.com/sroze/fossil-node-client).
+
 ## Development
 
 ```
@@ -173,8 +181,6 @@ goreleaser --snapshot --skip-publish --rm-dist
 
 As it stands, Fossil has enough features to be used as a complete event store. The focus going forward should be 
 around changes giving operational confidence and better performances.
-
-- **Node.js client** (using SSE) that commits offsets and supports acknowledgments.
 
 - **JWT tokens with `claims`** so that we can create tokens that allow to stream or collect on a specific
   set of streams.
