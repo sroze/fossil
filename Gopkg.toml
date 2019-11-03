@@ -24,15 +24,9 @@
 #   go-tests = true
 #   unused-packages = true
 
-required = ["github.com/jackc/tern"]
-
 [prune]
   go-tests = true
   unused-packages = true
-
-[[constraint]]
-  name = "github.com/jackc/tern"
-  version = "1.8.2"
 
 [[constraint]]
   name = "github.com/cloudevents/sdk-go"

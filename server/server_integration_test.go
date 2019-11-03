@@ -1,6 +1,6 @@
 // +build integration
 
-package fossil
+package server
 
 import (
 	"bufio"
