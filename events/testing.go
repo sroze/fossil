@@ -1,8 +1,7 @@
-package testing
+package events
 
 import (
-	cloudevents "github.com/cloudevents/sdk-go"
-	"github.com/sroze/fossil/events"
+	"github.com/cloudevents/sdk-go"
 	"testing"
 )
 
@@ -13,13 +12,13 @@ func NewEvent(id string, stream string, number int, sequenceNumberInStream int) 
 	event.SetID(id)
 
 	if stream != "" {
-		events.SetStream(&event, stream)
+		SetStream(&event, stream)
 	}
 	if number != 0 {
-		events.SetEventNumber(&event, number)
+		SetEventNumber(&event, number)
 	}
 	if sequenceNumberInStream != 0 {
-		events.SetSequenceNumberInStream(&event, sequenceNumberInStream)
+		SetSequenceNumberInStream(&event, sequenceNumberInStream)
 	}
 
 	return event

@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go"
 	"time"
 )
 
@@ -11,10 +12,20 @@ func (e *EventNotFound) Error() string {
 	return "event with such identifier is not found."
 }
 
-type DuplicateEventError struct{}
+func NewDuplicateEventError(eventInStore cloudevents.Event) error {
+	return &DuplicateEventError{eventInStore}
+}
+
+type DuplicateEventError struct {
+	eventInStore cloudevents.Event
+}
 
 func (e *DuplicateEventError) Error() string {
 	return "event with such identifier already exists."
+}
+
+func (e *DuplicateEventError) EventInStore() cloudevents.Event {
+	return e.eventInStore
 }
 
 type SequenceNumberDoNotMatchError struct{}

@@ -45,15 +45,15 @@ func TestSimpleEventStreaming(t *testing.T) {
 		// Wait for the stream listener to be registered
 		time.Sleep(100 * time.Millisecond)
 
-		events := make(chan fossiltesting.ServerSentEvent)
-		go fossiltesting.ReadServerSideEvents(bufio.NewReader(response.Body), events)
+		stream := make(chan fossiltesting.ServerSentEvent)
+		go fossiltesting.ReadServerSideEvents(bufio.NewReader(response.Body), stream)
 
 		// ServerSentEvent is consumed
-		event := fossiltesting.NewEvent("123456", "/visits/1234", 1, 1)
+		event := events.NewEvent("123456", "/visits/1234", 1, 1)
 		streamFactory.Source <- event
 
 		// Receive an event
-		received := <-events
+		received := <-stream
 		if received.ID != event.ID() {
 			t.Errorf("received ID %s is different from sent %s", received.ID, event.ID())
 		}
@@ -97,7 +97,7 @@ func TestMatcherFromRequest(t *testing.T) {
 	})
 
 	t.Run("gets the last event number from the event id", func(t *testing.T) {
-		event := fossiltesting.NewEvent(uuid.New().String(), "some/stream", 0, 0)
+		event := events.NewEvent(uuid.New().String(), "some/stream", 0, 0)
 		err := storage.Store(context.Background(), "some/stream", &event)
 		if err != nil {
 			t.Error(err)

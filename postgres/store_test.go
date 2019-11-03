@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/events"
 	"github.com/sroze/fossil/store"
-	fossiltesting "github.com/sroze/fossil/testing"
 	"os"
 	"strings"
 	"testing"
@@ -37,7 +36,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("stores and returns the event and sequence numbers", func(t *testing.T) {
 		streamName := uuid.New().String()
-		event := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 
 		err := storage.Store(context.Background(), streamName, &event)
 		if err != nil {
@@ -56,8 +55,8 @@ func TestStorage(t *testing.T) {
 	t.Run("returns a duplicate error if same event exists", func(t *testing.T) {
 		streamName := uuid.New().String()
 		id := uuid.New().String()
-		event1 := fossiltesting.NewEvent(id, streamName, 0, 0)
-		event2 := fossiltesting.NewEvent(id, streamName, 0, 0)
+		event1 := events.NewEvent(id, streamName, 0, 0)
+		event2 := events.NewEvent(id, streamName, 0, 0)
 
 		err := storage.Store(context.Background(), streamName, &event1)
 		if err != nil {
@@ -66,17 +65,23 @@ func TestStorage(t *testing.T) {
 		}
 
 		err = storage.Store(context.Background(), streamName, &event2)
-		if _, ok := err.(*store.DuplicateEventError); !ok {
+		duplicateError, ok := err.(*store.DuplicateEventError)
+		if !ok {
 			t.Error("expected a duplicate event error")
+			return
+		}
+
+		if events.GetEventNumber(duplicateError.EventInStore()) != events.GetEventNumber(event1) {
+			t.Error("expected same event numbers but found different")
 		}
 	})
 
 	t.Run("overrides the event if explicitly stated", func(t *testing.T) {
 		streamName := uuid.New().String()
 		id := uuid.New().String()
-		event1 := fossiltesting.NewEvent(id, streamName, 0, 0)
+		event1 := events.NewEvent(id, streamName, 0, 0)
 		event1.SetData("first")
-		event2 := fossiltesting.NewEvent(id, streamName, 0, 0)
+		event2 := events.NewEvent(id, streamName, 0, 0)
 		event2.SetData("second")
 
 		err := storage.Store(context.Background(), streamName, &event1)
@@ -112,7 +117,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("it refuses an expected sequence number that is already existing in the stream", func(t *testing.T) {
 		streamName := uuid.New().String()
-		event1 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event1 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		event1.SetData("first")
 
 		err := storage.Store(context.Background(), streamName, &event1)
@@ -127,7 +132,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		event2 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event2 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		events.SetExpectedSequenceNumber(&event2, event1SequenceNumber)
 		event2.SetData("second")
 
@@ -136,7 +141,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("it refuses an expected sequence number beyond what is already in the stream", func(t *testing.T) {
 		streamName := uuid.New().String()
-		event1 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event1 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		event1.SetData("first")
 
 		err := storage.Store(context.Background(), streamName, &event1)
@@ -145,7 +150,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		event2 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event2 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		events.SetExpectedSequenceNumber(&event2, 20)
 		event2.SetData("second")
 
@@ -154,7 +159,7 @@ func TestStorage(t *testing.T) {
 
 	t.Run("it accepts the exact expected sequence number", func(t *testing.T) {
 		streamName := uuid.New().String()
-		event1 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event1 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		event1.SetData("first")
 
 		err := storage.Store(context.Background(), streamName, &event1)
@@ -169,7 +174,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		event2 := fossiltesting.NewEvent(uuid.New().String(), streamName, 0, 0)
+		event2 := events.NewEvent(uuid.New().String(), streamName, 0, 0)
 		events.SetExpectedSequenceNumber(&event2, event1SequenceNumber+1)
 		event2.SetData("second")
 
