@@ -64,15 +64,19 @@ func CollectEventWithHeaders(t *testing.T, id string, stream string, contents in
 	return response
 }
 
-func StreamEventsFromUrl(ctx context.Context, url string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
+func StreamEventsFromUrl(ctx context.Context, url string, channel chan fossiltesting.ServerSentEvent) {
+	StreamEventsFromUrlWithHeaders(ctx, url, channel, map[string]string{})
+}
+
+func StreamEventsFromUrlWithHeaders(ctx context.Context, url string, channel chan fossiltesting.ServerSentEvent, headers map[string]string) {
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	request.Header.Set("Accept", "text/event-stream")
-	if lastEventId > 0 {
-		request.Header.Set("Last-Event-Id", strconv.Itoa(lastEventId))
+	for key, value := range headers {
+		request.Header.Set(key, value)
 	}
 
 	response, err := http.DefaultClient.Do(request.WithContext(ctx))
@@ -87,12 +91,16 @@ func StreamEventsFromUrl(ctx context.Context, url string, lastEventId int, chann
 	fossiltesting.ReadServerSideEvents(bufio.NewReader(response.Body), channel)
 }
 
-func StreamEvents(matcher string, lastEventId int, channel chan fossiltesting.ServerSentEvent) {
+func StreamEvents(matcher string, channel chan fossiltesting.ServerSentEvent) {
+	StreamEventsWithHeaders(matcher, channel, map[string]string{})
+}
+
+func StreamEventsWithHeaders(matcher string, channel chan fossiltesting.ServerSentEvent, headers map[string]string) {
 	query := url.Values{}
 	query.Set("matcher", matcher)
 	requestUrl := fmt.Sprintf("http://localhost:%s/stream?%s", os.Getenv("SERVER_PORT"), query.Encode())
 
-	StreamEventsFromUrl(context.Background(), requestUrl, lastEventId, channel)
+	StreamEventsFromUrlWithHeaders(context.Background(), requestUrl, channel, headers)
 }
 
 func StreamAndCommit(ctx context.Context, consumerName string, matcher string, channel chan fossiltesting.ServerSentEvent) error {
@@ -101,7 +109,7 @@ func StreamAndCommit(ctx context.Context, consumerName string, matcher string, c
 	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
 
 	events := make(chan fossiltesting.ServerSentEvent)
-	go StreamEventsFromUrl(ctx, requestUrl, 0, events)
+	go StreamEventsFromUrl(ctx, requestUrl, events)
 
 	for sse := range events {
 		eventNumber, ok := sse.Data["fossileventnumber"].(float64)
@@ -127,7 +135,7 @@ func CommitConsumerOffset(consumerName string, eventNumber string) error {
 		return err
 	}
 
-	request.Header.Set("Last-Event-Id", eventNumber)
+	request.Header.Set("Last-Fossil-Event-Number", eventNumber)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err
@@ -189,7 +197,7 @@ func TestWithDatabase(t *testing.T) {
 
 		// Streams the streamedEvents from the `visits/*` streams
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEvents(fmt.Sprintf("/%s/*", prefix), 0, streamedEvents)
+		go StreamEvents(fmt.Sprintf("/%s/*", prefix), streamedEvents)
 
 		// Collect another event
 		secondId := uuid.New().String()
@@ -202,7 +210,37 @@ func TestWithDatabase(t *testing.T) {
 		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, secondId)
 	})
 
-	t.Run("get events up to a certain point only", func(t *testing.T) {
+	t.Run("get events up to a certain point only, with the SSE last event ID", func(t *testing.T) {
+		prefix := uuid.New().String()
+
+		// Collect multiple events
+		CollectEvent(t, uuid.New().String(), fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		})
+		CollectEvent(t, uuid.New().String(), fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		})
+		lastEventId := uuid.New().String()
+		CollectEvent(t, lastEventId, fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		})
+
+		afterLastId := uuid.New().String()
+		CollectEvent(t, afterLastId, fmt.Sprintf("/%s/123", prefix), map[string]string{
+			"mood": "happy",
+		})
+
+		// Streams the streamedEvents from the `visits/*` streams
+		streamedEvents := make(chan fossiltesting.ServerSentEvent)
+		go StreamEventsWithHeaders(fmt.Sprintf("/%s/*", prefix), streamedEvents, map[string]string{
+			"Last-Event-Id": lastEventId,
+		})
+
+		// Expect to receive the one after last
+		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, afterLastId)
+	})
+
+	t.Run("get events up to a certain point only, with the last fossil event number", func(t *testing.T) {
 		prefix := uuid.New().String()
 
 		// Collect multiple events
@@ -215,11 +253,6 @@ func TestWithDatabase(t *testing.T) {
 		lastResponse := CollectEvent(t, uuid.New().String(), fmt.Sprintf("/%s/123", prefix), map[string]string{
 			"mood": "happy",
 		})
-		lastResponseEventNumber, err := strconv.Atoi(lastResponse.Header.Get("fossil-event-number"))
-		if err != nil {
-			t.Error(err)
-			return
-		}
 
 		afterLastId := uuid.New().String()
 		CollectEvent(t, afterLastId, fmt.Sprintf("/%s/123", prefix), map[string]string{
@@ -228,7 +261,9 @@ func TestWithDatabase(t *testing.T) {
 
 		// Streams the streamedEvents from the `visits/*` streams
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEvents(fmt.Sprintf("/%s/*", prefix), lastResponseEventNumber, streamedEvents)
+		go StreamEventsWithHeaders(fmt.Sprintf("/%s/*", prefix), streamedEvents, map[string]string{
+			"Last-Fossil-Event-Number": lastResponse.Header.Get("fossil-event-number"),
+		})
 
 		// Expect to receive the one after last
 		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, afterLastId)
@@ -266,7 +301,7 @@ func TestWithDatabase(t *testing.T) {
 		query.Set("matcher", fmt.Sprintf("/%s/*", prefix))
 		requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
 
-		go StreamEventsFromUrl(context.Background(), requestUrl, 0, streamedEvents)
+		go StreamEventsFromUrl(context.Background(), requestUrl, streamedEvents)
 
 		// Expect to receive the one after last
 		fossiltesting.ExpectServerSideEventWithId(t, <-streamedEvents, secondEventId)
@@ -360,7 +395,7 @@ func TestWithDatabase(t *testing.T) {
 		<-requestHasStarted
 
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEvents(fmt.Sprintf("/%s/*", prefix), 0, streamedEvents)
+		go StreamEvents(fmt.Sprintf("/%s/*", prefix), streamedEvents)
 		event := <-streamedEvents
 
 		// Do acknowledge

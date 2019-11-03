@@ -16,6 +16,7 @@ type Collector interface {
 
 type EventStore interface {
 	Store(ctx context.Context, stream string, event *cloudevents.Event) error
+	Find(ctx context.Context, id string) (*cloudevents.Event, error)
 }
 
 type EventLoader interface {

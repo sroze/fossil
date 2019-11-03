@@ -48,10 +48,10 @@ func NewFossilServer(
 		router.Use(jwtauth.Authenticator)
 	}
 
-	sseRouter := NewSSERouter(factory)
+	sseRouter := NewSSERouter(factory, store)
 	sseRouter.Mount(router)
 	NewCollectorRouter(collector, NewConsumerWaiter(factory.Broadcaster)).Mount(router)
-	NewConsumerGroup(sseRouter, store, loader, lock).Mount(router)
+	NewNamedConsumers(sseRouter, store, loader, lock).Mount(router)
 	NewConsumerWaiterRouter(collector).Mount(router)
 
 	router.Get("/about", func(writer http.ResponseWriter, request *http.Request) {

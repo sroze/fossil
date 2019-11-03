@@ -93,7 +93,7 @@ func TestStorage(t *testing.T) {
 			return
 		}
 
-		event, err := storage.Get(context.Background(), id)
+		event, err := storage.Find(context.Background(), id)
 		if err != nil {
 			t.Error(err)
 			return

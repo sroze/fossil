@@ -32,12 +32,23 @@ func NewInMemoryStorage() *InMemoryStorage {
 	}
 }
 
+func (s *InMemoryStorage) Find(ctx context.Context, identifier string) (*cloudevents.Event, error) {
+	for _, e := range s.Events {
+		if e.ID() == identifier {
+			return &e, nil
+		}
+	}
+
+	return nil, &EventNotFound{}
+}
+
 func (s *InMemoryStorage) Store(ctx context.Context, stream string, event *cloudevents.Event) error {
 	err := s.addOrReplace(*event)
 	if err != nil {
 		return err
 	}
 
+	events.SetStream(event, stream)
 	events.SetEventNumber(event, len(s.Events))
 	events.SetSequenceNumberInStream(event, s.countEventsInStream(stream))
 

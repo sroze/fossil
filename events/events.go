@@ -15,8 +15,8 @@ var toReplaceExistingEventExtensionName = "fossiltoreplaceexistingevent"
 var expectedSequenceNumberExtensionName = "fossilexpectedsequencenumber"
 
 type Matcher struct {
-	UriTemplate string
-	LastEventId int
+	UriTemplate     string
+	LastEventNumber int
 }
 
 func GetStreamFromEvent(event cloudevents.Event) string {
@@ -112,5 +112,5 @@ func EventMatches(event cloudevents.Event, matcher Matcher) bool {
 		return false
 	}
 
-	return GetEventNumber(event) > matcher.LastEventId
+	return GetEventNumber(event) > matcher.LastEventNumber
 }
