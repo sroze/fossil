@@ -1,8 +1,10 @@
 package store
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/concurrency"
+	"github.com/sroze/fossil/events"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -167,5 +169,32 @@ func TestCollectEvent(t *testing.T) {
 		response = httptest.NewRecorder()
 		server.ServeHTTP(response, request)
 		ExpectResponseCode(t, response, 200)
+	})
+
+	t.Run("it collects the fact that the producer is waiting for some consumer", func(t *testing.T) {
+		body := strings.NewReader("{\"mood\": \"happy\"}")
+		eventId := uuid.New().String()
+
+		request, _ := http.NewRequest(http.MethodPost, "/collect", body)
+		request.Header.Add("ce-specversion", "0.3")
+		request.Header.Add("ce-type", "https://acme.com/PersonCreated")
+		request.Header.Add("ce-time", "2018-04-05T03:56:24Z")
+		request.Header.Add("ce-id", eventId)
+		request.Header.Add("ce-source", "birdie.care")
+		request.Header.Add("fossil-stream", "person/1234")
+		request.Header.Add("fossil-wait-consumer", "<foo>")
+		request.Header.Add("Content-Type", "application/json; charset=utf-8")
+
+		server.ServeHTTP(httptest.NewRecorder(), request)
+
+		storedEvent, err := storage.Find(context.Background(), eventId)
+		if err != nil {
+			t.Error(err)
+		}
+
+		consumers := events.GetConsumersWaitedForAcknowledgmentFromEvent(*storedEvent)
+		if len(consumers) != 1 && consumers[0] != "foo" {
+			t.Errorf("expected to find one consumer named '%s', found %s instead", "foo", consumers)
+		}
 	})
 }

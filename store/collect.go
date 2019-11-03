@@ -100,6 +100,13 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 
 		if len(waitForConsumers) > 0 {
 			waitFor = r.waiter.WaitFor(ctx, waitConfigurations)
+
+			var consumerNames []string
+			for _, configuration := range waitConfigurations {
+				consumerNames = append(consumerNames, configuration.ConsumerName)
+			}
+
+			events.SetConsumersWaitedForAcknowledgmentFromEvent(event, consumerNames)
 		}
 	}
 

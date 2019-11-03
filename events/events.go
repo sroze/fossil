@@ -6,6 +6,7 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
 	"github.com/gobwas/glob"
+	"strings"
 )
 
 var SequenceNumberInStreamExtensionName = "fossilsequenceinstream"
@@ -13,6 +14,7 @@ var eventNumberExtensionName = "fossileventnumber"
 var streamExtensionName = "fossilstream"
 var toReplaceExistingEventExtensionName = "fossiltoreplaceexistingevent"
 var expectedSequenceNumberExtensionName = "fossilexpectedsequencenumber"
+var consumersWaitedForAcknowledgmentExtensionName = "fossilconsumerswaitedforacknowledgment"
 
 type Matcher struct {
 	UriTemplate     string
@@ -25,6 +27,14 @@ func GetStreamFromEvent(event cloudevents.Event) string {
 
 func SetStream(event *cloudevents.Event, stream string) {
 	event.SetExtension(streamExtensionName, stream)
+}
+
+func GetConsumersWaitedForAcknowledgmentFromEvent(event cloudevents.Event) []string {
+	return strings.Split(getStringFromExtension(event, consumersWaitedForAcknowledgmentExtensionName), ",")
+}
+
+func SetConsumersWaitedForAcknowledgmentFromEvent(event *cloudevents.Event, consumers []string) {
+	event.SetExtension(consumersWaitedForAcknowledgmentExtensionName, strings.Join(consumers, ","))
 }
 
 func SetEventNumber(event *cloudevents.Event, number int) {
