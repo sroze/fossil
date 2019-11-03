@@ -67,13 +67,35 @@ jobs:
         PGPORT: ${{ job.services.postgres.ports[5432] }}
 
   release:
-    if: github.ref == 'refs/head/test-release'
+    if: github.ref == 'refs/heads/automated-release'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
       - name: Set up Go
         uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Docker Hub Login
+        run: docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Test
+        run: |
+          export GOPATH=$HOME/go
+          export GOBIN=$(go env GOPATH)/bin
+          export PATH=$PATH:$GOPATH
+          export PATH=$PATH:$GOBIN
+          mkdir -p $GOPATH/pkg
+          mkdir -p $GOBIN
+          mkdir -p $GOPATH/src/github.com/$GITHUB_REPOSITORY
+          cp -r $(pwd)/* $GOPATH/src/github.com/$GITHUB_REPOSITORY
+          cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
+
+          curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+          dep ensure
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v1
         with:
