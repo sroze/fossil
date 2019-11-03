@@ -58,12 +58,8 @@ jobs:
         export GOBIN=$(go env GOPATH)/bin
         export PATH=$PATH:$GOPATH
         export PATH=$PATH:$GOBIN
-        go get github.com/jackc/pgx
-        cd $GOPATH/src/github.com/jackc/pgx
-        git checkout v3.6.0
         cd $GOPATH/src/github.com/$GITHUB_REPOSITORY
         go run main.go migrate
-        cd ../..
         go test -tags=integration -v ./...
 
       env:
