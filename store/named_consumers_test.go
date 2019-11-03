@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/concurrency"
 	"github.com/sroze/fossil/events"
-	testing2 "github.com/sroze/fossil/testing"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -74,7 +73,7 @@ func TestNamedConsumers(t *testing.T) {
 
 		t.Run("uses the event's number to commit", func(t *testing.T) {
 			consumerName := uuid.New().String()
-			event := testing2.NewEvent(
+			event := events.NewEvent(
 				uuid.New().String(),
 				"some/stream",
 				12,

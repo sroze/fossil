@@ -73,8 +73,8 @@ func TestCollectEvent(t *testing.T) {
 		}
 	})
 
-	t.Run("error when the event already exists", func(t *testing.T) {
-		body := strings.NewReader("{\"mood\": \"happy again\"}")
+	t.Run("accepts when sent the exact same event so that collection is idempotent", func(t *testing.T) {
+		body := strings.NewReader("{\"mood\": \"happy\"}")
 
 		request, _ := http.NewRequest(http.MethodPost, "/collect", body)
 		request.Header.Add("ce-specversion", "0.3")
@@ -89,7 +89,30 @@ func TestCollectEvent(t *testing.T) {
 
 		server.ServeHTTP(response, request)
 
-		ExpectResponseCode(t, response, 400)
+		ExpectResponseCode(t, response, 200)
+		eventNumber := response.Header().Get("fossil-event-number")
+		if eventNumber == "" {
+			t.Error("expected the event number as response but found nothing")
+		}
+	})
+
+	t.Run("error when an event with the same identifier but different body exists", func(t *testing.T) {
+		body := strings.NewReader("{\"mood\": \"happy but has changed\"}")
+
+		request, _ := http.NewRequest(http.MethodPost, "/collect", body)
+		request.Header.Add("ce-specversion", "0.3")
+		request.Header.Add("ce-type", "https://acme.com/PersonCreated")
+		request.Header.Add("ce-time", "2018-04-05T03:56:24Z")
+		request.Header.Add("ce-id", "1234-1234-1234")
+		request.Header.Add("ce-source", "birdie.care")
+		request.Header.Add("fossil-stream", "person/1234")
+		request.Header.Add("Content-Type", "application/json; charset=utf-8")
+
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		ExpectResponseCode(t, response, 409)
 	})
 
 	t.Run("can override an event", func(t *testing.T) {

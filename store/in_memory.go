@@ -64,7 +64,7 @@ func (s *InMemoryStorage) addOrReplace(event cloudevents.Event) error {
 				return nil
 			}
 
-			return &DuplicateEventError{}
+			return NewDuplicateEventError(e)
 		}
 	}
 

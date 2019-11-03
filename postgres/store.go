@@ -121,7 +121,12 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 				return &store.SequenceNumberDoNotMatchError{}
 			}
 
-			return &store.DuplicateEventError{}
+			eventInStore, err := s.Find(ctx, event.ID())
+			if err != nil {
+				return err
+			}
+
+			return store.NewDuplicateEventError(*eventInStore)
 		}
 	}
 
