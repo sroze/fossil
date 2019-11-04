@@ -5,7 +5,7 @@ import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
-	"github.com/gobwas/glob"
+	"github.com/yosida95/uritemplate"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ var expectedSequenceNumberExtensionName = "fossilexpectedsequencenumber"
 var consumersWaitedForAcknowledgmentExtensionName = "fossilconsumerswaitedforacknowledgment"
 
 type Matcher struct {
-	UriTemplate     string
+	UriTemplates    []string
 	LastEventNumber int
 }
 
@@ -118,9 +118,17 @@ func getIntegerFromExtension(event cloudevents.Event, extensionName string) int 
 func EventMatches(event cloudevents.Event, matcher Matcher) bool {
 	stream := GetStreamFromEvent(event)
 
-	if !glob.MustCompile(matcher.UriTemplate).Match(stream) {
-		return false
+	for _, template := range matcher.UriTemplates {
+		template, err := uritemplate.New(template)
+		if err != nil {
+			fmt.Println("ERROR", err)
+			continue
+		}
+
+		if template.Match(stream) != nil {
+			return GetEventNumber(event) > matcher.LastEventNumber
+		}
 	}
 
-	return GetEventNumber(event) > matcher.LastEventNumber
+	return false
 }

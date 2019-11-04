@@ -45,7 +45,7 @@ func NewNamedConsumers(sseRouter *SSERouter, store EventStore, loader EventLoade
 }
 
 func (cg *NamedConsumers) Mount(router *chi.Mux) {
-	router.Get("/consumer/{name}/stream", cg.Stream)
+	router.Get("/consumer/{name}/sse", cg.Stream)
 	router.Put("/consumer/{name}/commit", cg.CommitOffset)
 }
 
@@ -77,7 +77,7 @@ func (cg *NamedConsumers) Stream(rw http.ResponseWriter, req *http.Request) {
 
 	offset := getLastEvent(
 		cg.loader.MatchingStream(req.Context(), events.Matcher{
-			UriTemplate: commitOffsetStreamFromConsumerName(consumerName),
+			UriTemplates: []string{commitOffsetStreamFromConsumerName(consumerName)},
 		}),
 	)
 

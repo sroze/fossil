@@ -25,7 +25,7 @@ func TestEventStream(t *testing.T) {
 		ctx, stop := context.WithCancel(context.Background())
 
 		channel := factory.NewEventStream(ctx, events.Matcher{
-			UriTemplate: "a-stream",
+			UriTemplates: []string{"a-stream"},
 		})
 
 		events.ExpectEventWithId(t, <-channel, "1234")
@@ -42,7 +42,7 @@ func TestEventStream(t *testing.T) {
 		defer stop()
 
 		channel := factory.NewEventStream(ctx, events.Matcher{
-			UriTemplate: "visits/*",
+			UriTemplates: []string{"visits/{id}"},
 		})
 
 		go func() {
@@ -74,7 +74,7 @@ func TestEventStream(t *testing.T) {
 		}
 
 		channel := factory.NewEventStream(ctx, events.Matcher{
-			UriTemplate: "visits/*",
+			UriTemplates: []string{"visits/{id}"},
 		})
 
 		go func() {
@@ -104,7 +104,7 @@ func TestEventStream(t *testing.T) {
 		}
 
 		channel := factory.NewEventStream(ctx, events.Matcher{
-			UriTemplate: "visits/*",
+			UriTemplates: []string{"visits/{id}"},
 		})
 
 		go func() {

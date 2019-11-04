@@ -95,7 +95,7 @@ func TestNamedConsumers(t *testing.T) {
 			ExpectResponseCode(t, response, 200)
 
 			committedEvent := <-storage.MatchingStream(context.Background(), events.Matcher{
-				UriTemplate: fmt.Sprintf("fossil/consumer/%s/commit-offsets", consumerName),
+				UriTemplates: []string{fmt.Sprintf("fossil/consumer/%s/commit-offsets", consumerName)},
 			})
 
 			offset, err := getCommittedOffsetFromEvent(&committedEvent)

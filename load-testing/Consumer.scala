@@ -8,7 +8,7 @@ import java.net.URLEncoder
 object Consumer {
   val listenEventsFor2Minutes = scenario("Listen for 2 minutes")
     .exec(
-      sse("StreamEvents").connect("/stream?matcher=" + URLEncoder.encode(Config.StreamPrefix + "/*"))
+      sse("StreamEvents").connect("/sse?stream=" + URLEncoder.encode(Config.StreamPrefix + "/{id}"))
     )
     .pause(120)
     .exec(sse("Close").close())

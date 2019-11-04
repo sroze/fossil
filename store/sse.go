@@ -23,10 +23,10 @@ func NewSSERouter(eventStreamFactory *EventStreamFactory, store EventStore) *SSE
 
 func matcherFromRequest(store EventStore, req *http.Request) (events.Matcher, error) {
 	matcher := events.Matcher{}
-	matcher.UriTemplate = req.URL.Query().Get("matcher")
+	matcher.UriTemplates = req.URL.Query()["stream"]
 
-	if matcher.UriTemplate == "" {
-		return matcher, errors.New("no matcher found in URL")
+	if len(matcher.UriTemplates) == 0 {
+		return matcher, errors.New("no 'stream' template found in URL")
 	}
 
 	lastEventNumber := req.Header.Get("Last-Fossil-Event-Number")
@@ -56,7 +56,7 @@ func matcherFromRequest(store EventStore, req *http.Request) (events.Matcher, er
 }
 
 func (r *SSERouter) Mount(router *chi.Mux) {
-	router.Get("/stream", r.StreamEvents)
+	router.Get("/sse", r.StreamEvents)
 }
 
 func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {

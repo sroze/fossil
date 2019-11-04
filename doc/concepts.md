@@ -12,12 +12,7 @@ This is an event, as defined by the [CloudEvents spec](https://github.com/cloude
 One stream is one instance of a specific stream pattern. 
 For example: `visits/0d11536e-a33b-4ee9-b14f-29f6764d24cd`.
 
-## Stream pattern
+## Stream template
 
 This is an abstraction allowing the event store to create the stream from an event.
-For example: `visits/{visit_id}`
-
-## Stream matcher
-
-Used when listening for messages. 
-For example: `visits/*`
+For example: `visits/{id}`

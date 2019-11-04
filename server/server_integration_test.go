@@ -97,16 +97,16 @@ func StreamEvents(matcher string, channel chan fossiltesting.ServerSentEvent) {
 
 func StreamEventsWithHeaders(matcher string, channel chan fossiltesting.ServerSentEvent, headers map[string]string) {
 	query := url.Values{}
-	query.Set("matcher", matcher)
-	requestUrl := fmt.Sprintf("http://localhost:%s/stream?%s", os.Getenv("SERVER_PORT"), query.Encode())
+	query.Set("stream", matcher)
+	requestUrl := fmt.Sprintf("http://localhost:%s/sse?%s", os.Getenv("SERVER_PORT"), query.Encode())
 
 	StreamEventsFromUrlWithHeaders(context.Background(), requestUrl, channel, headers)
 }
 
 func StreamAndCommit(ctx context.Context, consumerName string, matcher string, channel chan fossiltesting.ServerSentEvent) error {
 	query := url.Values{}
-	query.Set("matcher", matcher)
-	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
+	query.Set("stream", matcher)
+	requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/sse?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
 
 	events := make(chan fossiltesting.ServerSentEvent)
 	go StreamEventsFromUrl(ctx, requestUrl, events)
@@ -195,9 +195,9 @@ func TestWithDatabase(t *testing.T) {
 			"mood": "happy",
 		})
 
-		// Streams the streamedEvents from the `visits/*` streams
+		// Streams the streamedEvents from the `visits/{id}` streams
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEvents(fmt.Sprintf("/%s/*", prefix), streamedEvents)
+		go StreamEvents(fmt.Sprintf("/%s/{id}", prefix), streamedEvents)
 
 		// Collect another event
 		secondId := uuid.New().String()
@@ -230,9 +230,9 @@ func TestWithDatabase(t *testing.T) {
 			"mood": "happy",
 		})
 
-		// Streams the streamedEvents from the `visits/*` streams
+		// Streams the streamedEvents from the `visits/{id}` streams
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEventsWithHeaders(fmt.Sprintf("/%s/*", prefix), streamedEvents, map[string]string{
+		go StreamEventsWithHeaders(fmt.Sprintf("/%s/{id}", prefix), streamedEvents, map[string]string{
 			"Last-Event-Id": lastEventId,
 		})
 
@@ -259,9 +259,9 @@ func TestWithDatabase(t *testing.T) {
 			"mood": "happy",
 		})
 
-		// Streams the streamedEvents from the `visits/*` streams
+		// Streams the streamedEvents from the `visits/{id}` streams
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEventsWithHeaders(fmt.Sprintf("/%s/*", prefix), streamedEvents, map[string]string{
+		go StreamEventsWithHeaders(fmt.Sprintf("/%s/{id}", prefix), streamedEvents, map[string]string{
 			"Last-Fossil-Event-Number": lastResponse.Header.Get("fossil-event-number"),
 		})
 
@@ -298,8 +298,8 @@ func TestWithDatabase(t *testing.T) {
 		// Listen to events, we should only have the 2nd one
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
 		query := url.Values{}
-		query.Set("matcher", fmt.Sprintf("/%s/*", prefix))
-		requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/stream?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
+		query.Set("stream", fmt.Sprintf("/%s/{id}", prefix))
+		requestUrl := fmt.Sprintf("http://localhost:%s/consumer/%s/sse?%s", os.Getenv("SERVER_PORT"), consumerName, query.Encode())
 
 		go StreamEventsFromUrl(context.Background(), requestUrl, streamedEvents)
 
@@ -312,7 +312,7 @@ func TestWithDatabase(t *testing.T) {
 
 		consumerName := "testing-" + uuid.New().String()
 		prefix := uuid.New().String()
-		matcher := fmt.Sprintf("/%s/*", prefix)
+		matcher := fmt.Sprintf("/%s/{id}", prefix)
 
 		// Start two listeners
 		firstContext, cancelFirst := context.WithCancel(context.Background())
@@ -395,7 +395,7 @@ func TestWithDatabase(t *testing.T) {
 		<-requestHasStarted
 
 		streamedEvents := make(chan fossiltesting.ServerSentEvent)
-		go StreamEvents(fmt.Sprintf("/%s/*", prefix), streamedEvents)
+		go StreamEvents(fmt.Sprintf("/%s/{id}", prefix), streamedEvents)
 		event := <-streamedEvents
 
 		// Do acknowledge
