@@ -31,14 +31,19 @@ Content-Length: nnnn
 ### Stream events
 
 Fossil exposes a SSE ([Server Sent Event](https://en.wikipedia.org/wiki/Server-sent_events))
-endpoint allowing you to stream events matching a specific topic:
+endpoint allowing you to stream events matching one or multiple streams:
 
 ```
-curl -N --http2 -H "Accept: text/event-stream"  http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+curl -N --http2 -H "Accept: text/event-stream"  http://localhost:8080/sse?stream=aggregate%2F%7Bid%7D -vvv
 ```
 
-**Important note:** this will return all the events matching the `matcher`(s) that have been stored in Fossil so far,
-so please be aware of the potential amount of events.
+The `stream` query parameter is a stream template. The format is the one of the [URI template](https://tools.ietf.org/html/rfc6570) 
+defined by the W3C spec. For example, if you want to get all the events for the streams `foo/1`, `foo/2`, etc... you can
+use the stream template `foo/{x}`.
+
+**Note:** as Fossil is an event store, this will also return all the previously stored events matching the 
+`stream` template(s) so please be aware of the potential amount of events. Fossil works well with millions of events so
+mostly worry about the consumer side.
 
 #### Only get events from a certain point in time
 
@@ -46,7 +51,7 @@ Every Fossil event has an event number, unique (and incremental in time) across 
 You can stream only events above a given number by using the SSE's `Last-Event-Id` header:
 
 ```
-curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://localhost:8080/stream?matcher=%2Fvisits%2F%2A -vvv
+curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://localhost:8080/sse?stream=%2Faggregate%2F%7Bid%7D -vvv
 ```
 
 (this will exclude the event 123 and send only what's after)
@@ -54,10 +59,10 @@ curl -N --http2 -H "Accept: text/event-stream" -H 'Last-Event-Id: 123' http://lo
 #### As a named consumer
 
 Fossil has the ability to keep track of what a given consumer has read so far. Give a name to the consumer
-and use the `/consumer/{name}/stream` endpoint. This will only get you the message that have not yet been acknowledged:
+and use the `/consumer/{name}/sse` endpoint. This will only get you the message that have not yet been acknowledged:
 
 ```
-curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/stream?matcher=%2Fvisits%2F%2A -vvv
+curl -N --http2 -H "Accept: text/event-stream" http://localhost:8080/consumer/{name}/sse?stream=%2Faggregate%2F%7Bid%7D -vvv
 ```
 
 When the consumer is done with one (or multiple if you want to batch), commit its offset by sending 
@@ -184,8 +189,6 @@ around changes giving operational confidence and better performances.
 
 - **JWT tokens with `claims`** so that we can create tokens that allow to stream or collect on a specific
   set of streams.
-  
-- **Use URI templates** rather than a custom `*`-based Kafka matcher. This would therefore be inline with the RFC6570.
 
 - **Outbox to Kafka or SQS** to enable consumers to use alternatives to SSE.
 

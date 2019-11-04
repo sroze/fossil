@@ -3,6 +3,7 @@ package store
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/concurrency"
 	"github.com/sroze/fossil/events"
@@ -33,14 +34,14 @@ func TestSimpleEventStreaming(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		query := url.Values{}
-		query.Set("matcher", "/visits/*")
+		query.Set("stream", "/visits/{id}")
 
-		request, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/stream?"+query.Encode(), nil)
+		request, _ := http.NewRequestWithContext(ctx, http.MethodGet, "/sse?"+query.Encode(), nil)
 		request.Header.Add("Accept", "text/event-stream")
 
 		response := httptest.NewRecorder()
-
 		go server.ServeHTTP(response, request)
+		ExpectResponseCode(t, response, 200)
 
 		// Wait for the stream listener to be registered
 		time.Sleep(100 * time.Millisecond)
@@ -55,7 +56,8 @@ func TestSimpleEventStreaming(t *testing.T) {
 		// Receive an event
 		received := <-stream
 		if received.ID != event.ID() {
-			t.Errorf("received ID %s is different from sent %s", received.ID, event.ID())
+			fmt.Println(received)
+			t.Errorf("received ID '%s' is different from sent '%s'", received.ID, event.ID())
 		}
 
 		cancel()
@@ -66,7 +68,7 @@ func TestMatcherFromRequest(t *testing.T) {
 	storage := NewInMemoryStorage()
 
 	t.Run("it gets the template from query parameters", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/stream?matcher=foo", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/sse?stream=foo", nil)
 		request.Header.Add("Accept", "text/event-stream")
 
 		matcher, err := matcherFromRequest(storage, request)
@@ -75,13 +77,37 @@ func TestMatcherFromRequest(t *testing.T) {
 			return
 		}
 
-		if matcher.UriTemplate != "foo" {
-			t.Errorf("expected template to be foo, found %s instead", matcher.UriTemplate)
+		if len(matcher.UriTemplates) != 1 {
+			t.Errorf("expected one template, got %d", len(matcher.UriTemplates))
+		}
+		if matcher.UriTemplates[0] != "foo" {
+			t.Errorf("expected template to be foo, found %s instead", matcher.UriTemplates[0])
+		}
+	})
+
+	t.Run("it gets multiple templates from query parameters", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/sse?stream=foo&stream=bar", nil)
+		request.Header.Add("Accept", "text/event-stream")
+
+		matcher, err := matcherFromRequest(storage, request)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if len(matcher.UriTemplates) != 2 {
+			t.Errorf("expected one template, got %d", len(matcher.UriTemplates))
+		}
+		if matcher.UriTemplates[0] != "foo" {
+			t.Errorf("expected template to be foo, found %s instead", matcher.UriTemplates[0])
+		}
+		if matcher.UriTemplates[1] != "bar" {
+			t.Errorf("expected template to be bar, found %s instead", matcher.UriTemplates[1])
 		}
 	})
 
 	t.Run("last event number from headers", func(t *testing.T) {
-		request, _ := http.NewRequest(http.MethodGet, "/stream?matcher=foo", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/sse?stream=foo", nil)
 		request.Header.Add("Accept", "text/event-stream")
 		request.Header.Add("Last-Fossil-Event-Number", "12")
 
@@ -107,7 +133,7 @@ func TestMatcherFromRequest(t *testing.T) {
 		// Fake the event number
 		events.SetEventNumber(&event, 10)
 
-		request, _ := http.NewRequest(http.MethodGet, "/stream?matcher=foo", nil)
+		request, _ := http.NewRequest(http.MethodGet, "/sse?stream=foo", nil)
 		request.Header.Add("Accept", "text/event-stream")
 		request.Header.Add("Last-Event-Id", event.ID())
 
