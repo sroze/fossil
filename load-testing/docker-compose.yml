@@ -11,16 +11,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+    - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
+
+  pghero:
+    image: ankane/pghero
+    environment:
+    - DATABASE_URL=postgres://fossil:fossil@postgres:5432/fossil
+    ports:
+    - "8081:8080"
+    depends_on:
+    - postgres
 
   fossil:
     image: sroze/fossil:latest
     environment:
-      SERVER_PORT: 80
-      DATABASE_URL: postgres://fossil:fossil@postgres/fossil
+    - SERVER_PORT=80
+    - DATABASE_URL=postgres://fossil:fossil@postgres/fossil
+    - LOGGING_LEVEL=info
     depends_on:
       - postgres
+    ports:
+    - "8080:80"
 
   influxdb:
     build: influxdb
