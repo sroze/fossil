@@ -1,8 +1,8 @@
 {
-  "name": "InfluxDB (cAdvisor)",
+  "name": "InfluxDB (Fossil)",
   "type": "influxdb",
   "url": "http://influxdb:8086",
   "access": "proxy",
-  "database": "cadvisor",
+  "database": "fossil",
   "basicAuth": false
 }

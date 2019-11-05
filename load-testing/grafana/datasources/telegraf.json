@@ -1,8 +1,8 @@
 {
-  "name": "InfluxDB (cAdvisor)",
+  "name": "InfluxDB (Telegraf)",
   "type": "influxdb",
   "url": "http://influxdb:8086",
   "access": "proxy",
-  "database": "cadvisor",
+  "database": "telegraf",
   "basicAuth": false
 }

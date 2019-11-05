@@ -77,8 +77,12 @@ services:
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
-      - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+      - /sys:/sys:ro
+# IF CentOS/RHEL, uncomment the following lines:
+#      - /cgroup:/cgroup:ro
+#      - /cgroup:/sys/fs/cgroup:ro
+#    privileged: true
     links:
       - influxdb
 

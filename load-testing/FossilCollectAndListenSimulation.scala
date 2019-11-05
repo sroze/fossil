@@ -18,7 +18,7 @@ class FossilCollectAndListenSimulation extends Simulation {
       .protocols(httpProtocol)
       .throttle(
         reachRps(100) in (1 minute),
-        holdFor(FiniteDuration),
+        holdFor(30 minutes),
       ),
     Consumer.listenEventsFor2Minutes.inject(
       rampUsers(50) during duration
