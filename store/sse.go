@@ -3,7 +3,9 @@ package store
 import (
 	"errors"
 	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/go-chi/chi"
+	"github.com/sirupsen/logrus"
 	"github.com/sroze/fossil/events"
 	"net/http"
 	"strconv"
@@ -59,6 +61,25 @@ func (r *SSERouter) Mount(router *chi.Mux) {
 	router.Get("/sse", r.StreamEvents)
 }
 
+func sendEventAsSSE(rw http.ResponseWriter, event cloudevents.Event) error {
+	_, err := fmt.Fprintf(rw, "id: %s\n", event.ID())
+	if err != nil {
+		return fmt.Errorf("error writing id: %s", err)
+	}
+
+	json, err := event.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON: %s", err)
+	}
+
+	_, err = fmt.Fprintf(rw, "data: %s\n\n", string(json))
+	if err != nil {
+		return fmt.Errorf("error sending data: %s", err)
+	}
+
+	return nil
+}
+
 func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	// Make sure that the writer supports flushing.
 	flusher, ok := rw.(http.Flusher)
@@ -82,20 +103,9 @@ func (r *SSERouter) StreamEvents(rw http.ResponseWriter, req *http.Request) {
 	stream := r.eventStreamFactory.NewEventStream(req.Context(), matcher)
 
 	for event := range stream {
-		_, err := fmt.Fprintf(rw, "id: %s\n", event.ID())
+		err := sendEventAsSSE(rw, event)
 		if err != nil {
-			fmt.Println("error writing id", err)
-			continue
-		}
-		json, err := event.MarshalJSON()
-		if err != nil {
-			fmt.Println("error marshaling JSON", err)
-			continue
-		}
-
-		_, err = fmt.Fprintf(rw, "data: %s\n\n", string(json))
-		if err != nil {
-			fmt.Println("error sending data", err)
+			logrus.Errorf("error sending SSE: %s", err)
 			continue
 		}
 

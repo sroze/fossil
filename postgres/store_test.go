@@ -4,7 +4,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/events"
 	"github.com/sroze/fossil/store"
@@ -17,7 +16,6 @@ func ExpectSequenceNumberDoNotMatchError(t *testing.T, err error) {
 	if err == nil {
 		t.Error("expected error while storing the event but got nothing")
 	} else if _, isSequenceNumberError := err.(*store.SequenceNumberDoNotMatchError); !isSequenceNumberError {
-		fmt.Println(err)
 		t.Errorf("expected error to be a SequenceNumberDoNotMatchError error but found %T", err)
 	}
 }

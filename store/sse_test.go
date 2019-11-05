@@ -3,7 +3,6 @@ package store
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/concurrency"
 	"github.com/sroze/fossil/events"
@@ -56,7 +55,6 @@ func TestSimpleEventStreaming(t *testing.T) {
 		// Receive an event
 		received := <-stream
 		if received.ID != event.ID() {
-			fmt.Println(received)
 			t.Errorf("received ID '%s' is different from sent '%s'", received.ID, event.ID())
 		}
 

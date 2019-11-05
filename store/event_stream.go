@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/sirupsen/logrus"
 	"github.com/sroze/fossil/concurrency"
 	"github.com/sroze/fossil/events"
 )
@@ -24,6 +25,10 @@ func NewEventStreamFactory(loader EventLoader) *EventStreamFactory {
 }
 
 func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
+	l := logrus.WithFields(logrus.Fields{
+		"matcher": matcher,
+	})
+
 	subscription := f.Broadcaster.NewSubscriber()
 	channel := make(chan cloudevents.Event)
 
@@ -34,16 +39,18 @@ func (f *EventStreamFactory) NewEventStream(ctx context.Context, matcher events.
 		f.Broadcaster.RemoveSubscriber(subscription)
 	}()
 
-	existingEvents := f.loader.MatchingStream(ctx, matcher)
 	go func() {
 		var lastEventNumberReceived = 0
 
+		l.Info("loading previously stored events")
+		existingEvents := f.loader.MatchingStream(ctx, matcher)
 		for event := range existingEvents {
 			channel <- event
 
 			lastEventNumberReceived = events.GetEventNumber(event)
 		}
 
+		l.Info("broadcasting newly collected events")
 		for event := range subscription {
 			if !events.EventMatches(event, matcher) {
 				continue

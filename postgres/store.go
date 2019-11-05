@@ -2,9 +2,9 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	"github.com/cloudevents/sdk-go"
 	"github.com/jackc/pgx"
+	"github.com/sirupsen/logrus"
 	"github.com/sroze/fossil/events"
 	"github.com/sroze/fossil/store"
 	"strings"
@@ -138,13 +138,17 @@ func (s *Storage) Store(ctx context.Context, stream string, event *cloudevents.E
 }
 
 func (s *Storage) MatchingStream(ctx context.Context, matcher events.Matcher) chan cloudevents.Event {
+	l := logrus.WithFields(logrus.Fields{
+		"matcher": matcher,
+	})
 	channel := make(chan cloudevents.Event)
 
 	go func() {
 		query, args := buildSelectQuery(matcher)
 		rows, err := s.conn.QueryEx(ctx, query, nil, args...)
 		if err != nil {
-			fmt.Println("error went loading historical events", err)
+			l.Errorf("error went loading historical events: %s", err)
+
 			close(channel)
 			return
 		}
@@ -164,7 +168,7 @@ func (s *Storage) MatchingStream(ctx context.Context, matcher events.Matcher) ch
 
 		// Any errors encountered by rows.Next or rows.Scan will be returned here
 		if rows.Err() != nil {
-			fmt.Println("error going through rows", err)
+			l.Errorf("error going through rows: %s", err)
 		}
 
 		close(channel)

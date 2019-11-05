@@ -2,9 +2,9 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/jackc/pgx"
+	"github.com/sirupsen/logrus"
 )
 
 type Consumer struct {
@@ -23,8 +23,7 @@ func NewConsumer(url string) (*Consumer, error) {
 func (c *Consumer) ConsumeFor(channel chan cloudevents.Event) {
 	_, err := c.conn.ExecEx(context.Background(), "listen messages", nil)
 	if err != nil {
-		fmt.Println("could not initiate messages listener", err)
-
+		logrus.Errorf("could not initiate messages listener: %s", err)
 		return
 	}
 
@@ -37,7 +36,7 @@ func (c *Consumer) ConsumeFor(channel chan cloudevents.Event) {
 			err := event.UnmarshalJSON([]byte(notification.Payload))
 
 			if err != nil {
-				fmt.Println("could not de-serialize event", err)
+				logrus.Errorf("could not de-serialize event: %s", err)
 				continue
 			}
 

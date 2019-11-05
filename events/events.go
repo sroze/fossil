@@ -2,9 +2,9 @@ package events
 
 import (
 	"encoding/json"
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
+	"github.com/sirupsen/logrus"
 	"github.com/yosida95/uritemplate"
 	"strings"
 )
@@ -70,6 +70,11 @@ func IsReplacingAnotherEvent(event cloudevents.Event) bool {
 }
 
 func getStringFromExtension(event cloudevents.Event, extensionName string) string {
+	l := logrus.WithFields(logrus.Fields{
+		"event":         event,
+		"extensionName": extensionName,
+	})
+
 	extension := event.Extensions()[extensionName]
 
 	var s string
@@ -78,7 +83,9 @@ func getStringFromExtension(event cloudevents.Event, extensionName string) strin
 		err := json.Unmarshal(v, &s)
 
 		if err != nil {
-			panic(err)
+			l.Panicf("could not unmarshal extension value: %s", err)
+
+			return ""
 		}
 
 		return s
@@ -86,7 +93,7 @@ func getStringFromExtension(event cloudevents.Event, extensionName string) strin
 
 	s, err := types.ToString(extension)
 	if err != nil {
-		panic(fmt.Errorf("could not get string for extension %s | %s | %s", extensionName, event, err))
+		l.Panicf("could not get string for extension: %s", err)
 	}
 
 	return s
@@ -101,7 +108,12 @@ func getIntegerFromExtension(event cloudevents.Event, extensionName string) int 
 		err := json.Unmarshal(v, &n)
 
 		if err != nil {
-			panic(err)
+			logrus.WithFields(logrus.Fields{
+				"event":         event,
+				"extensionName": extensionName,
+			}).Panicf("could not unmarshal integer: %s", err)
+
+			return 0
 		}
 
 		return n
@@ -121,7 +133,7 @@ func EventMatches(event cloudevents.Event, matcher Matcher) bool {
 	for _, template := range matcher.UriTemplates {
 		template, err := uritemplate.New(template)
 		if err != nil {
-			fmt.Println("ERROR", err)
+			logrus.WithField("matcher", matcher).Errorf("URI template is invalid: %s", err.Error())
 			continue
 		}
 

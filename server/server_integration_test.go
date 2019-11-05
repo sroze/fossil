@@ -320,7 +320,6 @@ func TestWithDatabase(t *testing.T) {
 		go func() {
 			err := StreamAndCommit(firstContext, consumerName, matcher, allEvents)
 			if err != nil {
-				fmt.Println("medre", err)
 				t.Error(err)
 			}
 		}()
@@ -328,7 +327,6 @@ func TestWithDatabase(t *testing.T) {
 		go func() {
 			err := StreamAndCommit(context.Background(), consumerName, matcher, allEvents)
 			if err != nil {
-				fmt.Println("medre", err)
 				t.Error(err)
 			}
 		}()
@@ -387,7 +385,6 @@ func TestWithDatabase(t *testing.T) {
 			})
 
 			if collectResponse.StatusCode > 300 {
-				fmt.Println("Collect error", collectResponse)
 				t.Errorf("Collect returned response code %d", collectResponse.StatusCode)
 			}
 		}()

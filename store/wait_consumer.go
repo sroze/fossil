@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
@@ -55,8 +54,7 @@ func (cwr *ConsumerWaiterRouter) Ack(rw http.ResponseWriter, req *http.Request) 
 	eventId := chi.URLParam(req, "id")
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		fmt.Printf("failed to handle request: %s", err)
-		rw.WriteHeader(http.StatusBadRequest)
+		rw.WriteHeader(http.StatusInternalServerError)
 		_, _ = rw.Write([]byte(`{"error":"Invalid request"}`))
 		return
 	}
@@ -64,7 +62,6 @@ func (cwr *ConsumerWaiterRouter) Ack(rw http.ResponseWriter, req *http.Request) 
 	ack := EventAcknowledgment{}
 	err = json.Unmarshal(body, &ack)
 	if err != nil {
-		fmt.Printf("failed to decode message request: %s", err)
 		rw.WriteHeader(http.StatusBadRequest)
 		_, _ = rw.Write([]byte(`{"error":"Invalid request"}`))
 		return

@@ -2,10 +2,8 @@ package server
 
 import (
 	"fmt"
-	"github.com/go-chi/chi"
 	"github.com/sroze/fossil/postgres"
 	"github.com/sroze/fossil/store"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -39,14 +37,6 @@ func StartServer() error {
 		postgres.NewLock(pool),
 		os.Getenv("JWT_SECRET"),
 	)
-
-	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
-		log.Printf("%s %s\n", method, route) // Walk and print out all routes
-		return nil
-	}
-	if err := chi.Walk(router, walkFunc); err != nil {
-		return err
-	}
 
 	port, err := strconv.Atoi(os.Getenv("SERVER_PORT"))
 	if err != nil {

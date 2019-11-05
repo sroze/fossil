@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go"
 	httpcloudevents "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
 	"github.com/go-chi/chi"
@@ -33,8 +32,7 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		fmt.Printf("failed to handle request: %s", err)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
 		return
 	}
@@ -44,7 +42,6 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 		Body:   body,
 	})
 	if err != nil {
-		fmt.Printf("failed to handle request: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
 		return
@@ -52,7 +49,6 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 
 	err = event.Validate()
 	if err != nil {
-		fmt.Printf("failed to handle request: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(`{"error":"Invalid request"}`))
 		return
@@ -126,7 +122,6 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 			_, _ = w.Write([]byte(`{"error":"Event sequence did not match."}`))
 			return
 		} else {
-			fmt.Printf("failed to collect event: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
 			return
@@ -148,7 +143,6 @@ func (r *CollectorRouter) CollectEvent(w http.ResponseWriter, request *http.Requ
 				return
 			}
 
-			fmt.Printf("failed to wait for consumer: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(`{"error":"Something went wrong."}`))
 		}
