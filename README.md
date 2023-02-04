@@ -1,4 +1,4 @@
-# 🪨 Fossil 
+# 🪨 Fossil
 
 Event sourcing made simple, for your frontends and backends.
 

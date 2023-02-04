@@ -1,4 +1,4 @@
-import {MagnifyingGlassIcon} from "@heroicons/react/20/solid";
+import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 
 export const SearchBar = () => (
   <div className="flex flex-1 justify-center lg:justify-end">

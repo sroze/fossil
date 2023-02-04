@@ -1,24 +1,23 @@
-import {MagnifyingGlassIcon} from "@heroicons/react/20/solid";
-import {Menu, Transition} from "@headlessui/react";
-import {ProfilePicture} from "../components/profile-picture";
-import {Fragment} from "react";
-import {classNames} from "../../remix-utils/front-end";
-import {useLoaderData} from "@remix-run/react";
-import {LoaderParamsWithAuthentication} from "../../identity-and-authorization/remix-utils.server";
-import md5 from "md5";
+import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
+import { Menu, Transition } from '@headlessui/react';
+import { ProfilePicture } from '../components/profile-picture';
+import { Fragment } from 'react';
+import { classNames } from '../../remix-utils/front-end';
+import { useLoaderData } from '@remix-run/react';
+import { LoaderParamsWithAuthentication } from '../../identity-and-authorization/remix-utils.server';
+import md5 from 'md5';
 
-const userNavigation = [
-  { name: "Sign out", href: "/auth/logout" },
-];
+const userNavigation = [{ name: 'Sign out', href: '/auth/logout' }];
 
 export function Navbar() {
   const { profile } = useLoaderData<LoaderParamsWithAuthentication>();
 
-  const profilePictureUrl = profile.photos && profile.photos.length > 0
-    ? profile.photos[0].value
-    : (profile.emails ? `https://www.gravatar.com/avatar/${md5(
-      profile.emails[0].value
-    )}` : 'https://picsum.photos/id/27/40/40');
+  const profilePictureUrl =
+    profile.photos && profile.photos.length > 0
+      ? profile.photos[0].value
+      : profile.emails
+      ? `https://www.gravatar.com/avatar/${md5(profile.emails[0].value)}`
+      : 'https://picsum.photos/id/27/40/40';
 
   return (
     <nav className="flex-shrink-0 bg-indigo-600">
@@ -68,8 +67,8 @@ export function Navbar() {
                           <a
                             href={item.href}
                             className={classNames(
-                              active ? "bg-gray-100" : "",
-                              "block px-4 py-2 text-sm text-gray-700"
+                              active ? 'bg-gray-100' : '',
+                              'block px-4 py-2 text-sm text-gray-700'
                             )}
                           >
                             {item.name}
@@ -85,5 +84,5 @@ export function Navbar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }

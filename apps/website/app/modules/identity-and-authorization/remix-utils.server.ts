@@ -1,10 +1,6 @@
-import {
-  ActionFunction,
-  DataFunctionArgs,
-  json,
-} from "@remix-run/node";
-import {authenticationIsEnabled, authenticator} from "./authenticator.server";
-import type {Auth0Profile} from "remix-auth-auth0";
+import { ActionFunction, DataFunctionArgs, json } from '@remix-run/node';
+import { authenticationIsEnabled, authenticator } from './authenticator.server';
+import type { Auth0Profile } from 'remix-auth-auth0';
 
 export type LoaderParamsWithAuthentication = {
   profile: Auth0Profile;
@@ -16,8 +12,8 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
 ): Promise<(ReturnType & LoaderParamsWithAuthentication) | Response> {
   const profile: Auth0Profile = authenticationIsEnabled()
     ? await authenticator.isAuthenticated(args.request, {
-      failureRedirect: "/auth/login",
-    })
+        failureRedirect: '/auth/login',
+      })
     : developmentProfile;
 
   if (loader) {
@@ -39,7 +35,7 @@ export function actionWithAuthorization(action: ActionFunction) {
   return async (args: DataFunctionArgs) => {
     if (authenticationIsEnabled()) {
       await authenticator.isAuthenticated(args.request, {
-        failureRedirect: "/auth/login",
+        failureRedirect: '/auth/login',
       });
     }
 
@@ -48,15 +44,14 @@ export function actionWithAuthorization(action: ActionFunction) {
 }
 
 const developmentProfile: Auth0Profile = {
-  id: "00000000-0000-0000-0000-000000000000",
-  name: { givenName: "Software", familyName: "Engineer" },
-  displayName: "Developer",
-  emails: [{ value: "engineer@example.com" }],
+  id: '00000000-0000-0000-0000-000000000000',
+  name: { givenName: 'Software', familyName: 'Engineer' },
+  displayName: 'Developer',
+  emails: [{ value: 'engineer@example.com' }],
   photos: [
     {
-      value:
-        "https://eu.ui-avatars.com/api/?name=Software+Engineer&size=250",
+      value: 'https://eu.ui-avatars.com/api/?name=Software+Engineer&size=250',
     },
   ],
-  provider: "auth0",
+  provider: 'auth0',
 };

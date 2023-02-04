@@ -1,22 +1,20 @@
-import {loaderWithAuthorization} from "../modules/identity-and-authorization/remix-utils.server";
-import {LoaderFunction} from "@remix-run/node";
-import {Navbar} from "../modules/layout/organisms/Navbar";
+import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
+import { LoaderFunction } from '@remix-run/node';
+import { Navbar } from '../modules/layout/organisms/Navbar';
 
 type LoaderData = {};
 
-export const loader: LoaderFunction = args => loaderWithAuthorization<LoaderData>(args, async () => {
-  return {};
-});
+export const loader: LoaderFunction = (args) =>
+  loaderWithAuthorization<LoaderData>(args, async () => {
+    return {};
+  });
 
 export default function Index() {
   return (
-    <>
-      <div className="relative flex min-h-screen flex-col">
-        {/* Navbar */}
-        <Navbar />
-
-
-      </div>
-    </>
-  )
+    <div className="relative flex min-h-screen flex-col">
+      {/* Navbar */}
+      <Navbar />
+      // TODO: Create a store. // TODO: Create a subscription.
+    </div>
+  );
 }
