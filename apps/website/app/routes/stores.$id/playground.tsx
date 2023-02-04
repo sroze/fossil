@@ -5,6 +5,8 @@ import { WriteEventSlider } from '../../modules/playground/components/write-even
 import { useState } from 'react';
 import { useLoaderData, useLocation } from '@remix-run/react';
 import { json, LoaderFunction } from '@remix-run/node';
+import { useSubscription } from '../../modules/playground/hooks/useSubscription';
+import type { EventOverTheWire } from '../api.stores.$id/subscribe';
 
 type LoaderData = {
   store_id: string;
@@ -17,8 +19,10 @@ export const loader: LoaderFunction = ({ params }) =>
 
 export default function Playground() {
   const { store_id } = useLoaderData<LoaderData>();
+  const events = useSubscription<EventOverTheWire>(
+    `/api/stores/${store_id}/subscribe`
+  );
   const [slider, setSlider] = useState<boolean>(false);
-  const events = [];
 
   return (
     <>
@@ -49,12 +53,24 @@ export default function Playground() {
           <Table>
             <Table.Header>
               <Table.Header.Column>#</Table.Header.Column>
+              <Table.Header.Column>Time</Table.Header.Column>
               <Table.Header.Column>Stream</Table.Header.Column>
-              <Table.Header.Column>Event Type</Table.Header.Column>
-              <Table.Header.Column>??</Table.Header.Column>
-              <Table.Header.Column />
+              <Table.Header.Column>Position</Table.Header.Column>
+              <Table.Header.Column>Type</Table.Header.Column>
+              <Table.Header.Column>Payload</Table.Header.Column>
             </Table.Header>
-            <Table.Body></Table.Body>
+            <Table.Body>
+              {events.map((event, i) => (
+                <tr key={event.id}>
+                  <Table.Column>{event.id}</Table.Column>
+                  <Table.Column>{event.time}</Table.Column>
+                  <Table.Column>{event.stream_name}</Table.Column>
+                  <Table.Column>{event.position}</Table.Column>
+                  <Table.Column>{event.type}</Table.Column>
+                  <Table.Column>{event.data}</Table.Column>
+                </tr>
+              ))}
+            </Table.Body>
           </Table>
         )}
       </div>

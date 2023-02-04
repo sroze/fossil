@@ -1,6 +1,7 @@
 import { DataFunctionArgs, json } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
+import { fossilEventStore } from '../../modules/event-store/store.backend';
 
 function isJsonString(string: string) {
   try {
@@ -20,17 +21,19 @@ export const writeEventValidator = withZod(
       (arg) => (typeof arg === 'string' ? isJsonString(arg) : false),
       { message: 'Must be a valid JSON object.' }
     ),
-    expected_version: z.preprocess((val) => {
-      if (typeof val === 'string') {
-        return val === '' ? undefined : parseInt(val, 10);
-      }
-
-      return val;
-    }, z.number().optional()),
+    expected_version: z
+      .string()
+      .regex(/^-?[0-9]*$/)
+      .optional(),
   })
 );
 
-export async function action({ request }: DataFunctionArgs) {
+export type SuccessfulWriteResponse = {
+  position: string;
+  global_position: string;
+};
+
+export async function action({ request, params }: DataFunctionArgs) {
   const { data, error } = await writeEventValidator.validate(
     await request.formData()
   );
@@ -39,10 +42,20 @@ export async function action({ request }: DataFunctionArgs) {
     return json(error, 400);
   }
 
-  // FIXME: todo.
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  // For the MVP, we use the exact same store...
+  const appendResult = await fossilEventStore.appendEvents(
+    data.stream,
+    [
+      {
+        type: data.type,
+        data: data.data,
+      },
+    ],
+    data.expected_version ? BigInt(data.expected_version) : null
+  );
 
-  return json({
-    data,
+  return json<SuccessfulWriteResponse>({
+    position: appendResult.position.toString(),
+    global_position: appendResult.global_position.toString(),
   });
 }

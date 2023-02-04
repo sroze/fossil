@@ -9,7 +9,10 @@ import { SliderTitle } from '../../design-system/slider.title';
 import { useFetcher } from '@remix-run/react';
 import { ValidatedForm, validationError } from 'remix-validated-form';
 import { FormInput, TextAreaInput } from '../../zod-forms/input';
-import { writeEventValidator } from '../../../routes/api.stores.$id/write';
+import {
+  SuccessfulWriteResponse,
+  writeEventValidator,
+} from '../../../routes/api.stores.$id/write';
 import { SubmitButton } from '../../zod-forms/submit-button';
 
 export const WriteEventSlider: React.FC<
@@ -17,7 +20,8 @@ export const WriteEventSlider: React.FC<
     storeId: string;
   }
 > = ({ storeId, open, onClose }) => {
-  const writer = useFetcher();
+  // FIXME: At the moment, we can't catch errors properly (see https://github.com/remix-run/remix/discussions/4242)
+  const writer = useFetcher<SuccessfulWriteResponse>();
 
   return (
     <Slider open={open} onClose={onClose}>
@@ -82,6 +86,11 @@ export const WriteEventSlider: React.FC<
           </div>
         </div>
         <div className="flex flex-shrink-0 justify-end px-4 py-4">
+          {writer.data ? (
+            <div className="pt-2 text-green-700 flex-1 text-sm">
+              ✔️ Wrote event at position {writer.data.position}
+            </div>
+          ) : null}
           <button
             type="button"
             className="rounded-md border mr-4 border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"

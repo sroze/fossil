@@ -3,35 +3,14 @@ import { context, propagation } from '@opentelemetry/api';
 import { literal } from 'pg-format';
 import { suppressTracing } from '@opentelemetry/core';
 import { v4 } from 'uuid';
+import {
+  AppendResult,
+  EventToWrite,
+  EventInStore,
+  IEventStore,
+} from '../interfaces';
 
 export class WrongExpectedVersionError extends Error {}
-
-export type EventToWrite = {
-  /* optional id for the event */
-  id?: string;
-  type: string;
-  data: any;
-  metadata?: any;
-};
-
-export type TimelineEvent = {
-  id: string;
-  time: Date;
-  type: string;
-  data: any;
-  metadata: any;
-  stream_name: string;
-  position: bigint;
-  global_position: bigint;
-};
-
-export type AppendResult = {
-  /* The new position of the stream */
-  position: bigint;
-
-  /* The new global order. Useful for cache busting  */
-  global_position: bigint;
-};
 
 const sql = (parts: TemplateStringsArray, ...values: any[]) => {
   let text = '';
@@ -48,7 +27,7 @@ export class MessageDbClient {
     streamName: string,
     messages: EventToWrite[],
     expectedVersion: bigint | null
-  ) {
+  ): Promise<AppendResult> {
     const queryParts = ['BEGIN;'];
     for (let i = 0; i < messages.length; ++i) {
       const message = messages[i];
@@ -103,9 +82,9 @@ export class MessageDbClient {
 
   async getStreamMessages(
     streamName: string,
-    fromPosition = 0n,
-    maxCount = 1000
-  ): Promise<TimelineEvent[]> {
+    fromPosition: bigint,
+    maxCount: number
+  ): Promise<EventInStore[]> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -118,25 +97,10 @@ export class MessageDbClient {
     }
   }
 
-  async getLastStreamMessage(
-    streamName: string
-  ): Promise<TimelineEvent | undefined> {
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(
-        'select * from get_last_stream_message($1)',
-        [streamName]
-      );
-      return result.rows.map(fromDb)[0];
-    } finally {
-      client.release();
-    }
-  }
-
   async getCategoryMessages(
     category: string,
     fromPosition: bigint,
-    maxCount = 1000
+    maxCount: number
   ) {
     const client = await this.pool.connect();
     try {
@@ -145,6 +109,22 @@ export class MessageDbClient {
         [category, String(fromPosition), maxCount]
       );
       return result.rows.map(fromDb);
+    } finally {
+      client.release();
+    }
+  }
+
+  async getLastStreamMessage(
+    streamName: string,
+    type?: string
+  ): Promise<EventInStore | undefined> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        'select * from get_last_stream_message($1, $2)',
+        [streamName, type || null]
+      );
+      return result.rows.map(fromDb)[0];
     } finally {
       client.release();
     }
@@ -164,7 +144,7 @@ export class MessageDbClient {
   }
 }
 
-function fromDb(row: any): TimelineEvent {
+function fromDb(row: any): EventInStore {
   return {
     id: row.id,
     stream_name: row.stream_name,

@@ -1,7 +1,8 @@
-import { MessageDbClient } from '../event-store/message-db/client';
 import { v4 } from 'uuid';
 import { StoreCreated } from './events';
 import { Store } from './store';
+import { IEventStore } from '../event-store/interfaces';
+import { accumulate } from '../event-store/accumulate';
 
 // Commands
 type CreateServiceCommand = {
@@ -10,7 +11,7 @@ type CreateServiceCommand = {
 };
 
 export class StoreService {
-  constructor(private readonly client: MessageDbClient) {}
+  constructor(private readonly client: IEventStore) {}
 
   async create(command: CreateServiceCommand): Promise<string> {
     const identifier = v4();
@@ -23,20 +24,15 @@ export class StoreService {
       },
     };
 
-    await this.client.writeMessages(`Store-${identifier}`, [created], -1n);
+    await this.client.appendEvents(`Store-${identifier}`, [created], -1n);
 
     return identifier;
   }
 
   async load(identifier: string): Promise<Store> {
-    const events = await this.client.getStreamMessages(
-      `Store-${identifier}`,
-      0n,
-      1000
+    const events = await accumulate(
+      this.client.readStream(`Store-${identifier}`, 0n)
     );
-    if (events.length == 1000) {
-      throw new Error(`You've done a lot, talk to our support team.`);
-    }
 
     // @ts-ignore don't worry!
     return new Store(events);

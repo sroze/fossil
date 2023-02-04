@@ -22,6 +22,7 @@
     "react-dom": "^17.0.2",
     "remix-auth": "^3.4.0",
     "remix-auth-auth0": "^1.5.1",
+    "remix-utils": "^6.0.0",
     "remix-validated-form": "^4.6.8",
     "zod": "^3.20.2"
   },
