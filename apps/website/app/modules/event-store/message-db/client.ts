@@ -2,12 +2,13 @@ import { Pool } from 'pg';
 import { context, propagation } from '@opentelemetry/api';
 import { literal } from 'pg-format';
 import { suppressTracing } from '@opentelemetry/core';
+import { v4 } from 'uuid';
 
 export class WrongExpectedVersionError extends Error {}
 
-export type StreamEvent = {
+export type EventToWrite = {
   /* optional id for the event */
-  id: string;
+  id?: string;
   type: string;
   data: any;
   metadata?: any;
@@ -45,7 +46,7 @@ export class MessageDbClient {
 
   async writeMessages(
     streamName: string,
-    messages: StreamEvent[],
+    messages: EventToWrite[],
     expectedVersion: bigint | null
   ) {
     const queryParts = ['BEGIN;'];
@@ -55,7 +56,7 @@ export class MessageDbClient {
       propagation.inject(context.active(), metadata);
       queryParts.push(sql`select *
                           from write_message(
-                            ${message.id},
+                            ${message.id || v4()},
                             ${streamName},
                             ${message.type},
                             ${JSON.stringify(message.data)},
