@@ -1,4 +1,9 @@
-import { DataFunctionArgs, json, LoaderFunction } from '@remix-run/node';
+import {
+  DataFunctionArgs,
+  json,
+  LoaderFunction,
+  redirect,
+} from '@remix-run/node';
 import { useActionData } from '@remix-run/react';
 import { withZod } from '@remix-validated-form/with-zod';
 import { ValidatedForm, validationError } from 'remix-validated-form';
@@ -7,6 +12,8 @@ import { SubmitButton } from '../modules/zod-forms/submit-button';
 import { FormInput } from '../modules/zod-forms/input';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
+import { StoreService } from '../modules/stores/service';
+import { fossilEventStore } from '../modules/event-store/store.backend';
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization(args, async () => {
@@ -15,7 +22,9 @@ export const loader: LoaderFunction = (args) =>
 
 export const validator = withZod(
   z.object({
-    name: z.string().min(1, { message: 'The name of the store' }),
+    name: z
+      .string()
+      .min(3, { message: "Store's name must be at least 3 letters" }),
     region: z.enum(['london']),
   })
 );
@@ -27,15 +36,13 @@ export const action = async ({ request }: DataFunctionArgs) => {
     return validationError(error);
   }
 
-  //
-  // TODO: Write in `stream` for this account?
+  const service = new StoreService(fossilEventStore);
+  const identifier = await service.create(data);
 
-  return json(data);
+  return redirect(`/stores/${identifier}`);
 };
 
 export default function Demo() {
-  const data = useActionData();
-
   return (
     <div className="relative flex min-h-full flex-col">
       {/* Navbar */}
@@ -71,8 +78,6 @@ export default function Demo() {
                   <input type="hidden" name="region" value="london" />
 
                   <SubmitButton>Create</SubmitButton>
-
-                  {data ? <pre>{JSON.stringify(data)}</pre> : null}
                 </ValidatedForm>
               </div>
             </div>

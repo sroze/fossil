@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  postgres:
+    image: 'postgres:15'
+    environment:
+      POSTGRES_DB: fossil
+      POSTGRES_USER: fossil
+      POSTGRES_PASSWORD: fossil
+    ports:
+      - '5432:5432'
