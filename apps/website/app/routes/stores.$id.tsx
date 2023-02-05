@@ -4,6 +4,7 @@ import {
   CircleStackIcon,
   FireIcon,
   HomeIcon,
+  QueueListIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/solid';
 import { StoreState } from '../modules/stores/store';
@@ -32,6 +33,11 @@ export default function Store() {
 
   const navigation = [
     { name: 'Overview', href: `/stores/${store.id}`, icon: HomeIcon },
+    {
+      name: 'Streams',
+      href: `/stores/${store.id}/streams`,
+      icon: QueueListIcon,
+    },
     {
       name: 'Playground',
       href: `/stores/${store.id}/playground`,
