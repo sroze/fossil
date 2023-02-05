@@ -25,7 +25,7 @@ export default function Security() {
 
   return (
     <div className="p-5">
-      <H2>Public keys</H2>
+      <H2>Encryption keys</H2>
       <div>
         Keys are used to sign tokens to be able to read & write from the store.
       </div>

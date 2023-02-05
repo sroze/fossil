@@ -4,12 +4,12 @@ import { Slider, SliderProps } from '../../design-system/slider';
 import { SliderTitle } from '../../design-system/slider.title';
 import { useFetcher } from '@remix-run/react';
 import { ValidatedForm } from 'remix-validated-form';
-import { FormInput, TextAreaInput } from '../../zod-forms/input';
+import { FormInput, TextAreaInput } from '../../zod-forms/components/input';
 import {
   SuccessfulWriteResponse,
   writeEventValidator,
 } from '../../../routes/api.stores.$id/write';
-import { SubmitButton } from '../../zod-forms/submit-button';
+import { SubmitButton } from '../../zod-forms/components/submit-button';
 
 export const WriteEventSlider: React.FC<
   SliderProps & {

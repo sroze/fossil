@@ -1,7 +1,6 @@
 import { AnyStoreEvent, StoreCreated } from './events';
-import { JWK } from 'node-jose';
-import RawKey = JWK.RawKey;
 import { EventWithWrittenMetadata } from '../../event-store/interfaces';
+import { PrivateKey, PublicKey } from '../../security/interfaces';
 
 export type StoreState = {
   id: string;
@@ -10,7 +9,8 @@ export type StoreState = {
     id: string;
     name: string;
     type: 'hosted' | 'private';
-    public_key: RawKey;
+    public_key: PublicKey;
+    private_key?: PrivateKey;
     added_at: string;
   }[];
 };
@@ -44,10 +44,8 @@ export class Store {
 
         this.state.jwks.push({
           id: data.key_id,
-          name: data.name,
           added_at: time.toISOString(),
-          public_key: data.public_key,
-          type: data.type,
+          ...data,
         });
       } else if (type === 'KeyDeleted') {
         this.state.jwks = this.state.jwks.filter(

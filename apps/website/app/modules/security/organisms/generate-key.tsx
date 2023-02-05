@@ -1,34 +1,16 @@
 import { useFetcher } from '@remix-run/react';
 import { ValidatedForm } from 'remix-validated-form';
 import React from 'react';
-import { FormInput } from '../../zod-forms/input';
-import { SubmitButton } from '../../zod-forms/submit-button';
+import { FormInput } from '../../zod-forms/components/input';
+import { SubmitButton } from '../../zod-forms/components/submit-button';
 import {
   generateKeyValidator,
   SuccessfulGenerateKeyResponse,
 } from '../../../routes/api.stores.$id/keys.generate';
-import { PrimaryButton, SecondaryButton } from '../../design-system/buttons';
+import { PrimaryButton } from '../../design-system/buttons';
 import { LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
-import { RadioFieldset } from '../../zod-forms/radio-fieldset';
-
-function downloadFile(file: File) {
-  // Create a link and set the URL using `createObjectURL`
-  const link = document.createElement('a');
-  link.style.display = 'none';
-  link.href = URL.createObjectURL(file);
-  link.download = file.name;
-
-  // It needs to be added to the DOM so it can be clicked
-  document.body.appendChild(link);
-  link.click();
-
-  // To make this work on Firefox we need to wait
-  // a little while before removing it.
-  setTimeout(() => {
-    URL.revokeObjectURL(link.href);
-    link.parentNode?.removeChild(link);
-  }, 0);
-}
+import { RadioFieldset } from '../../zod-forms/components/radio-fieldset';
+import { downloadFile } from '../utils/react';
 
 export const GenerateKeyForm: React.FC<{
   store_id: string;

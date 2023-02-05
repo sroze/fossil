@@ -5,18 +5,36 @@ import { useLoaderData, useLocation } from '@remix-run/react';
 import { json, LoaderFunction } from '@remix-run/node';
 import { EventsStream } from '../../modules/playground/components/events-stream';
 import { H2 } from '../../modules/design-system/h2';
+import { GenerateToken } from '../../modules/security/organisms/generate-token';
+import { LoaderFunctionArgs } from '@remix-run/router';
+import { StoreService } from '../../modules/stores/service';
+import { StoreState } from '../../modules/stores/domain/store';
+import { NoHostedKey } from '../../modules/playground/components/empty-state';
+import { ButtonAndPopup } from '../../modules/design-system/button-and-popup';
+
+export type KeySummary = { id: string; name: string };
 
 type LoaderData = {
-  store_id: string;
+  store: StoreState;
+  hosted_keys: KeySummary[];
 };
 
-export const loader: LoaderFunction = ({ params }) =>
-  json<LoaderData>({
-    store_id: params.id!,
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { state: store } = await StoreService.resolve().load(params.id!);
+
+  return json<LoaderData>({
+    store,
+    hosted_keys: store.jwks
+      .filter((key) => key.type === 'hosted')
+      .map(({ id, name }) => ({
+        id,
+        name,
+      })),
   });
+}
 
 export default function Playground() {
-  const { store_id } = useLoaderData<LoaderData>();
+  const { store, hosted_keys } = useLoaderData<LoaderData>();
   const [slider, setSlider] = useState<boolean>(false);
 
   return (
@@ -24,7 +42,7 @@ export default function Playground() {
       <WriteEventSlider
         open={slider}
         onClose={() => setSlider(false)}
-        storeId={store_id}
+        storeId={store.id}
       />
 
       <div className="pt-5">
@@ -40,7 +58,24 @@ export default function Playground() {
           descending order (i.e. latest first).
         </div>
 
-        <EventsStream uri={`/api/stores/${store_id}/subscribe`} />
+        <EventsStream uri={`/api/stores/${store.id}/subscribe`} />
+
+        <H2>Generate a token</H2>
+        <div>To write events programmatically, generate a token.</div>
+
+        <ButtonAndPopup title="Generate a token">
+          {hosted_keys.length > 0 ? (
+            <GenerateToken
+              store_id={store.id}
+              key_options={hosted_keys.map((key) => ({
+                value: key.id,
+                label: key.name,
+              }))}
+            />
+          ) : (
+            <NoHostedKey store_id={store.id} />
+          )}
+        </ButtonAndPopup>
       </div>
     </>
   );

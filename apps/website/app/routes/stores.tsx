@@ -2,8 +2,8 @@ import { DataFunctionArgs, LoaderFunction, redirect } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { ValidatedForm, validationError } from 'remix-validated-form';
 import { z } from 'zod';
-import { SubmitButton } from '../modules/zod-forms/submit-button';
-import { FormInput } from '../modules/zod-forms/input';
+import { SubmitButton } from '../modules/zod-forms/components/submit-button';
+import { FormInput } from '../modules/zod-forms/components/input';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
@@ -13,7 +13,7 @@ export const loader: LoaderFunction = (args) =>
     return {};
   });
 
-export const validator = withZod(
+export const generateStoreValidator = withZod(
   z.object({
     name: z
       .string()
@@ -23,7 +23,9 @@ export const validator = withZod(
 );
 
 export const action = async ({ request }: DataFunctionArgs) => {
-  const { data, error } = await validator.validate(await request.formData());
+  const { data, error } = await generateStoreValidator.validate(
+    await request.formData()
+  );
 
   if (error) {
     return validationError(error);
@@ -65,7 +67,7 @@ export default function Demo() {
 
             <div className="mt-8">
               <div className="mt-6">
-                <ValidatedForm validator={validator} method="post">
+                <ValidatedForm validator={generateStoreValidator} method="post">
                   <FormInput className="mb-5" name="name" label="Name" />
                   <input type="hidden" name="region" value="london" />
 

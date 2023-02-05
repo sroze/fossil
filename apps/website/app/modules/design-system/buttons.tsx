@@ -1,6 +1,9 @@
 import { classNames } from '../remix-utils/front-end';
 import React from 'react';
 
+export const buttonClassNames = (): string =>
+  'inline-flex items-center rounded-md border font-medium  shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2';
+
 export const sizeClassNames = (size: 'small' | 'medium'): string =>
   size === 'small' ? 'mr-2 px-2.5 py-1.5 text-xs' : 'mr-3 py-2 px-4 text-sm';
 
@@ -20,7 +23,7 @@ export const PrimaryButton: React.FC<{
     type={type || 'button'}
     onClick={onClick}
     className={classNames(
-      'inline-flex justify-center rounded-md border font-medium  shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
+      buttonClassNames(),
       sizeClassNames('medium'),
       colorSchemeClassNames('primary'),
       className
@@ -38,7 +41,7 @@ export const SecondaryButton: React.FC<{ onClick?: () => void }> = ({
     type="button"
     onClick={onClick}
     className={classNames(
-      'inline-flex items-center rounded border shadow-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2',
+      buttonClassNames(),
       sizeClassNames('medium'),
       colorSchemeClassNames('secondary')
     )}

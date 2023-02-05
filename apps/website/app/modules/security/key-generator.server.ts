@@ -1,19 +1,18 @@
-import * as jose from 'node-jose';
 import { JWK } from 'node-jose';
-import RawKey = JWK.RawKey;
+import { PrivateKey, PublicKey } from './interfaces';
 
 export async function generateKey(): Promise<{
-  public: RawKey;
-  private: RawKey & Record<string, string>;
+  public: PublicKey;
+  private: PrivateKey;
 }> {
-  const keystore = jose.JWK.createKeyStore();
+  const keystore = JWK.createKeyStore();
   const key = await keystore.generate('RSA', 2048, {
     alg: 'RS256',
     use: 'sig',
   });
 
   return {
-    public: key.toJSON(false) as RawKey,
-    private: key.toJSON(true) as any,
+    public: key.toJSON(false) as PublicKey,
+    private: key.toJSON(true) as PrivateKey,
   };
 }

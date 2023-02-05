@@ -18,9 +18,14 @@
 
 - The payload has the following fields:
 
-  - `store` (required) The identifier of the store.
-  - `read` A list of stream matchers, to which this token grants read permissions.
-  - `write` A list of stream matchers, to which this token grants read permissions.
+  - `fossil`
+    - `store` (required) The identifier of the store.
+    - `read` (optional)
+      - `streams` A list of stream matchers, to which this token grants read permissions.
+    - `write` (optional)
+      - `streams` A list of stream matchers, to which this token grants read permissions.
+      - `types` (optional) A list of event types allowed to be written.
+      - `metadata` (optional) Any metadata that will be added to events when writing.
 
 - A stream matcher can be:
   - `*` to indicate any stream.

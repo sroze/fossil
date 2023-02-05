@@ -2,25 +2,13 @@ import { DataFunctionArgs, json } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { storeForIdentifier } from '../../modules/stores/factory';
-
-function isJsonString(string: string) {
-  try {
-    JSON.parse(string);
-  } catch (e) {
-    return false;
-  }
-
-  return true;
-}
+import { zValidJsonAsString } from '../../modules/zod-forms/validators/json';
 
 export const writeEventValidator = withZod(
   z.object({
     stream: z.string().min(1),
     type: z.string().min(1),
-    data: z.custom<{ arg: string }>(
-      (arg) => (typeof arg === 'string' ? isJsonString(arg) : false),
-      { message: 'Must be a valid JSON object.' }
-    ),
+    data: zValidJsonAsString,
     expected_version: z
       .string()
       .regex(/^-?[0-9]*$/)

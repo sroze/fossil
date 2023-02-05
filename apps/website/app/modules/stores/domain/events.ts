@@ -1,6 +1,4 @@
-import { JWK } from 'node-jose';
-
-import RawKey = JWK.RawKey;
+import { PrivateKey, PublicKey } from '../../security/interfaces';
 
 type Event<Type extends string, Payload> = {
   id: string;
@@ -31,8 +29,8 @@ export type KeyGenerated = StoreEvent<
   {
     key_id: string;
     name: string;
-    public_key: RawKey;
-  } & ({ type: 'private' } | { type: 'hosted'; private_key: RawKey })
+    public_key: PublicKey;
+  } & ({ type: 'private' } | { type: 'hosted'; private_key: PrivateKey })
 >;
 
 export type KeyDeleted = StoreEvent<

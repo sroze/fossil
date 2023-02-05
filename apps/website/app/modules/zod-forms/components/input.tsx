@@ -1,7 +1,9 @@
-import React, { FC } from 'react';
+import React, { ComponentProps, FC } from 'react';
 import { useField } from 'remix-validated-form';
 import { ExclamationCircleIcon } from '@heroicons/react/20/solid';
-import { classNames } from '../remix-utils/front-end';
+import { classNames } from '../../remix-utils/front-end';
+import CreatableSelect from 'react-select/creatable';
+import Select from 'react-select';
 
 type LabelledFormProps = {
   name: string;
@@ -109,6 +111,48 @@ export const TextAreaInput: FC<
             ...rest,
           })}
         />
+      </FormComponentWithError>
+    </LabelledFormComponent>
+  );
+};
+
+export const SelectInput: React.FC<
+  LabelledFormProps & ComponentProps<Select>
+> = ({ label, name, optional, className, ...rest }) => {
+  const { getInputProps } = useField(name);
+
+  return (
+    <LabelledFormComponent
+      label={label}
+      name={name}
+      optional={optional}
+      className={className}
+    >
+      <FormComponentWithError name={name}>
+        <div className="flex-1">
+          <Select {...rest} {...getInputProps()} />
+        </div>
+      </FormComponentWithError>
+    </LabelledFormComponent>
+  );
+};
+
+export const CreatableSelectInput: React.FC<
+  LabelledFormProps & ComponentProps<CreatableSelect>
+> = ({ label, name, optional, className, ...rest }) => {
+  const { getInputProps } = useField(name);
+
+  return (
+    <LabelledFormComponent
+      label={label}
+      name={name}
+      optional={optional}
+      className={className}
+    >
+      <FormComponentWithError name={name}>
+        <div className="flex-1">
+          <CreatableSelect {...rest} {...getInputProps()} />
+        </div>
       </FormComponentWithError>
     </LabelledFormComponent>
   );
