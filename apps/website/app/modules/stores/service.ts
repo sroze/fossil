@@ -1,8 +1,14 @@
 import { v4 } from 'uuid';
-import { StoreCreated } from './domain/events';
+import { AnyStoreEvent, StoreCreated } from './domain/events';
 import { Store } from './domain/store';
-import { IEventStore } from '../event-store/interfaces';
+import {
+  AppendResult,
+  EventToWrite,
+  EventWithWrittenMetadata,
+  IEventStore,
+} from '../event-store/interfaces';
 import { accumulate } from '../event-store/accumulate';
+import { fossilEventStore } from '../event-store/store.backend';
 
 // Commands
 type CreateServiceCommand = {
@@ -11,6 +17,10 @@ type CreateServiceCommand = {
 };
 
 export class StoreService {
+  public static resolve(): StoreService {
+    return new StoreService(fossilEventStore);
+  }
+
   constructor(private readonly client: IEventStore) {}
 
   async create(command: CreateServiceCommand): Promise<string> {
@@ -24,9 +34,21 @@ export class StoreService {
       },
     };
 
-    await this.client.appendEvents(`Store-${identifier}`, [created], -1n);
+    await this.write(identifier, [created], -1n);
 
     return identifier;
+  }
+
+  write(
+    identifier: string,
+    events: Omit<AnyStoreEvent, 'id'>[],
+    expectedVersion?: bigint
+  ): Promise<AppendResult> {
+    return this.client.appendEvents(
+      `Store-${identifier}`,
+      events,
+      expectedVersion === undefined ? null : expectedVersion
+    );
   }
 
   async load(identifier: string): Promise<Store> {
@@ -34,7 +56,6 @@ export class StoreService {
       this.client.readStream(`Store-${identifier}`, 0n)
     );
 
-    // @ts-ignore don't worry!
-    return new Store(events);
+    return new Store(events as EventWithWrittenMetadata<AnyStoreEvent>[]);
   }
 }

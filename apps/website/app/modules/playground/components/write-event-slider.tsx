@@ -1,13 +1,9 @@
-import React, { Fragment, useState } from 'react';
-import {
-  LinkIcon,
-  PlusIcon,
-  QuestionMarkCircleIcon,
-} from '@heroicons/react/20/solid';
+import React from 'react';
+import { QuestionMarkCircleIcon } from '@heroicons/react/20/solid';
 import { Slider, SliderProps } from '../../design-system/slider';
 import { SliderTitle } from '../../design-system/slider.title';
 import { useFetcher } from '@remix-run/react';
-import { ValidatedForm, validationError } from 'remix-validated-form';
+import { ValidatedForm } from 'remix-validated-form';
 import { FormInput, TextAreaInput } from '../../zod-forms/input';
 import {
   SuccessfulWriteResponse,

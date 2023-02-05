@@ -3,6 +3,7 @@ import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { storeForIdentifier } from '../../modules/stores/factory';
 import { UniqueCategory } from '../../modules/stores/single-category-store';
+import { H2 } from '../../modules/design-system/h2';
 
 type StreamSummary = { name: string; position: string; last_time: string };
 type LoaderData = {
@@ -37,14 +38,16 @@ export default function Store() {
 
   return (
     <div className="p-5">
-      <h2 className="text-lg font-medium text-gray-900">Streams</h2>
+      <H2>Streams</H2>
 
       <Table>
         <Table.Header>
-          <Table.Header.Column>Stream</Table.Header.Column>
-          <Table.Header.Column>Current position</Table.Header.Column>
-          <Table.Header.Column>Last written in</Table.Header.Column>
-          <Table.Header.Column></Table.Header.Column>
+          <tr>
+            <Table.Header.Column>Stream</Table.Header.Column>
+            <Table.Header.Column>Current position</Table.Header.Column>
+            <Table.Header.Column>Last written in</Table.Header.Column>
+            <Table.Header.Column></Table.Header.Column>
+          </tr>
         </Table.Header>
         <Table.Body>
           {streams.map((stream) => (

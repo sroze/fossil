@@ -4,13 +4,12 @@ import {
   CircleStackIcon,
   FireIcon,
   HomeIcon,
+  LockClosedIcon,
   QueueListIcon,
-  UserGroupIcon,
 } from '@heroicons/react/24/solid';
 import { StoreState } from '../modules/stores/domain/store';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
-import { fossilEventStore } from '../modules/event-store/store.backend';
 import { classNames } from '../modules/remix-utils/front-end';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 
@@ -20,7 +19,7 @@ type LoaderData = {
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization(args, async ({ params }) => {
-    const store = await new StoreService(fossilEventStore).load(params.id!);
+    const store = await StoreService.resolve().load(params.id!);
 
     return {
       store: store.state,
@@ -37,6 +36,11 @@ export default function Store() {
       name: 'Streams',
       href: `/stores/${store.id}/streams`,
       icon: QueueListIcon,
+    },
+    {
+      name: 'Security',
+      href: `/stores/${store.id}/security`,
+      icon: LockClosedIcon,
     },
     {
       name: 'Playground',

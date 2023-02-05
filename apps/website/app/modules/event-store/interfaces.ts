@@ -6,16 +6,15 @@ export type EventToWrite = {
   metadata?: any;
 };
 
-export type EventInStore = {
+export type EventWithWrittenMetadata<Type> = Type & {
   id: string;
   time: Date;
-  type: string;
-  data: any;
-  metadata: any;
   stream_name: string;
   position: bigint;
   global_position: bigint;
 };
+
+export type EventInStore = EventWithWrittenMetadata<EventToWrite>;
 
 export type AppendResult = {
   /* The new position of the stream */

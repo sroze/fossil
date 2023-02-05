@@ -7,12 +7,14 @@ export const EventsTable: React.FC<{ events: EventOverTheWire[] }> = ({
 }) => (
   <Table>
     <Table.Header>
-      <Table.Header.Column>#</Table.Header.Column>
-      <Table.Header.Column>Time</Table.Header.Column>
-      <Table.Header.Column>Stream</Table.Header.Column>
-      <Table.Header.Column>Position</Table.Header.Column>
-      <Table.Header.Column>Type</Table.Header.Column>
-      <Table.Header.Column>Payload</Table.Header.Column>
+      <tr>
+        <Table.Header.Column>#</Table.Header.Column>
+        <Table.Header.Column>Time</Table.Header.Column>
+        <Table.Header.Column>Stream</Table.Header.Column>
+        <Table.Header.Column>Position</Table.Header.Column>
+        <Table.Header.Column>Type</Table.Header.Column>
+        <Table.Header.Column>Payload</Table.Header.Column>
+      </tr>
     </Table.Header>
     <Table.Body>
       {events.map((event, i) => (

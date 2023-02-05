@@ -1,10 +1,4 @@
-import {
-  DataFunctionArgs,
-  json,
-  LoaderFunction,
-  redirect,
-} from '@remix-run/node';
-import { useActionData } from '@remix-run/react';
+import { DataFunctionArgs, LoaderFunction, redirect } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { ValidatedForm, validationError } from 'remix-validated-form';
 import { z } from 'zod';
@@ -13,7 +7,6 @@ import { FormInput } from '../modules/zod-forms/input';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
-import { fossilEventStore } from '../modules/event-store/store.backend';
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization(args, async () => {
@@ -36,8 +29,7 @@ export const action = async ({ request }: DataFunctionArgs) => {
     return validationError(error);
   }
 
-  const service = new StoreService(fossilEventStore);
-  const identifier = await service.create(data);
+  const identifier = await StoreService.resolve().create(data);
 
   return redirect(`/stores/${identifier}`);
 };
