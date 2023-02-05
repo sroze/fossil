@@ -1,11 +1,7 @@
 import { DataFunctionArgs, json } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
-import { storeForIdentifier } from '../../modules/stores/tenanted-store';
-import {
-  DefaultCategory,
-  defaultCategoryEncoder,
-} from '../../modules/stores/default-category';
+import { storeForIdentifier } from '../../modules/stores/factory';
 
 function isJsonString(string: string) {
   try {
@@ -48,7 +44,7 @@ export async function action({ request, params }: DataFunctionArgs) {
 
   // For the MVP, we use the exact same store...
   const appendResult = await storeForIdentifier(params.id!).appendEvents(
-    defaultCategoryEncoder.encodeStream(data.stream),
+    data.stream,
     [
       {
         type: data.type,

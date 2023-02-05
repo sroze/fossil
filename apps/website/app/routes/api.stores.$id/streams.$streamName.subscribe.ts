@@ -4,7 +4,6 @@ import { InMemoryCheckpointStore } from '../../modules/subscriptions/checkpoint-
 import { CheckpointAfterNMessages } from '../../modules/subscriptions/checkpoint-strategy/message-count';
 import { subscriptionAsEventStream } from '../../modules/subscriptions/server-sent-events/subscription';
 import { storeForIdentifier } from '../../modules/stores/factory';
-import { UniqueCategory } from '../../modules/stores/single-category-store';
 import { EventInStore } from '../../modules/event-store/interfaces';
 
 export const loader: LoaderFunction = ({ request, params }) => {
@@ -19,8 +18,10 @@ export const loader: LoaderFunction = ({ request, params }) => {
   // Expose it as an event stream.
   return subscriptionAsEventStream(
     manager,
-    (position, signal) => store.readCategory(UniqueCategory, position, signal),
-    (event: EventInStore) => event.global_position,
+    (position, signal) =>
+      store.readStream(params.streamName!, position, signal),
+    // FIXME: There is something off with this position -- we need an ADR to clarify what we expect.
+    (event: EventInStore) => event.position + 1n,
     request.signal
   );
 };

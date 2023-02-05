@@ -1,21 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { EventEmitter } from 'events';
 import { ICheckpointStore } from './checkpoint-store/interfaces';
-import { EventInStore, IEventStore } from '../event-store/interfaces';
+import { EventInStore } from '../event-store/interfaces';
 import { CheckpointStrategy } from './checkpoint-strategy/interfaces';
+import { PositionResolver, StreamFetcher, Subscription } from './interfaces';
 
-export class SubscriptionManager extends EventEmitter {
+export class SubscriptionManager implements Subscription {
   constructor(
-    private readonly store: IEventStore,
     private readonly checkpointStore: ICheckpointStore,
     private readonly checkpointStrategy: CheckpointStrategy,
     private readonly pollingFrequencyInMs = 100
-  ) {
-    super();
-  }
+  ) {}
 
   async subscribe(
-    category: string,
+    streamFetcher: StreamFetcher,
+    positionResolver: PositionResolver,
     handler: (event: EventInStore) => Promise<void>,
     signal: AbortSignal
   ): Promise<void> {
@@ -24,15 +22,11 @@ export class SubscriptionManager extends EventEmitter {
     while (!signal.aborted) {
       let hasConsumedEvents: boolean = false;
 
-      for await (const event of this.store.readCategory(
-        category,
-        position,
-        signal
-      )) {
+      for await (const event of streamFetcher(position, signal)) {
         await handler(event);
 
         hasConsumedEvents = true;
-        position = event.global_position;
+        position = positionResolver(event);
 
         if (this.checkpointStrategy.shouldCheckpoint()) {
           await this.checkpointStore.storeCheckpoint(position);

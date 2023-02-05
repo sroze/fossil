@@ -1003,6 +1003,10 @@ video {
   padding: 2.5rem;
 }
 
+.p-5 {
+  padding: 1.25rem;
+}
+
 .p-12 {
   padding: 3rem;
 }
@@ -1383,6 +1387,11 @@ video {
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.hover\:text-indigo-900:hover {
+  --tw-text-opacity: 1;
+  color: rgb(49 46 129 / var(--tw-text-opacity));
 }
 
 .hover\:text-gray-900:hover {

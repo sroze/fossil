@@ -1,6 +1,6 @@
-import { TenantedEventEncoder } from './tenanted-store';
+import { PrefixedStreamEventEncoder } from './tenancy/prefix-encoder';
+import { UniqueCategory } from './single-category-store';
 
-export const DefaultCategory = 'Default';
-export const defaultCategoryEncoder = new TenantedEventEncoder(
-  `${DefaultCategory}-`
+export const defaultCategoryEncoder = new PrefixedStreamEventEncoder(
+  `${UniqueCategory}-`
 );

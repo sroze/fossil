@@ -3,34 +3,11 @@ import {
   EventInStore,
   EventToWrite,
   IEventStore,
-} from '../event-store/interfaces';
-import { fossilEventStore } from '../event-store/store.backend';
-
-export class TenantedEventEncoder {
-  constructor(private readonly prefix: string) {}
-
-  public encodeStream(stream: string): string {
-    return this.prefix + stream;
-  }
-
-  public decodeStream(stream: string): string {
-    if (!stream.startsWith(this.prefix)) {
-      throw new Error(`Stream cannot be decoded.`);
-    }
-
-    return stream.slice(this.prefix.length);
-  }
-
-  public decodeEvent({ stream_name, ...rest }: EventInStore): EventInStore {
-    return {
-      ...rest,
-      stream_name: this.decodeStream(stream_name),
-    };
-  }
-}
+} from '../../event-store/interfaces';
+import { PrefixedStreamEventEncoder } from './prefix-encoder';
 
 export class TenantedStore implements IEventStore {
-  private encoder: TenantedEventEncoder;
+  private encoder: PrefixedStreamEventEncoder;
 
   constructor(
     private readonly implementation: IEventStore,
@@ -40,7 +17,7 @@ export class TenantedStore implements IEventStore {
       throw new Error(`Tenant identifier cannot contain a dash.`);
     }
 
-    this.encoder = new TenantedEventEncoder(tenantIdentifier + '#');
+    this.encoder = new PrefixedStreamEventEncoder(tenantIdentifier + '#');
   }
 
   appendEvents(
@@ -97,12 +74,4 @@ export class TenantedStore implements IEventStore {
       yield this.encoder.decodeEvent(event);
     }
   }
-}
-
-export function storeForIdentifier(id: string): IEventStore {
-  if (!id) {
-    throw new Error(`Identifier provided is invalid.`);
-  }
-
-  return new TenantedStore(fossilEventStore, id.replace(/-/g, ''));
 }

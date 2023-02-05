@@ -7,7 +7,7 @@ import {
   QueueListIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/solid';
-import { StoreState } from '../modules/stores/store';
+import { StoreState } from '../modules/stores/domain/store';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
 import { fossilEventStore } from '../modules/event-store/store.backend';

@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
-import { StoreCreated } from './events';
-import { Store } from './store';
+import { StoreCreated } from './domain/events';
+import { Store } from './domain/store';
 import { IEventStore } from '../event-store/interfaces';
 import { accumulate } from '../event-store/accumulate';
 

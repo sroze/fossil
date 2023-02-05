@@ -41,9 +41,6 @@ export class MessageDbStore implements IEventStore {
     yield* streamByBatch(
       (position, batchSize) =>
         this.client.getStreamMessages(stream, position, batchSize),
-
-      // IEventStore positions are exclusive, MessageDb positions are inclusive
-      // We want the API to be "give me all events that occured *after* what I've currently seen
       fromPosition,
       signal
     );
