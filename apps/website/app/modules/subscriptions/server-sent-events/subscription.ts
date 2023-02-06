@@ -1,6 +1,6 @@
 import { eventStream } from 'remix-utils';
 import { serializeEventInStoreForWire } from './wire';
-import { PositionResolver, StreamFetcher, Subscription } from '../interfaces';
+import { PositionResolver, StreamFetcher, Subscription } from 'subscription';
 
 // FIXME: Add the event ID so it supports recovering from network errors...
 // TODO: Add "caught-up" events to know you are at the end.

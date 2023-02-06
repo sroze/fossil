@@ -2,9 +2,14 @@
 import { ICheckpointStore } from './checkpoint-store/interfaces';
 import { EventInStore } from 'event-store';
 import { CheckpointStrategy } from './checkpoint-strategy/interfaces';
-import { PositionResolver, StreamFetcher, Subscription } from './interfaces';
 
-export class SubscriptionManager implements Subscription {
+export type StreamFetcher = (
+  position: bigint,
+  signal: AbortSignal
+) => AsyncIterable<EventInStore>;
+export type PositionResolver = (event: EventInStore) => bigint;
+
+export class Subscription {
   constructor(
     private readonly checkpointStore: ICheckpointStore,
     private readonly checkpointStrategy: CheckpointStrategy,
