@@ -31,7 +31,8 @@
     "remix-auth-auth0": "^1.5.1",
     "remix-utils": "^6.0.0",
     "remix-validated-form": "^4.6.8",
-    "zod": "^3.20.2"
+    "zod": "^3.20.2",
+    "event-store": "workspace:*"
   },
   "devDependencies": {
     "@remix-run/dev": "^1.7.0",

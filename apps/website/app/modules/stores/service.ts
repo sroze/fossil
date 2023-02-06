@@ -3,10 +3,9 @@ import { AnyStoreEvent, StoreCreated } from './domain/events';
 import { Store } from './domain/store';
 import {
   AppendResult,
-  EventToWrite,
   EventWithWrittenMetadata,
   IEventStore,
-} from '../event-store/interfaces';
+} from 'event-store';
 import { accumulate } from '../event-store/accumulate';
 import { fossilEventStore } from '../event-store/store.backend';
 

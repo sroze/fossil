@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import {PrimaryButton, SecondaryButton} from './buttons';
+import { PrimaryButton, SecondaryButton } from './buttons';
 import { Popup } from './popup';
 
-export const ButtonAndPopup: React.FC<{ title: string; variant?: 'primary' | 'secondary' }> = ({
-  title,
-  variant,
-  children,
-}) => {
+export const ButtonAndPopup: React.FC<{
+  title: string;
+  variant?: 'primary' | 'secondary';
+}> = ({ title, variant, children }) => {
   const [open, setOpen] = useState(false);
   const Button = variant === 'primary' ? PrimaryButton : SecondaryButton;
 

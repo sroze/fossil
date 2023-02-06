@@ -1,6 +1,5 @@
 import { createPool } from './pg';
-import { MessageDbClient } from './message-db/client';
-import { MessageDbStore } from './message-db/store';
+import { MessageDbClient, MessageDbStore } from 'event-store';
 
 export const fossilEventStore = new MessageDbStore(
   new MessageDbClient(createPool(process.env.DATABASE_URL!))

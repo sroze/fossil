@@ -4,7 +4,7 @@ import { InMemoryCheckpointStore } from '../../modules/subscriptions/checkpoint-
 import { CheckpointAfterNMessages } from '../../modules/subscriptions/checkpoint-strategy/message-count';
 import { subscriptionAsEventStream } from '../../modules/subscriptions/server-sent-events/subscription';
 import { storeForIdentifier } from '../../modules/stores/factory';
-import { EventInStore } from '../../modules/event-store/interfaces';
+import type { EventInStore } from 'event-store';
 
 export const loader: LoaderFunction = ({ request, params }) => {
   const store = storeForIdentifier(params.id!);

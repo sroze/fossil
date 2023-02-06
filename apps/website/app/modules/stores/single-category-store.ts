@@ -3,7 +3,7 @@ import {
   EventInStore,
   EventToWrite,
   IEventStore,
-} from '../event-store/interfaces';
+} from 'event-store';
 import { PrefixedStreamEventEncoder } from './tenancy/prefix-encoder';
 
 export const UniqueCategory = 'Default';

@@ -5,7 +5,7 @@ import { CheckpointAfterNMessages } from '../../modules/subscriptions/checkpoint
 import { subscriptionAsEventStream } from '../../modules/subscriptions/server-sent-events/subscription';
 import { storeForIdentifier } from '../../modules/stores/factory';
 import { UniqueCategory } from '../../modules/stores/single-category-store';
-import { EventInStore } from '../../modules/event-store/interfaces';
+import type { EventInStore } from 'event-store';
 
 export const loader: LoaderFunction = ({ request, params }) => {
   const store = storeForIdentifier(params.id!);

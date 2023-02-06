@@ -10,7 +10,7 @@ importers:
       prettier: 2.8.3
       turbo: 1.7.3
 
-  apps/api:
+  apps/read-models:
     specifiers:
       '@types/body-parser': ^1.19.0
       '@types/cors': ^2.8.10
@@ -23,10 +23,10 @@ importers:
       cors: ^2.8.5
       eslint: ^7.32.0
       eslint-config-custom-server: workspace:*
+      event-store: workspace:*
       express: ^4.17.1
       jest: ^26.6.3
       jest-presets: workspace:*
-      logger: workspace:*
       morgan: ^1.10.0
       supertest: ^6.2.4
       tsconfig: workspace:*
@@ -35,8 +35,8 @@ importers:
     dependencies:
       body-parser: 1.20.1
       cors: 2.8.5
+      event-store: link:../../packages/event-store
       express: 4.18.2
-      logger: link:../../packages/logger
       morgan: 1.10.0
     devDependencies:
       '@types/body-parser': 1.19.2
@@ -70,6 +70,7 @@ importers:
       '@types/react': ^17.0.47
       '@types/react-dom': ^17.0.17
       concurrently: ^7.6.0
+      event-store: workspace:*
       luxon: ^3.2.1
       md5: ^2.3.0
       node-jose: ^2.1.1
@@ -95,6 +96,7 @@ importers:
       '@remix-run/react': 1.12.0_biqbaboplfbrettd7655fr4n2y
       '@remix-run/serve': 1.12.0
       '@remix-validated-form/with-zod': 2.0.5_fvokfsjk4qzjevn2et67tznlr4
+      event-store: link:../../packages/event-store
       luxon: 3.2.1
       md5: 2.3.0
       node-jose: 2.1.1
@@ -136,31 +138,42 @@ importers:
     dependencies:
       eslint-config-turbo: 0.0.7_eslint@8.33.0
 
-  packages/jest-presets:
-    specifiers:
-      ts-jest: ^26.5.0
-    dependencies:
-      ts-jest: 26.5.6_xuote2qreek47x2di7kesslrai
-
-  packages/logger:
+  packages/event-store:
     specifiers:
       '@types/jest': ^26.0.22
       '@types/node': ^18.11.9
+      '@types/pg': ^8.6.6
+      '@types/pg-format': ^1.0.2
+      '@types/uuid': ^9.0.0
       eslint: ^7.32.0
       eslint-config-custom: workspace:*
       jest: ^26.6.3
       jest-presets: workspace:*
+      pg-format: ^1.0.4
       tsconfig: workspace:*
       typescript: ^4.8.3
+      uuid: ^9.0.0
+    dependencies:
+      pg-format: 1.0.4
+      uuid: 9.0.0
     devDependencies:
       '@types/jest': 26.0.24
       '@types/node': 18.11.19
+      '@types/pg': 8.6.6
+      '@types/pg-format': 1.0.2
+      '@types/uuid': 9.0.0
       eslint: 7.32.0
       eslint-config-custom: link:../eslint-config-custom
       jest: 26.6.3
       jest-presets: link:../jest-presets
       tsconfig: link:../tsconfig
       typescript: 4.9.5
+
+  packages/jest-presets:
+    specifiers:
+      ts-jest: ^26.5.0
+    dependencies:
+      ts-jest: 26.5.6_xuote2qreek47x2di7kesslrai
 
   packages/tsconfig:
     specifiers: {}
@@ -2333,7 +2346,7 @@ packages:
     resolution: {integrity: sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==}
     dependencies:
       '@types/connect': 3.4.35
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/cacheable-request/6.0.3:
@@ -2348,7 +2361,7 @@ packages:
   /@types/connect/3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/cookie/0.4.1:
@@ -2361,7 +2374,7 @@ packages:
   /@types/cors/2.8.13:
     resolution: {integrity: sha512-RG8AStHlUiV5ysZQKq97copd2UmVYw3/pRMLefISZ3S1hK104Cwm7iLQ3fTKx+lsUH2CE8FlLaYeEA2LSeqYUA==}
     dependencies:
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/debug/4.1.7:
@@ -2389,7 +2402,7 @@ packages:
   /@types/express-serve-static-core/4.17.33:
     resolution: {integrity: sha512-TPBqmR/HRYI3eC2E5hmiivIzv+bidAfXofM+sbonAGvyDhySGw9/PQZFt2BLOrjUUR++4eJVpx6KnLQK1Fk9tA==}
     dependencies:
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
     dev: true
@@ -2480,7 +2493,7 @@ packages:
   /@types/morgan/1.9.4:
     resolution: {integrity: sha512-cXoc4k+6+YAllH3ZHmx4hf7La1dzUk6keTR4bF4b4Sc0mZxU/zK4wO7l+ZzezXm/jkYj/qC+uYGZrarZdIVvyQ==}
     dependencies:
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/ms/0.7.31:
@@ -2500,6 +2513,18 @@ packages:
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
     dev: false
+
+  /@types/pg-format/1.0.2:
+    resolution: {integrity: sha512-D3MEO6u3BObw3G4Xewjdx05MF5v/fiog78CedtrXe8BhONM8GvUz2dPfLWtI0BPRBoRd6anPHXe+sbrPReZouQ==}
+    dev: true
+
+  /@types/pg/8.6.6:
+    resolution: {integrity: sha512-O2xNmXebtwVekJDD+02udOncjVcMZQuTEQEMpKJ0ZRf5E7/9JJX3izhKUcUifBkyKpljyUM6BTgy2trmviKlpw==}
+    dependencies:
+      '@types/node': 18.11.19
+      pg-protocol: 1.6.0
+      pg-types: 2.2.0
+    dev: true
 
   /@types/prettier/2.7.2:
     resolution: {integrity: sha512-KufADq8uQqo1pYKVIYzfKbJfBAc0sOeXqGbFaSpv8MRmC/zXgowNZmFcbngndGk922QDmOASEXUZCaY48gs4cg==}
@@ -2554,7 +2579,7 @@ packages:
     resolution: {integrity: sha512-z5xyF6uh8CbjAu9760KDKsH2FcDxZ2tFCsA4HIMWE6IkiYMXfVoa+4f9KX+FN0ZLsaMw1WNG2ETLA6N+/YA+cg==}
     dependencies:
       '@types/mime': 3.0.1
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/stack-utils/2.0.1:
@@ -2564,7 +2589,7 @@ packages:
     resolution: {integrity: sha512-tLfnlJf6A5mB6ddqF159GqcDizfzbMUB1/DeT59/wBNqzRTNNKsaw79A/1TZ84X+f/EwWH8FeuSkjlCLyqS/zQ==}
     dependencies:
       '@types/cookiejar': 2.1.2
-      '@types/node': 15.14.9
+      '@types/node': 18.11.19
     dev: true
 
   /@types/supertest/2.0.12:
@@ -2575,6 +2600,10 @@ packages:
 
   /@types/unist/2.0.6:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
+    dev: true
+
+  /@types/uuid/9.0.0:
+    resolution: {integrity: sha512-kr90f+ERiQtKWMz5rP32ltJ/BtULDI5RVO0uavn1HQUOwjx0R1h0rnDYNL0CepF1zL5bSY6FISAfd9tOdDhU5Q==}
     dev: true
 
   /@types/yargs-parser/21.0.0:
@@ -8086,7 +8115,6 @@ packages:
   /pg-int8/1.0.1:
     resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
     engines: {node: '>=4.0.0'}
-    dev: false
 
   /pg-pool/3.5.2_pg@8.9.0:
     resolution: {integrity: sha512-His3Fh17Z4eg7oANLob6ZvH8xIVen3phEZh2QuyrIl4dQSDVEabNducv6ysROKpDNPSD+12tONZVWfSgMvDD9w==}
@@ -8098,7 +8126,6 @@ packages:
 
   /pg-protocol/1.6.0:
     resolution: {integrity: sha512-M+PDm637OY5WM307051+bsDia5Xej6d9IR4GwJse1qA1DIhiKlksvrneZOYQq42OM+spubpcNYEo2FcKQrDk+Q==}
-    dev: false
 
   /pg-types/2.2.0:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
@@ -8109,7 +8136,6 @@ packages:
       postgres-bytea: 1.0.0
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
-    dev: false
 
   /pg/8.9.0:
     resolution: {integrity: sha512-ZJM+qkEbtOHRuXjmvBtOgNOXOtLSbxiMiUVMgE4rV6Zwocy03RicCVvDXgx8l4Biwo8/qORUnEqn2fdQzV7KCg==}
@@ -8324,24 +8350,20 @@ packages:
   /postgres-array/2.0.0:
     resolution: {integrity: sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==}
     engines: {node: '>=4'}
-    dev: false
 
   /postgres-bytea/1.0.0:
     resolution: {integrity: sha512-xy3pmLuQqRBZBXDULy7KbaitYqLcmxigw14Q5sj8QBVLqEwXfeybIKVWiqAXTlcvdvb0+xkOtDbfQMOf4lST1w==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /postgres-date/1.0.7:
     resolution: {integrity: sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /postgres-interval/1.2.0:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
     dependencies:
       xtend: 4.0.2
-    dev: false
 
   /prelude-ls/1.1.2:
     resolution: {integrity: sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==}
@@ -10220,6 +10242,11 @@ packages:
   /uuid/8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
+
+  /uuid/9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+    hasBin: true
+    dev: false
 
   /uvu/0.5.6:
     resolution: {integrity: sha512-+g8ENReyr8YsOc6fv/NVJs2vFdHBnBNdfE49rshrTzDWOlUx4Gq7KOS2GD8eqhy2j+Ejq29+SbKH8yjkAqXqoA==}

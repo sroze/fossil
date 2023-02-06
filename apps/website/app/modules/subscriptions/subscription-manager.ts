@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { ICheckpointStore } from './checkpoint-store/interfaces';
-import { EventInStore } from '../event-store/interfaces';
+import { EventInStore } from 'event-store';
 import { CheckpointStrategy } from './checkpoint-strategy/interfaces';
 import { PositionResolver, StreamFetcher, Subscription } from './interfaces';
 

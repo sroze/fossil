@@ -3,7 +3,8 @@ import { Outlet, useLoaderData, useLocation } from '@remix-run/react';
 import {
   CircleStackIcon,
   FireIcon,
-  HomeIcon, InboxStackIcon,
+  HomeIcon,
+  InboxStackIcon,
   LockClosedIcon,
   QueueListIcon,
 } from '@heroicons/react/24/solid';

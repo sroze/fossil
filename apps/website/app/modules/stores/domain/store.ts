@@ -1,5 +1,5 @@
 import { AnyStoreEvent, StoreCreated } from './events';
-import { EventWithWrittenMetadata } from '../../event-store/interfaces';
+import type { EventWithWrittenMetadata } from 'event-store';
 import { PrivateKey, PublicKey } from '../../security/interfaces';
 
 export type StoreState = {

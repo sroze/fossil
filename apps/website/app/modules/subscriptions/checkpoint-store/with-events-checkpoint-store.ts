@@ -1,5 +1,5 @@
 import { ICheckpointStore } from './interfaces';
-import { IEventStore } from '../../event-store/interfaces';
+import type { IEventStore } from 'event-store';
 
 export class WithEventsCheckpointStore implements ICheckpointStore {
   constructor(

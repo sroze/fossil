@@ -3,7 +3,7 @@ import {
   EventInStore,
   EventToWrite,
   IEventStore,
-} from '../../event-store/interfaces';
+} from 'event-store';
 import { PrefixedStreamEventEncoder } from './prefix-encoder';
 
 export class TenantedStore implements IEventStore {

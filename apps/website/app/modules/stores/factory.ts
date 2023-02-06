@@ -1,4 +1,4 @@
-import { IEventStore } from '../event-store/interfaces';
+import type { IEventStore } from 'event-store';
 import { fossilEventStore } from '../event-store/store.backend';
 import { TenantedStore } from './tenancy/tenanted-store';
 import { SingleCategoryStore } from './single-category-store';

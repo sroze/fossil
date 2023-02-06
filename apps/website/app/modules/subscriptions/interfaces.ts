@@ -1,4 +1,4 @@
-import { EventInStore } from '../event-store/interfaces';
+import { EventInStore } from 'event-store';
 
 export type StreamFetcher = (
   position: bigint,

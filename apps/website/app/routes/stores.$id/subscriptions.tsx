@@ -1,5 +1,5 @@
-import {H2} from "../../modules/design-system/h2";
-import {Table} from "../../modules/design-system/table";
+import { H2 } from '../../modules/design-system/h2';
+import { Table } from '../../modules/design-system/table';
 
 export default function Subscriptions() {
   // TODO: Create subscription by writing in `Subscription-{id}`
@@ -24,13 +24,17 @@ export default function Subscriptions() {
         </Table.Header>
         <Table.Body>
           <tr>
-            <Table.Column><code>BillingV2</code></Table.Column>
             <Table.Column>
-              Poll
+              <code>BillingV2</code>
             </Table.Column>
+            <Table.Column>Poll</Table.Column>
             <Table.Column>
               <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                <svg className="mr-1.5 h-2 w-2 text-yellow-400" fill="currentColor" viewBox="0 0 8 8">
+                <svg
+                  className="mr-1.5 h-2 w-2 text-yellow-400"
+                  fill="currentColor"
+                  viewBox="0 0 8 8"
+                >
                   <circle cx={4} cy={4} r={3} />
                 </svg>
                 Idle
@@ -48,5 +52,5 @@ export default function Subscriptions() {
         </Table.Body>
       </Table>
     </div>
-  )
+  );
 }

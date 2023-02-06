@@ -1,14 +1,7 @@
-import { Pool } from 'pg';
-import { context, propagation } from '@opentelemetry/api';
+import type { Pool } from 'pg';
 import { literal } from 'pg-format';
-import { suppressTracing } from '@opentelemetry/core';
 import { v4 } from 'uuid';
-import {
-  AppendResult,
-  EventToWrite,
-  EventInStore,
-  IEventStore,
-} from '../interfaces';
+import { AppendResult, EventToWrite, EventInStore } from '../interfaces';
 
 export class WrongExpectedVersionError extends Error {}
 
@@ -32,7 +25,6 @@ export class MessageDbClient {
     for (let i = 0; i < messages.length; ++i) {
       const message = messages[i];
       const metadata = message.metadata || {};
-      propagation.inject(context.active(), metadata);
       queryParts.push(sql`select *
                           from write_message(
                             ${message.id || v4()},
@@ -60,10 +52,7 @@ export class MessageDbClient {
       //
       // The any type is here because the PG types don't document that when you
       // give it multiple statements you get back an array of results
-      const res: any = await context.with(
-        suppressTracing(context.active()),
-        () => client.query(queryParts.join('\n'))
-      );
+      const res: any = await client.query(queryParts.join('\n'));
       const lastMessage = res[res.length - 2]?.rows?.[0];
       return {
         position: BigInt(lastMessage?.position ?? -1n),

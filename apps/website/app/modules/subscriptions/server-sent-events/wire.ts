@@ -1,4 +1,4 @@
-import { EventInStore } from '../../event-store/interfaces';
+import type { EventInStore } from 'event-store';
 
 export type EventOverTheWire = Omit<
   EventInStore,
