@@ -10,7 +10,7 @@ type TableType = React.FC & {
 };
 
 export const Table: TableType = ({ children }) => (
-  <div className="shadow ring-1 ring-black ring-opacity-5 md:rounded-lg my-4 overflow-hidden">
+  <div className="shadow ring-1 ring-black ring-opacity-5 md:rounded-lg my-4 overflow-auto">
     <table className="min-w-full divide-y divide-gray-300">{children}</table>
   </div>
 );

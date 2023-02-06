@@ -51,7 +51,7 @@ export default function Store() {
         </Table.Header>
         <Table.Body>
           {streams.map((stream) => (
-            <tr>
+            <tr key={stream.name}>
               <Table.Column>{stream.name}</Table.Column>
               <Table.Column>{stream.position}</Table.Column>
               <Table.Column>{stream.last_time}</Table.Column>

@@ -25,6 +25,12 @@ export default function Security() {
 
   return (
     <div className="p-5">
+      <div className="float-right">
+        <ButtonAndPopup title="Generate a new key" variant="primary">
+          <GenerateKeyForm store_id={store.id} />
+        </ButtonAndPopup>
+      </div>
+
       <H2>Encryption keys</H2>
       <div>
         Keys are used to sign tokens to be able to read & write from the store.
@@ -74,10 +80,6 @@ export default function Security() {
           ))}
         </Table.Body>
       </Table>
-
-      <ButtonAndPopup title="Generate a new key">
-        <GenerateKeyForm store_id={store.id} />
-      </ButtonAndPopup>
     </div>
   );
 }

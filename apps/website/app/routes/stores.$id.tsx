@@ -3,7 +3,7 @@ import { Outlet, useLoaderData, useLocation } from '@remix-run/react';
 import {
   CircleStackIcon,
   FireIcon,
-  HomeIcon,
+  HomeIcon, InboxStackIcon,
   LockClosedIcon,
   QueueListIcon,
 } from '@heroicons/react/24/solid';
@@ -36,6 +36,11 @@ export default function Store() {
       name: 'Streams',
       href: `/stores/${store.id}/streams`,
       icon: QueueListIcon,
+    },
+    {
+      name: 'Durable subscriptions',
+      href: `/stores/${store.id}/subscriptions`,
+      icon: InboxStackIcon,
     },
     {
       name: 'Security',

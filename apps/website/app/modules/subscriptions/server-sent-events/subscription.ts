@@ -4,6 +4,7 @@ import { PositionResolver, StreamFetcher, Subscription } from '../interfaces';
 
 // FIXME: Add the event ID so it supports recovering from network errors...
 // TODO: Add "caught-up" events to know you are at the end.
+// TODO: Add "deletion" events when a stream has been deleted.
 export function subscriptionAsEventStream(
   subscription: Subscription,
   fetcher: StreamFetcher,
