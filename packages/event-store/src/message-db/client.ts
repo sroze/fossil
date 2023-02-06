@@ -69,71 +69,58 @@ export class MessageDbClient {
     }
   }
 
-  async getStreamMessages(
+  async getStreamMessages<EventType extends EventInStore = EventInStore>(
     streamName: string,
     fromPosition: bigint,
     maxCount: number
-  ): Promise<EventInStore[]> {
+  ): Promise<EventType[]> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
         'select * from get_stream_messages($1, $2, $3)',
         [streamName, String(fromPosition), maxCount]
       );
-      return result.rows.map(fromDb);
+      return result.rows.map(fromDb<EventType>);
     } finally {
       client.release();
     }
   }
 
-  async getCategoryMessages(
+  async getCategoryMessages<EventType extends EventInStore = EventInStore>(
     category: string,
     fromPosition: bigint,
     maxCount: number
-  ) {
+  ): Promise<EventType[]> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
         'select * from get_category_messages($1, $2, $3)',
         [category, String(fromPosition), maxCount]
       );
-      return result.rows.map(fromDb);
+      return result.rows.map(fromDb<EventType>);
     } finally {
       client.release();
     }
   }
 
-  async getLastStreamMessage(
+  async getLastStreamMessage<EventType extends EventInStore = EventInStore>(
     streamName: string,
     type?: string
-  ): Promise<EventInStore | undefined> {
+  ): Promise<EventType | undefined> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
         'select * from get_last_stream_message($1, $2)',
         [streamName, type || null]
       );
-      return result.rows.map(fromDb)[0];
-    } finally {
-      client.release();
-    }
-  }
-
-  async getMaxCategoryPosition(category: string): Promise<bigint> {
-    const client = await this.pool.connect();
-    try {
-      const res = await client.query(
-        'select max(global_position) from messages where category(stream_name) = $1;',
-        [category]
-      );
-      return BigInt(res.rows[0]?.max ?? -1);
+      return result.rows.map(fromDb<EventType>)[0];
     } finally {
       client.release();
     }
   }
 }
 
-function fromDb(row: any): EventInStore {
+function fromDb<T extends EventInStore = EventInStore>(row: any): T {
   return {
     id: row.id,
     stream_name: row.stream_name,
@@ -143,5 +130,5 @@ function fromDb(row: any): EventInStore {
     metadata: JSON.parse(row.metadata || 'null'),
     global_position: BigInt(row.global_position),
     position: BigInt(row.position),
-  };
+  } as T;
 }

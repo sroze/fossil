@@ -37,26 +37,26 @@ export interface IEventStore {
    * @param events The list of events to append
    * @param expectedVersion The version we expect the stream to be at for OCC. -1 for "no stream"
    */
-  appendEvents(
+  appendEvents<EventType extends EventToWrite = EventToWrite>(
     streamName: string,
     events: EventToWrite[],
     expectedVersion: bigint | null
   ): Promise<AppendResult>;
 
-  readCategory(
+  readCategory<EventType extends EventInStore = EventInStore>(
     category: string,
     fromPosition: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventInStore>;
+  ): AsyncIterable<EventType>;
 
-  readStream(
+  readStream<EventType extends EventInStore = EventInStore>(
     stream: string,
     fromPosition: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventInStore>;
+  ): AsyncIterable<EventType>;
 
-  lastEventFromStream(
+  lastEventFromStream<EventType extends EventInStore = EventInStore>(
     stream: string,
     type?: string
-  ): Promise<EventInStore | undefined>;
+  ): Promise<EventType | undefined>;
 }

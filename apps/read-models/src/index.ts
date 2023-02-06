@@ -10,6 +10,7 @@ import {
   CheckpointAfterNMessages,
   InMemoryCheckpointStore,
   Subscription,
+  WithEventsCheckpointStore,
 } from 'subscription';
 
 require('dotenv').config();
@@ -41,12 +42,17 @@ export type SubscriptionCreated = EventWritten<
 
 (async () => {
   const subscription = new Subscription(
-    new InMemoryCheckpointStore(),
+    new WithEventsCheckpointStore(store, 'ConsumerCheckpoint-api-v1'),
     new CheckpointAfterNMessages(1)
   );
 
   void subscription.subscribe<AnySubscriptionEvent>(
-    (position, signal) => store.readCategory('Subscription', position, signal),
+    (position, signal) =>
+      store.readCategory<AnySubscriptionEvent>(
+        'Subscription',
+        position,
+        signal
+      ),
     (event: EventInStore) => event.global_position,
     async ({ data }) => {
       await pool.query(
