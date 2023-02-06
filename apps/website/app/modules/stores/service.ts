@@ -3,7 +3,7 @@ import { AnyStoreEvent, StoreCreated } from './domain/events';
 import { Store } from './domain/store';
 import {
   AppendResult,
-  EventWithWrittenMetadata,
+  EventWrittenWithMetadata,
   IEventStore,
 } from 'event-store';
 import { accumulate } from '../event-store/accumulate';
@@ -55,6 +55,6 @@ export class StoreService {
       this.client.readStream(`Store-${identifier}`, 0n)
     );
 
-    return new Store(events as EventWithWrittenMetadata<AnyStoreEvent>[]);
+    return new Store(events as EventWrittenWithMetadata<AnyStoreEvent>[]);
   }
 }

@@ -1,20 +1,25 @@
-export type EventToWrite = {
-  /* optional id for the event */
-  id?: string;
-  type: string;
-  data: any;
+export type EventWritten<Type = string, Data = any> = {
+  id: string;
+  type: Type;
+  data: Data;
   metadata?: any;
 };
 
-export type EventWithWrittenMetadata<Type> = Type & {
-  id: string;
+export type WrittenEventMetadata = {
   time: Date;
   stream_name: string;
   position: bigint;
   global_position: bigint;
 };
 
-export type EventInStore = EventWithWrittenMetadata<EventToWrite>;
+export type EventWrittenWithMetadata<Event> = Event & WrittenEventMetadata;
+
+// Identifier will be automatically created if not provided.
+export type EventToWrite = Omit<EventWritten, 'id'> & {
+  id?: string;
+};
+
+export type EventInStore = EventWrittenWithMetadata<EventWritten>;
 
 export type AppendResult = {
   /* The new position of the stream */

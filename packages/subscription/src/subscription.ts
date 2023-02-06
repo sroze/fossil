@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { ICheckpointStore } from './checkpoint-store/interfaces';
-import { EventInStore } from 'event-store';
-import { CheckpointStrategy } from './checkpoint-strategy/interfaces';
+import type { EventInStore } from 'event-store';
+import type { ICheckpointStore } from './checkpoint-store/interfaces';
+import type { CheckpointStrategy } from './checkpoint-strategy/interfaces';
 
-export type StreamFetcher = (
+export type StreamFetcher<EventType = EventInStore> = (
   position: bigint,
   signal: AbortSignal
-) => AsyncIterable<EventInStore>;
-export type PositionResolver = (event: EventInStore) => bigint;
+) => AsyncIterable<EventType>;
+
+export type PositionResolver<EventType = EventInStore> = (
+  event: EventType
+) => bigint;
 
 export class Subscription {
   constructor(
@@ -16,10 +19,10 @@ export class Subscription {
     private readonly pollingFrequencyInMs = 100
   ) {}
 
-  async subscribe(
-    streamFetcher: StreamFetcher,
-    positionResolver: PositionResolver,
-    handler: (event: EventInStore) => Promise<void>,
+  async subscribe<EventType = EventInStore>(
+    streamFetcher: StreamFetcher<EventType>,
+    positionResolver: PositionResolver<EventType>,
+    handler: (event: EventType) => Promise<void>,
     signal: AbortSignal
   ): Promise<void> {
     let position = await this.checkpointStore.getCheckpoint();

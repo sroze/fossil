@@ -32,6 +32,7 @@
     "remix-auth-auth0": "^1.5.1",
     "remix-utils": "^6.0.0",
     "remix-validated-form": "^4.6.8",
+    "sql-template-tag": "^4.1.0",
     "subscription": "workspace:*",
     "zod": "^3.20.2"
   },
@@ -42,6 +43,7 @@
     "@types/pg": "^8.6.6",
     "@types/react": "^17.0.47",
     "@types/react-dom": "^17.0.17",
+    "@types/uuid": "^9.0.0",
     "concurrently": "^7.6.0",
     "tailwindcss": "^3.2.4",
     "tsconfig": "workspace:*",

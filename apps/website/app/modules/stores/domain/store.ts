@@ -1,5 +1,5 @@
 import { AnyStoreEvent, StoreCreated } from './events';
-import type { EventWithWrittenMetadata } from 'event-store';
+import type { EventWrittenWithMetadata } from 'event-store';
 import { PrivateKey, PublicKey } from '../../security/interfaces';
 
 export type StoreState = {
@@ -18,7 +18,7 @@ export type StoreState = {
 export class Store {
   public state!: StoreState;
 
-  constructor(events: EventWithWrittenMetadata<AnyStoreEvent>[]) {
+  constructor(events: EventWrittenWithMetadata<AnyStoreEvent>[]) {
     if (events.length === 0 || events[0].type !== 'StoreCreated') {
       throw new Error(
         `Store must be created from events, for first should be 'StoreCreated'.`
@@ -34,7 +34,7 @@ export class Store {
     this.apply(events.splice(1));
   }
 
-  apply(events: EventWithWrittenMetadata<AnyStoreEvent>[]) {
+  apply(events: EventWrittenWithMetadata<AnyStoreEvent>[]) {
     for (const { type, data, time } of events) {
       if (type === 'KeyGenerated') {
         if (!data.key_id || !data.public_key) {

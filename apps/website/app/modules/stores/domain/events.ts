@@ -1,13 +1,8 @@
 import { PrivateKey, PublicKey } from '../../security/interfaces';
-
-type Event<Type extends string, Payload> = {
-  id: string;
-  type: Type;
-  data: Payload;
-};
+import { EventWritten } from 'event-store';
 
 // TODO: Can we remove this `store_id` requirement?
-type StoreEvent<Type extends string, Payload> = Event<
+type StoreEvent<Type extends string, Payload> = EventWritten<
   Type,
   Payload & { store_id: string }
 >;
