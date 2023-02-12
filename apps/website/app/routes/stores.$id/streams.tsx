@@ -1,9 +1,9 @@
 import { Table } from '../../modules/design-system/table';
 import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
-import { storeForIdentifier } from '../../modules/stores/factory';
-import { UniqueCategory } from '../../modules/stores/single-category-store';
 import { H2 } from '../../modules/design-system/h2';
+import { locator } from '~/modules/stores/locator';
+import { DefaultCategory } from 'store-locator';
 
 type StreamSummary = { name: string; position: string; last_time: string };
 type LoaderData = {
@@ -12,11 +12,11 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params, request }) => {
-  const store = storeForIdentifier(params.id!);
+  const store = await locator.locate(params.id!);
   const streams: Record<string, StreamSummary> = {};
 
   for await (const event of store.readCategory(
-    UniqueCategory,
+    DefaultCategory,
     0n,
     request.signal
   )) {

@@ -5,12 +5,12 @@ import {
   CheckpointAfterNMessages,
 } from 'subscription';
 import { subscriptionAsEventStream } from '../../modules/subscriptions/server-sent-events/subscription';
-import { storeForIdentifier } from '../../modules/stores/factory';
-import { UniqueCategory } from '../../modules/stores/single-category-store';
 import type { EventInStore } from 'event-store';
+import { locator } from '~/modules/stores/locator';
+import { DefaultCategory } from 'store-locator';
 
-export const loader: LoaderFunction = ({ request, params }) => {
-  const store = storeForIdentifier(params.id!);
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const store = await locator.locate(params.id!);
 
   // We create an ephemeral subscription.
   const manager = new Subscription(
@@ -21,7 +21,7 @@ export const loader: LoaderFunction = ({ request, params }) => {
   // Expose it as an event stream.
   return subscriptionAsEventStream(
     manager,
-    (position, signal) => store.readCategory(UniqueCategory, position, signal),
+    (position, signal) => store.readCategory(DefaultCategory, position, signal),
     (event: EventInStore) => event.global_position,
     request.signal
   );

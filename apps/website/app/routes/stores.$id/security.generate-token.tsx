@@ -5,10 +5,9 @@ import { z } from 'zod';
 import { zValidJsonAsString } from '../../modules/zod-forms/validators/json';
 import { validationError } from 'remix-validated-form';
 import { DateTime } from 'luxon';
-import { JWK, JWS } from 'node-jose';
 import { H2 } from '../../modules/design-system/h2';
 import { useActionData } from '@remix-run/react';
-import { generateToken } from '../../modules/security/token-generator.server';
+import { generateToken } from 'store-security';
 
 // TODO: Support URI templates and `*`
 const streamTemplate = z.string().min(1);
@@ -40,15 +39,6 @@ export type GenerateTokenSuccessfulResponse = {
   token: any;
 };
 
-type FossilClaims = {
-  exp: number;
-  fossil: {
-    read?: { streams: string[] };
-    write?: { streams: string[]; topics?: string[] };
-    metadata?: Record<string, string>;
-  };
-};
-
 export const action: ActionFunction = async ({ params, request }) => {
   const store = await StoreService.resolve().load(params.id!);
   const { data, error } = await generateTokenValidator.validate(
@@ -66,7 +56,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   }
 
   const { read, write, metadata } = data;
-  const claims: FossilClaims = {
+  const claims = {
     exp: DateTime.fromISO(data.exp).valueOf() / 1000,
     fossil: {
       read,

@@ -54,12 +54,14 @@ export type SubscriptionCreated = EventWritten<
         signal
       ),
     (event: EventInStore) => event.global_position,
-    async ({ data }) => {
-      await pool.query(
-        sql`INSERT INTO subscriptions (subscription_id, store_id, name, type, status)
+    async ({ data, type }) => {
+      if (type === 'SubscriptionCreated') {
+        await pool.query(
+          sql`INSERT INTO subscriptions (subscription_id, store_id, name, type, status)
             VALUES (${data.subscription_id}, ${data.store_id}, ${data.name}, ${data.type}, 'idle')
             ON CONFLICT DO NOTHING`
-      );
+        );
+      }
     },
     abortController.signal
   );

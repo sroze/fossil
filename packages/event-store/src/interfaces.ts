@@ -60,3 +60,5 @@ export interface IEventStore {
     type?: string
   ): Promise<EventType | undefined>;
 }
+
+export class WrongExpectedVersionError extends Error {}

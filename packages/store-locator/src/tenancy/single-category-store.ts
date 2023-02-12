@@ -4,9 +4,9 @@ import {
   EventToWrite,
   IEventStore,
 } from 'event-store';
-import { PrefixedStreamEventEncoder } from './tenancy/prefix-encoder';
+import { PrefixedStreamEventEncoder } from './prefix-encoder';
+import { DefaultCategory } from './default-category';
 
-export const UniqueCategory = 'Default';
 export class SingleCategoryStore implements IEventStore {
   private encoder: PrefixedStreamEventEncoder;
 
@@ -44,8 +44,8 @@ export class SingleCategoryStore implements IEventStore {
     fromPosition: bigint,
     signal?: AbortSignal
   ): AsyncIterable<EventInStore> {
-    if (category !== UniqueCategory) {
-      throw new Error(`Only the "${UniqueCategory}" category is supported.`);
+    if (category !== DefaultCategory) {
+      throw new Error(`Only the "${DefaultCategory}" category is supported.`);
     }
 
     for await (const event of this.implementation.readCategory(

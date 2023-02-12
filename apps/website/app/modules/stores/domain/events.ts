@@ -1,4 +1,4 @@
-import { PrivateKey, PublicKey } from '../../security/interfaces';
+import { PrivateKey, PublicKey } from 'store-security';
 import { EventWritten } from 'event-store';
 
 // TODO: Can we remove this `store_id` requirement?

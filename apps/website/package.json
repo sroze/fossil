@@ -33,12 +33,15 @@
     "remix-utils": "^6.0.0",
     "remix-validated-form": "^4.6.8",
     "sql-template-tag": "^4.1.0",
+    "store-security": "workspace:*",
     "subscription": "workspace:*",
+    "store-locator": "workspace:*",
     "zod": "^3.20.2"
   },
   "devDependencies": {
     "@remix-run/dev": "^1.7.0",
     "@remix-run/serve": "^1.7.0",
+    "@types/luxon": "^3.2.0",
     "@types/md5": "^2.3.2",
     "@types/pg": "^8.6.6",
     "@types/react": "^17.0.47",

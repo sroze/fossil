@@ -1,9 +1,12 @@
 import type { Pool } from 'pg';
 import { literal } from 'pg-format';
 import { v4 } from 'uuid';
-import { AppendResult, EventToWrite, EventInStore } from '../interfaces';
-
-export class WrongExpectedVersionError extends Error {}
+import {
+  AppendResult,
+  EventInStore,
+  EventToWrite,
+  WrongExpectedVersionError,
+} from '../interfaces';
 
 const sql = (parts: TemplateStringsArray, ...values: any[]) => {
   let text = '';

@@ -1,8 +1,8 @@
 import { DataFunctionArgs, json } from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
-import { storeForIdentifier } from '../../modules/stores/factory';
 import { zValidJsonAsString } from '../../modules/zod-forms/validators/json';
+import { locator } from '~/modules/stores/locator';
 
 export const writeEventValidator = withZod(
   z.object({
@@ -31,7 +31,8 @@ export async function action({ request, params }: DataFunctionArgs) {
   }
 
   // For the MVP, we use the exact same store...
-  const appendResult = await storeForIdentifier(params.id!).appendEvents(
+  const store = await locator.locate(params.id!);
+  const appendResult = await store.appendEvents(
     data.stream,
     [
       {

@@ -5,11 +5,11 @@ import {
   CheckpointAfterNMessages,
 } from 'subscription';
 import { subscriptionAsEventStream } from '../../modules/subscriptions/server-sent-events/subscription';
-import { storeForIdentifier } from '../../modules/stores/factory';
 import type { EventInStore } from 'event-store';
+import { locator } from '~/modules/stores/locator';
 
-export const loader: LoaderFunction = ({ request, params }) => {
-  const store = storeForIdentifier(params.id!);
+export const loader: LoaderFunction = async ({ request, params }) => {
+  const store = await locator.locate(params.id!);
 
   // We create an ephemeral subscription.
   const subscription = new Subscription(
