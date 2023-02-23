@@ -8,7 +8,7 @@ importers:
       turbo: latest
     devDependencies:
       prettier: 2.8.3
-      turbo: 1.7.4
+      turbo: 1.8.2
 
   apps/api:
     specifiers:
@@ -24,6 +24,7 @@ importers:
       '@types/luxon': ^3.2.0
       '@types/node': 18.11.18
       '@types/pg': ^8.6.6
+      '@types/superagent': ^4.1.16
       '@types/supertest': ^2.0.11
       '@types/uuid': ^9.0.0
       '@typescript-eslint/eslint-plugin': ^5.0.0
@@ -34,6 +35,7 @@ importers:
       eslint: ^8.0.1
       eslint-config-prettier: ^8.3.0
       eslint-plugin-prettier: ^4.0.0
+      event-serialization: workspace:*
       event-store: workspace:*
       jest: ^29.3.1
       luxon: ^3.2.1
@@ -59,6 +61,7 @@ importers:
       '@nestjs/swagger': 6.2.1_jwhthynhjmc53rsvxm3vss4ax4
       class-transformer: 0.5.1
       class-validator: 0.14.0
+      event-serialization: link:../../packages/event-serialization
       event-store: link:../../packages/event-store
       luxon: 3.2.1
       pg: 8.9.0
@@ -76,6 +79,7 @@ importers:
       '@types/luxon': 3.2.0
       '@types/node': 18.11.18
       '@types/pg': 8.6.6
+      '@types/superagent': 4.1.16
       '@types/supertest': 2.0.12
       '@types/uuid': 9.0.0
       '@typescript-eslint/eslint-plugin': 5.51.0_go4drrxstycfikanvu45pi4vgq
@@ -170,6 +174,7 @@ importers:
       '@types/react-dom': ^17.0.17
       '@types/uuid': ^9.0.0
       concurrently: ^7.6.0
+      event-serialization: workspace:*
       event-store: workspace:*
       luxon: ^3.2.1
       md5: ^2.3.0
@@ -200,6 +205,7 @@ importers:
       '@remix-run/react': 1.12.0_biqbaboplfbrettd7655fr4n2y
       '@remix-run/serve': 1.12.0
       '@remix-validated-form/with-zod': 2.0.5_fvokfsjk4qzjevn2et67tznlr4
+      event-serialization: link:../../packages/event-serialization
       event-store: link:../../packages/event-store
       luxon: 3.2.1
       md5: 2.3.0
@@ -239,9 +245,9 @@ importers:
       eslint-plugin-react: 7.28.0
       typescript: ^4.8.3
     dependencies:
-      eslint-config-next: 13.1.6_4vsywjlpuriuw3tl5oq6zy5a64
+      eslint-config-next: 13.2.0_4vsywjlpuriuw3tl5oq6zy5a64
       eslint-config-prettier: 8.6.0_eslint@8.33.0
-      eslint-config-turbo: 0.0.7_eslint@8.33.0
+      eslint-config-turbo: 0.0.8_eslint@8.33.0
       eslint-plugin-react: 7.28.0_eslint@8.33.0
     devDependencies:
       typescript: 4.9.5
@@ -250,7 +256,29 @@ importers:
     specifiers:
       eslint-config-turbo: latest
     dependencies:
-      eslint-config-turbo: 0.0.7_eslint@8.33.0
+      eslint-config-turbo: 0.0.8_eslint@8.33.0
+
+  packages/event-serialization:
+    specifiers:
+      '@types/jest': ^26.0.22
+      '@types/node': ^18.11.9
+      eslint: ^7.32.0
+      eslint-config-custom: workspace:*
+      event-store: workspace:*
+      jest: ^29.3.1
+      jest-presets: workspace:*
+      tsconfig: workspace:*
+      typescript: ^4.8.3
+    devDependencies:
+      '@types/jest': 26.0.24
+      '@types/node': 18.11.19
+      eslint: 7.32.0
+      eslint-config-custom: link:../eslint-config-custom
+      event-store: link:../event-store
+      jest: 29.3.1_@types+node@18.11.19
+      jest-presets: link:../jest-presets
+      tsconfig: link:../tsconfig
+      typescript: 4.9.5
 
   packages/event-store:
     specifiers:
@@ -2703,8 +2731,8 @@ packages:
       tslib: 2.5.0
     dev: true
 
-  /@next/eslint-plugin-next/13.1.6:
-    resolution: {integrity: sha512-o7cauUYsXjzSJkay8wKjpKJf2uLzlggCsGUkPu3lP09Pv97jYlekTC20KJrjQKmSv5DXV0R/uks2ZXhqjNkqAw==}
+  /@next/eslint-plugin-next/13.2.0:
+    resolution: {integrity: sha512-/UW29MPgX5P1J1AVIj9g1TCv4BKzUTBB54wgtEp7X15pEKerACGYv9iny44KGZxSJDizWD2+Zaw6+E7do4kwRA==}
     dependencies:
       glob: 7.1.7
     dev: false
@@ -5575,8 +5603,8 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-config-next/13.1.6_4vsywjlpuriuw3tl5oq6zy5a64:
-    resolution: {integrity: sha512-0cg7h5wztg/SoLAlxljZ0ZPUQ7i6QKqRiP4M2+MgTZtxWwNKb2JSwNc18nJ6/kXBI6xYvPraTbQSIhAuVw6czw==}
+  /eslint-config-next/13.2.0_4vsywjlpuriuw3tl5oq6zy5a64:
+    resolution: {integrity: sha512-nZfIQG5m82xwgGO8EjakbF5qjnXADcveGxOxlg5J1jZ9MQlESvqqRrvl4+KHE+JKRgFD2h0q5xwDDWfFbtZmMA==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
       typescript: '>=3.3.1'
@@ -5584,7 +5612,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@next/eslint-plugin-next': 13.1.6
+      '@next/eslint-plugin-next': 13.2.0
       '@rushstack/eslint-patch': 1.2.0
       '@typescript-eslint/parser': 5.50.0_4vsywjlpuriuw3tl5oq6zy5a64
       eslint: 8.33.0
@@ -5608,13 +5636,13 @@ packages:
     dependencies:
       eslint: 8.33.0
 
-  /eslint-config-turbo/0.0.7_eslint@8.33.0:
-    resolution: {integrity: sha512-WbrGlyfs94rOXrhombi1wjIAYGdV2iosgJRndOZtmDQeq5GLTzYmBUCJQZWtLBEBUPCj96RxZ2OL7Cn+xv/Azg==}
+  /eslint-config-turbo/0.0.8_eslint@8.33.0:
+    resolution: {integrity: sha512-ijj6uv0QX2kWahg3OYnTK1/q4MueXsqY2uE4MP9yeUA5CzVhL7GU+biKlv1BfMMqPltixHUcpZoW4yyNLCnMiw==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
       eslint: 8.33.0
-      eslint-plugin-turbo: 0.0.7_eslint@8.33.0
+      eslint-plugin-turbo: 0.0.8_eslint@8.33.0
     dev: false
 
   /eslint-import-resolver-node/0.3.7:
@@ -5808,8 +5836,8 @@ packages:
       string.prototype.matchall: 4.0.8
     dev: false
 
-  /eslint-plugin-turbo/0.0.7_eslint@8.33.0:
-    resolution: {integrity: sha512-iajOH8eD4jha3duztGVBD1BEmvNrQBaA/y3HFHf91vMDRYRwH7BpHSDFtxydDpk5ghlhRxG299SFxz7D6z4MBQ==}
+  /eslint-plugin-turbo/0.0.8_eslint@8.33.0:
+    resolution: {integrity: sha512-pExSCmjWw/KFKb3/0PVqxiWb30FbcwDEf6kKv3alvNBSVEzDHalyAGHc9klbLSG+nFmbkfNE3Ky/UHDryCqt8g==}
     peerDependencies:
       eslint: '>6.6.0'
     dependencies:
@@ -11252,65 +11280,65 @@ packages:
       tslib: 1.14.1
       typescript: 4.9.5
 
-  /turbo-darwin-64/1.7.4:
-    resolution: {integrity: sha512-ZyYrQlUl8K/mYN1e6R7bEhPPYjMakz0DYMaexkyD7TAijQtWmTSd4a+I7VknOYNEssnUZ/v41GU3gPV1JAzxxQ==}
+  /turbo-darwin-64/1.8.2:
+    resolution: {integrity: sha512-j77U0uOeppENexFsIvvzExADSqMBEeCHnm+6LSNQfaajHSrbUVSTsuD6ZMYHamT6bslc+ZZm21jdecWkwZFBbw==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-darwin-arm64/1.7.4:
-    resolution: {integrity: sha512-CKIXg9uqp1a+Yeq/c4U0alPOqvwLUq5SBZf1PGYhGqJsfG0fRBtJfkUjHuBsuJIOGXg8rCmcGSWGIsIF6fqYuw==}
+  /turbo-darwin-arm64/1.8.2:
+    resolution: {integrity: sha512-1NoAvjlwt2wycsAFJouauy9epn9DptSMy6BoGqxJVc4jiibsLepp9qYc4f1/ln0zjd3FR1IvhGOiBfdpqMN7hg==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-64/1.7.4:
-    resolution: {integrity: sha512-RIUl4RUFFyzD2T024vL7509Ygwcw+SEa8NOwPfaN6TtJHK7RZV/SBP3fLNVOptG9WRLnOWX3OvsLMbiOqDLLyA==}
+  /turbo-linux-64/1.8.2:
+    resolution: {integrity: sha512-TcT3CRYnBYA46kLGGbGC2jDyCEAvMgVpUdpIZGTmod48EKpZaEfVgTkpa4GJde8W68yRFogPZjPVL3yJHFpXSA==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-arm64/1.7.4:
-    resolution: {integrity: sha512-Bg65F0AjYYYxqE6RPf2H5TIGuA/EyWMeGOATHVSZOWAbYcnG3Ly03GZii8AHnUi7ntWBdjwvXf/QbOS1ayNB6A==}
+  /turbo-linux-arm64/1.8.2:
+    resolution: {integrity: sha512-Mb9+KBy4YJzPMZ6WGoMzMVZ6EtueCSvOvgmNpVFgkwbtabfBuaBOvN+irtg4RRSWvJQTDTziLABieocEEXZImQ==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-64/1.7.4:
-    resolution: {integrity: sha512-rTaV50XZ2BRxRHOHqt1UsWfeDmYLbn8UKE6g2D2ED+uW+kmnTvR9s01nmlGWd2sAuWcRYQyQ2V+O09VfKPKcQw==}
+  /turbo-windows-64/1.8.2:
+    resolution: {integrity: sha512-/+R5ikRrw2w2w38JtNPubGLIQHgUC70m783DI9aPgaM5c8P5D/Y0k6HgjuC/uXgiaz2h3R7p7YWlr+2/E0bqyA==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-arm64/1.7.4:
-    resolution: {integrity: sha512-h8sxdKPvHTnWUPtwnYszFMmSO0P/iUUwmYY9n7iYThA71zSao28UeZ0H0Gw75cY3MPjvkjn2C4EBAUGPjuZJLw==}
+  /turbo-windows-arm64/1.8.2:
+    resolution: {integrity: sha512-s07viz5nXSx4kyiksuPM4FGLRkoaGMaw0BpwFjdRQsl1p+WclUN1IPdokVPKOmFpu5pNCVYlG/raP/mXAEzDCg==}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo/1.7.4:
-    resolution: {integrity: sha512-8RLedDoUL0kkVKWEZ/RMM70BvKLyDFen06QuKKhYC2XNOfNKqFDqzIdcY/vGick869bNIWalChoy4O07k0HLsA==}
+  /turbo/1.8.2:
+    resolution: {integrity: sha512-G/uJx6bZK5RwTWHsRN/MP0MvXFznmCaL3MQXdSf+OG/q0o8GE7+yivyyWEplWI1Asc8AEN909A/wlIkoz2FKTg==}
     hasBin: true
     requiresBuild: true
     optionalDependencies:
-      turbo-darwin-64: 1.7.4
-      turbo-darwin-arm64: 1.7.4
-      turbo-linux-64: 1.7.4
-      turbo-linux-arm64: 1.7.4
-      turbo-windows-64: 1.7.4
-      turbo-windows-arm64: 1.7.4
+      turbo-darwin-64: 1.8.2
+      turbo-darwin-arm64: 1.8.2
+      turbo-linux-64: 1.8.2
+      turbo-linux-arm64: 1.8.2
+      turbo-windows-64: 1.8.2
+      turbo-windows-arm64: 1.8.2
     dev: true
 
   /type-check/0.3.2:

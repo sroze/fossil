@@ -3,16 +3,20 @@ import { WriteController } from './controllers/write';
 import { SystemStore } from './symbols';
 import { Pool } from 'pg';
 import { IEventStore, MessageDbClient, MessageDbStore } from 'event-store';
-import { TokenAuthenticator } from 'store-security';
+import { KeyLocator, TokenAuthenticator } from 'store-security';
 import { InMemoryKeyLocator } from '../test/key-locator';
 import { StoreLocator } from 'store-locator';
+import { ReadController } from './controllers/read';
+import { HttpAuthenticator } from './services/http-authenticator';
 
 const SystemStoreDatabasePool = Symbol('SystemStoreDatabasePool');
+export const KeyLocatorSymbol = Symbol('KeyLocator');
 
 @Module({
   imports: [],
-  controllers: [WriteController],
+  controllers: [WriteController, ReadController],
   providers: [
+    HttpAuthenticator,
     {
       provide: SystemStoreDatabasePool,
       useFactory: () =>
@@ -24,8 +28,14 @@ const SystemStoreDatabasePool = Symbol('SystemStoreDatabasePool');
         }),
     },
     {
+      provide: KeyLocatorSymbol,
+      useFactory: () => new InMemoryKeyLocator([]),
+    },
+    {
       provide: TokenAuthenticator,
-      useFactory: () => new TokenAuthenticator(new InMemoryKeyLocator([])),
+      useFactory: (keyLocator: KeyLocator) =>
+        new TokenAuthenticator(keyLocator),
+      inject: [KeyLocatorSymbol],
     },
     {
       provide: SystemStore,

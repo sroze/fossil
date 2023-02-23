@@ -2,7 +2,7 @@ import React from 'react';
 import { EmptyEventStream } from './empty-state';
 import { EventsTable } from './events-table';
 import { useSubscription } from '../hooks/useSubscription';
-import { EventOverTheWire } from '../../subscriptions/server-sent-events/wire';
+import { EventOverTheWire } from '../../../../../../packages/event-serialization/src';
 
 // TODO: Add a loading state.
 // TODO: Add error handling.

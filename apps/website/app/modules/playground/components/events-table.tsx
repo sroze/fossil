@@ -1,6 +1,6 @@
 import { Table } from '../../design-system/table';
 import React from 'react';
-import { EventOverTheWire } from '../../subscriptions/server-sent-events/wire';
+import { EventOverTheWire } from '../../../../../../packages/event-serialization/src';
 
 export const EventsTable: React.FC<{ events: EventOverTheWire[] }> = ({
   events,

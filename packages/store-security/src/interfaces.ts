@@ -12,15 +12,17 @@ export interface KeyLocator {
   findPublicKey(storeId: string, keyId: string): Promise<PublicKey | undefined>;
 }
 
+export type ReadClaims = {
+  streams: string[];
+};
+
+export type WriteClaims = {
+  streams: string[];
+  types?: string[];
+};
+
 export interface FossilClaims {
   store_id: string;
-
-  read?: {
-    streams: string[];
-  };
-
-  write?: {
-    streams: string[];
-    types?: string[];
-  };
+  read?: ReadClaims;
+  write?: WriteClaims;
 }

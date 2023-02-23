@@ -11,7 +11,7 @@ export function configureApplication(app: INestApplication): INestApplication {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   return app;
 }

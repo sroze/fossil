@@ -36,6 +36,7 @@
     "store-security": "workspace:*",
     "subscription": "workspace:*",
     "store-locator": "workspace:*",
+    "event-serialization": "workspace:*",
     "zod": "^3.20.2"
   },
   "devDependencies": {

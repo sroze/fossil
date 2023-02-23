@@ -17,9 +17,13 @@ import {
 import { EventToWrite, WrongExpectedVersionError } from 'event-store';
 import { IsUUID, IsNotEmpty, IsJSON } from 'class-validator';
 import { Request } from 'express';
-import { extractTokenFromRequest } from '../express-utils';
-import { FossilClaims, TokenAuthenticator } from 'store-security';
+import {
+  authorizeWrite,
+  FossilClaims,
+  TokenAuthenticator,
+} from 'store-security';
 import { StoreLocator } from 'store-locator';
+import { HttpAuthenticator } from '../services/http-authenticator';
 
 class EventToWriteDto implements EventToWrite {
   @ApiPropertyOptional({
@@ -77,7 +81,7 @@ class WriteResultDto {
 @Controller()
 export class WriteController {
   constructor(
-    private readonly tokenAuthenticator: TokenAuthenticator,
+    private readonly authenticator: HttpAuthenticator,
     private readonly storeLocator: StoreLocator,
   ) {}
 
@@ -88,29 +92,12 @@ export class WriteController {
     @Body() command: WriteRequestDto,
     @Req() request: Request,
   ): Promise<WriteResultDto> {
-    const token = extractTokenFromRequest(request);
-    if (!token) {
-      throw new UnauthorizedException(
-        'You must bring a token to write on the event store.',
-      );
-    }
-
-    let payload: FossilClaims;
-    try {
-      payload = await this.tokenAuthenticator.authorize(storeId, token);
-    } catch (e) {
-      throw new UnauthorizedException(e);
-    }
-
+    const payload = await this.authenticator.authenticate(storeId, request);
     if (!payload.write) {
       throw new ForbiddenException(
         'You are not authorized to write with this token.',
       );
-    }
-
-    // FIXME: move this out to a function in `store-security` that can be tested individually.
-    const { streams } = payload.write;
-    if (!streams.includes('*') && !streams.includes(command.stream)) {
+    } else if (!authorizeWrite(payload.write, command.stream)) {
       throw new ForbiddenException(
         'You are not authorized to write in this stream with this token.',
       );

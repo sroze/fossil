@@ -1,44 +1,14 @@
-import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { v4 } from 'uuid';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../app.module';
-import {
-  GeneratedKey,
-  generateKey,
-  generateToken,
-  TokenAuthenticator,
-} from 'store-security';
+import { generateKey, generateToken } from 'store-security';
 import { DateTime } from 'luxon';
-import { InMemoryKeyLocator } from '../../test/key-locator';
-import { configureApplication } from '../application/configure';
+import { TestApplication } from '../../test/test-application';
 
 describe('Write', () => {
-  let app: INestApplication;
-  let keyForStore: GeneratedKey;
+  let app: TestApplication;
 
   beforeAll(async () => {
-    keyForStore = await generateKey();
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(TokenAuthenticator)
-      .useValue(
-        new TokenAuthenticator(
-          new InMemoryKeyLocator([
-            {
-              storeId: '123',
-              keyId: keyForStore.private.kid,
-              key: keyForStore.public,
-            },
-          ]),
-        ),
-      )
-      .compile();
-
-    app = configureApplication(moduleRef.createNestApplication());
-    await app.init();
+    app = await TestApplication.create().init();
   });
 
   afterAll(async () => {
@@ -106,16 +76,13 @@ describe('Write', () => {
     });
 
     it('returns 401 if the token does not match this store', async () => {
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '678',
-        },
-      });
-
       await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            store_id: '678',
+          }),
+        )
         .send({ stream: 'Foo-123', events: [fooEvent] })
         .expect(401);
     });
@@ -123,49 +90,35 @@ describe('Write', () => {
 
   describe('With a valid authentication token', () => {
     it('returns 403 if they are not to write', async () => {
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-        },
-      });
-
       await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(app.withToken('123', {}))
         .send({ stream: 'Foo-123', events: [fooEvent] })
         .expect(403);
     });
 
     it('returns 403 if the allowed streams are not matching', async () => {
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-          write: { streams: ['Bar-123'] },
-        },
-      });
-
       await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            write: { streams: ['Bar-123'] },
+          }),
+        )
         .send({ stream: 'Foo-123', events: [fooEvent] })
         .expect(403);
     });
 
     it('writes the event if the stream is allowed', async () => {
       const stream = `Foo-${v4()}`;
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-          write: { streams: [stream] },
-        },
-      });
 
       const { body } = await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            write: { streams: [stream] },
+          }),
+        )
         .send({ stream, events: [fooEvent] })
         .expect(201);
 
@@ -174,17 +127,14 @@ describe('Write', () => {
 
     it('writes multiple events', async () => {
       const stream = `Foo-${v4()}`;
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-          write: { streams: [stream] },
-        },
-      });
 
       const { body } = await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            write: { streams: [stream] },
+          }),
+        )
         .send({
           stream,
           events: [fooEvent, { type: 'Bar', data: { foo: 'bar' } }],
@@ -196,36 +146,32 @@ describe('Write', () => {
 
     it('accepts an "empty stream" as expected version', async () => {
       const stream = `Foo-${v4()}`;
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-          write: { streams: [stream] },
-        },
-      });
 
       await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            write: { streams: [stream] },
+          }),
+        )
         .send({ stream, events: [fooEvent], expected_version: '-1' })
         .expect(201);
     });
 
     it('returns a conflict response when the expected version is not was is expected', async () => {
       const stream = `Foo-${v4()}`;
-      const token = await generateToken(keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: '123',
-          write: { streams: [stream] },
-        },
-      });
 
       await request(app.getHttpServer())
         .post('/stores/123/events')
-        .set('authorization', `Bearer ${token}`)
+        .use(
+          app.withToken('123', {
+            write: { streams: [stream] },
+          }),
+        )
         .send({ stream, events: [fooEvent], expected_version: '1' })
         .expect(409);
     });
+
+    // TODO: Error messages should match https://www.rfc-editor.org/rfc/rfc7807
   });
 });
