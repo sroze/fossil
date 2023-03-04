@@ -29,6 +29,7 @@ export type AppendResult = {
   global_position: bigint;
 };
 
+// TODO: We probably should remove the `EventType`
 export interface IEventStore {
   /**
    * Append events to a stream transactionally.

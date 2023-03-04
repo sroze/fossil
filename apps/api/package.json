@@ -30,6 +30,7 @@
     "store-locator": "workspace:*",
     "store-security": "workspace:*",
     "event-serialization": "workspace:*",
+    "subscription": "workspace:*",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

@@ -32,46 +32,46 @@ export class TenantedStore implements IEventStore {
     );
   }
 
-  async lastEventFromStream(
+  async lastEventFromStream<EventType extends EventInStore = EventInStore>(
     stream: string,
     type?: string
-  ): Promise<EventInStore | undefined> {
+  ): Promise<EventType | undefined> {
     const event = await this.implementation.lastEventFromStream(
       this.encoder.encodeStream(stream),
       type
     );
     if (event) {
-      return this.encoder.decodeEvent(event);
+      return this.encoder.decodeEvent(event) as EventType;
     }
 
     return undefined;
   }
 
-  async *readCategory(
+  async *readCategory<EventType extends EventInStore = EventInStore>(
     category: string,
     fromPosition: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventInStore> {
+  ): AsyncIterable<EventType> {
     for await (const event of this.implementation.readCategory(
       this.encoder.encodeStream(category),
       fromPosition,
       signal
     )) {
-      yield this.encoder.decodeEvent(event);
+      yield this.encoder.decodeEvent(event) as EventType;
     }
   }
 
-  async *readStream(
+  async *readStream<EventType extends EventInStore = EventInStore>(
     stream: string,
     fromPosition: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventInStore> {
+  ): AsyncIterable<EventType> {
     for await (const event of this.implementation.readStream(
       this.encoder.encodeStream(stream),
       fromPosition,
       signal
     )) {
-      yield this.encoder.decodeEvent(event);
+      yield this.encoder.decodeEvent(event) as EventType;
     }
   }
 }

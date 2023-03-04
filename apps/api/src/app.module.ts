@@ -8,15 +8,18 @@ import { InMemoryKeyLocator } from '../test/key-locator';
 import { StoreLocator } from 'store-locator';
 import { ReadController } from './controllers/read';
 import { HttpAuthenticator } from './services/http-authenticator';
+import { HttpStoreLocator } from './services/http-store-locator';
+import { SubscribeController } from './controllers/subscribe';
 
 const SystemStoreDatabasePool = Symbol('SystemStoreDatabasePool');
 export const KeyLocatorSymbol = Symbol('KeyLocator');
 
 @Module({
   imports: [],
-  controllers: [WriteController, ReadController],
+  controllers: [WriteController, ReadController, SubscribeController],
   providers: [
     HttpAuthenticator,
+    HttpStoreLocator,
     {
       provide: SystemStoreDatabasePool,
       useFactory: () =>

@@ -1,5 +1,5 @@
 import { FossilClaims, KeyLocator } from './interfaces';
-import { decode, verify, Jwt, JwtPayload } from 'jsonwebtoken';
+import { decode, Jwt, JwtPayload } from 'jsonwebtoken';
 import { JWK, JWS } from 'node-jose';
 
 export class TokenAuthenticator {

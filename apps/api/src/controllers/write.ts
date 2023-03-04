@@ -3,7 +3,6 @@ import {
   Post,
   Body,
   Req,
-  UnauthorizedException,
   Param,
   ForbiddenException,
   ConflictException,
@@ -17,11 +16,7 @@ import {
 import { EventToWrite, WrongExpectedVersionError } from 'event-store';
 import { IsUUID, IsNotEmpty, IsJSON } from 'class-validator';
 import { Request } from 'express';
-import {
-  authorizeWrite,
-  FossilClaims,
-  TokenAuthenticator,
-} from 'store-security';
+import { authorizeWrite } from 'store-security';
 import { StoreLocator } from 'store-locator';
 import { HttpAuthenticator } from '../services/http-authenticator';
 

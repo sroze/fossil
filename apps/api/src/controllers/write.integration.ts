@@ -172,6 +172,7 @@ describe('Write', () => {
         .expect(409);
     });
 
-    // TODO: Error messages should match https://www.rfc-editor.org/rfc/rfc7807
+    it.todo('Idempotency on write');
+    it.todo('Error messages in libe with rfc7807');
   });
 });

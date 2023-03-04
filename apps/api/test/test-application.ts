@@ -42,15 +42,22 @@ export class TestApplication {
     return this.app.getHttpServer();
   }
 
+  generateToken(
+    storeId: string,
+    payload: Partial<FossilClaims> = {},
+  ): Promise<string> {
+    return generateToken(this.keyForStore.private, {
+      exp: DateTime.now().valueOf() / 1000 + 3600,
+      fossil: {
+        store_id: storeId,
+        ...payload,
+      },
+    });
+  }
+
   withToken(storeId: string, payload: Partial<FossilClaims> = {}): Plugin {
     return asyncPlugin(async (req: SuperAgentRequest) => {
-      const token = await generateToken(this.keyForStore.private, {
-        exp: DateTime.now().valueOf() / 1000 + 3600,
-        fossil: {
-          store_id: storeId,
-          ...payload,
-        },
-      });
+      const token = await this.generateToken(storeId, payload);
 
       req.set('authorization', `Bearer ${token}`);
     });

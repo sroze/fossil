@@ -1,7 +1,7 @@
 import { ICheckpointStore } from './interfaces';
 
 export class InMemoryCheckpointStore implements ICheckpointStore {
-  private current = 0n;
+  constructor(private current = 0n) {}
 
   async getCheckpoint(): Promise<bigint> {
     return this.current;
