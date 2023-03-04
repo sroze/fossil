@@ -1,4 +1,4 @@
-import { ActionFunction, DataFunctionArgs, json } from '@remix-run/node';
+import { DataFunctionArgs, json } from '@remix-run/node';
 import { authenticationIsEnabled, authenticator } from './authenticator.server';
 import type { Auth0Profile } from 'remix-auth-auth0';
 
@@ -8,7 +8,9 @@ export type LoaderParamsWithAuthentication = {
 
 export async function loaderWithAuthorization<ReturnType extends object = any>(
   args: DataFunctionArgs,
-  loader?: (args: DataFunctionArgs) => Promise<ReturnType | Response>
+  loader?: (
+    args: DataFunctionArgs & { profile: Auth0Profile }
+  ) => Promise<ReturnType | Response>
 ): Promise<(ReturnType & LoaderParamsWithAuthentication) | Response> {
   const profile: Auth0Profile = authenticationIsEnabled()
     ? await authenticator.isAuthenticated(args.request, {
@@ -17,7 +19,7 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
     : developmentProfile;
 
   if (loader) {
-    const result: ReturnType | Response = await loader(args);
+    const result: ReturnType | Response = await loader({ ...args, profile });
     if (result instanceof Response) {
       return result;
     }
@@ -31,15 +33,19 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
   return json({ profile });
 }
 
-export function actionWithAuthorization(action: ActionFunction) {
+export function actionWithAuthorization(
+  action: (
+    args: DataFunctionArgs & { profile: Auth0Profile }
+  ) => Promise<Response> | Response | Promise<any> | any
+) {
   return async (args: DataFunctionArgs) => {
-    if (authenticationIsEnabled()) {
-      await authenticator.isAuthenticated(args.request, {
-        failureRedirect: '/auth/login',
-      });
-    }
+    const profile: Auth0Profile = authenticationIsEnabled()
+      ? await authenticator.isAuthenticated(args.request, {
+          failureRedirect: '/auth/login',
+        })
+      : developmentProfile;
 
-    return action(args);
+    return action({ ...args, profile });
   };
 }
 

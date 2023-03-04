@@ -1,33 +1,11 @@
 import {
-  EventInStore,
-  EventWritten,
-  MessageDbClient,
-  MessageDbStore,
-} from 'event-store';
-import { Pool } from 'pg';
-import sql from 'sql-template-tag';
-import {
   CheckpointAfterNMessages,
-  InMemoryCheckpointStore,
   Subscription,
   WithEventsCheckpointStore,
 } from 'subscription';
-
-require('dotenv').config();
-
-const abortController = new AbortController();
-
-process.on('SIGINT', () => abortController.abort());
-process.on('SIGTERM', () => abortController.abort());
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL!,
-  max: 10,
-  connectionTimeoutMillis: 10000,
-  statement_timeout: 60000,
-});
-
-export const store = new MessageDbStore(new MessageDbClient(pool));
+import { EventInStore, EventWritten, IEventStore } from 'event-store';
+import sql from 'sql-template-tag';
+import { Pool } from 'pg';
 
 export type AnySubscriptionEvent = SubscriptionCreated;
 export type SubscriptionCreated = EventWritten<
@@ -40,7 +18,7 @@ export type SubscriptionCreated = EventWritten<
   }
 >;
 
-(async () => {
+export function main(pool: Pool, store: IEventStore, abortSignal: AbortSignal) {
   const subscription = new Subscription(
     new WithEventsCheckpointStore(store, 'ConsumerCheckpoint-api-v1'),
     new CheckpointAfterNMessages(1)
@@ -63,8 +41,6 @@ export type SubscriptionCreated = EventWritten<
         );
       }
     },
-    abortController.signal
+    abortSignal
   );
-})();
-
-export {};
+}

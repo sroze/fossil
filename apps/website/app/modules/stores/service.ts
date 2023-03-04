@@ -9,10 +9,18 @@ import {
 import { accumulate } from '../event-store/accumulate';
 import { fossilEventStore } from '../event-store/store.backend';
 
+// TODO: Simplify all of this with `eskit`'s `createTransact`  (https://github.com/birdiecare/node-packages/tree/main/packages/eskit)
+// TODO: Add `users` to stores, who have access to these stores.
+// TODO: Create a read-model that has the list of stores per user.
+
 // Commands
-type CreateServiceCommand = {
+type CreateStoreCommand = {
   name: string;
   region: 'london';
+};
+
+type GrantAccessToUserCommand = {
+  user_id: string;
 };
 
 export class StoreService {
@@ -22,7 +30,7 @@ export class StoreService {
 
   constructor(private readonly client: IEventStore) {}
 
-  async create(command: CreateServiceCommand): Promise<string> {
+  async create(command: CreateStoreCommand): Promise<string> {
     const identifier = v4();
     const created: StoreCreated = {
       id: v4(),
@@ -37,6 +45,8 @@ export class StoreService {
 
     return identifier;
   }
+
+  grantAccess;
 
   write(
     identifier: string,

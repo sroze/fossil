@@ -5,7 +5,10 @@ import { z } from 'zod';
 import { SubmitButton } from '../modules/zod-forms/components/submit-button';
 import { FormInput } from '../modules/zod-forms/components/input';
 import { Navbar } from '../modules/layout/organisms/Navbar';
-import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
+import {
+  actionWithAuthorization,
+  loaderWithAuthorization,
+} from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
 
 export const loader: LoaderFunction = (args) =>
@@ -22,7 +25,7 @@ export const generateStoreValidator = withZod(
   })
 );
 
-export const action = async ({ request }: DataFunctionArgs) => {
+export const action = actionWithAuthorization(async ({ request, profile }) => {
   const { data, error } = await generateStoreValidator.validate(
     await request.formData()
   );
@@ -33,8 +36,10 @@ export const action = async ({ request }: DataFunctionArgs) => {
 
   const identifier = await StoreService.resolve().create(data);
 
+  console.log('grant access to', profile);
+
   return redirect(`/stores/${identifier}`);
-};
+});
 
 export default function Demo() {
   return (
