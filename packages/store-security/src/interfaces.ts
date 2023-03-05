@@ -1,15 +1,18 @@
-import { JWK } from 'node-jose';
-import RawKey = JWK.RawKey;
+import type { JWK } from 'node-jose';
 
-export type PublicKey = RawKey;
-export type PrivateKey = RawKey & Record<string, string>;
+export type PublicKey = JWK.RawKey;
+export type PrivateKey = JWK.RawKey & Record<string, string>;
 export type GeneratedKey = {
   public: PublicKey;
   private: PrivateKey;
 };
 
 export interface KeyLocator {
-  findPublicKey(storeId: string, keyId: string): Promise<PublicKey | undefined>;
+  /**
+   * Find a public key from its `kid` found in the token.
+   *
+   */
+  findPublicKey(storeId: string, kid: string): Promise<PublicKey | undefined>;
 }
 
 export type ReadClaims = {

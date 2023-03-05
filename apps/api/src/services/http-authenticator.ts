@@ -19,7 +19,11 @@ export class HttpAuthenticator {
     try {
       payload = await this.tokenAuthenticator.authorize(storeId, token);
     } catch (e) {
-      throw new UnauthorizedException(e);
+      if (e instanceof Error) {
+        throw new UnauthorizedException(e.message, { cause: e });
+      }
+
+      throw e;
     }
 
     return payload;

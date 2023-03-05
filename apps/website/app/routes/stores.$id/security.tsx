@@ -5,15 +5,15 @@ import { GenerateKeyForm } from '../../modules/security/organisms/generate-key';
 import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { StoreService } from '../../modules/stores/service';
-import { StoreState } from '../../modules/stores/domain/store';
 import { LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
+import { StoreState } from '~/modules/stores/decider';
 
 type LoaderData = {
   store: StoreState;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const { state: store } = await StoreService.resolve().load(params.id!);
+  const store = await StoreService.resolve().load(params.id!);
 
   return json<LoaderData>({
     store,
@@ -66,7 +66,7 @@ export default function Security() {
               <Table.Column>
                 <form
                   method="post"
-                  action={`/stores/${store.id}/security/keys/${key.id}/delete`}
+                  action={`/stores/${store.id}/security/keys/${key.key_id}/delete`}
                 >
                   <button
                     type="submit"

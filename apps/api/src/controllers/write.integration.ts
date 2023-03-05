@@ -174,5 +174,6 @@ describe('Write', () => {
 
     it.todo('Idempotency on write');
     it.todo('Error messages in libe with rfc7807');
+    it.todo('Requires streams to be "{category}-{id}" formatted');
   });
 });

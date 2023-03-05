@@ -49,7 +49,7 @@ export class TenantedStore implements IEventStore {
 
   async *readCategory<EventType extends EventInStore = EventInStore>(
     category: string,
-    fromPosition: bigint,
+    fromPosition?: bigint,
     signal?: AbortSignal
   ): AsyncIterable<EventType> {
     for await (const event of this.implementation.readCategory(

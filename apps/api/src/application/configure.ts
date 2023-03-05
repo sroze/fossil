@@ -12,6 +12,7 @@ export function configureApplication(app: INestApplication): INestApplication {
   SwaggerModule.setup('docs', app, document);
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  app.enableCors();
 
   return app;
 }

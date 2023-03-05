@@ -1,5 +1,10 @@
-import { Controller, Get, Param, Query, Res, Sse } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Res } from '@nestjs/common';
+import {
+  ApiHeader,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   SseStream,
   WritableHeaderStream,
@@ -11,27 +16,55 @@ import {
   CheckpointAfterNMessages,
 } from 'subscription';
 import { serializeEventInStoreForWire } from 'event-serialization';
-import { EventInStore } from 'event-store';
-import { IsOptional, IsString } from 'class-validator';
+import { EventInStore, IEventStore } from 'event-store';
 import { HttpStoreLocator } from '../services/http-store-locator';
 import { Request } from 'express';
 
-class SubscribeQueryParams {
-  @IsString()
-  @IsOptional()
-  from?: string;
-}
+export const ServerSentEventsOperation = (): MethodDecorator &
+  ClassDecorator => {
+  return (
+    target: any,
+    key?: string | symbol,
+    descriptor?: TypedPropertyDescriptor<any>,
+  ): any => {
+    ApiHeader({
+      name: 'Last-Event-Id',
+      schema: { type: 'string' },
+      description:
+        'Receive events only after this provided identifier. This is NOT the event identifier but the `id` property received in the SSE stream.',
+    })(target, key, descriptor);
 
-@ApiTags('Store')
+    ApiOkResponse({
+      content: {
+        'text/event-stream': {
+          schema: {
+            type: 'array',
+            format: 'event-stream',
+            properties: {
+              id: { type: 'string' },
+              event: { type: 'string', enum: ['event'] },
+              data: { type: 'json', description: 'JSON-encoded event.' },
+            },
+          },
+        },
+      },
+    })(target, key, descriptor);
+  };
+};
+
+@ApiTags('Ephemeral subscription')
 @Controller()
 export class SubscribeController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
 
+  @ApiOperation({
+    summary: "Server Sent Event (SSE) stream of this category's events",
+  })
+  @ServerSentEventsOperation()
   @Get('stores/:id/categories/:category/subscribe')
   async subscribeCategory(
     @Param('id') storeId: string,
     @Param('category') category: string,
-    @Query() { from }: SubscribeQueryParams,
     @Req() req: Request,
     @Res() res: WritableHeaderStream,
   ) {
@@ -41,19 +74,17 @@ export class SubscribeController {
       category,
     );
 
-    await this.streamAsServerSentEvents(
-      req,
-      res,
-      (position, signal) => store.readCategory(category, position, signal),
-      (event: EventInStore) => event.global_position,
-    );
+    await this.streamAsServerSentEvents(store, req, res, 'category', category);
   }
 
+  @ApiOperation({
+    summary: "Server Sent Event (SSE) stream of this stream's events",
+  })
+  @ServerSentEventsOperation()
   @Get('stores/:id/streams/:stream/subscribe')
   async subscribeStream(
     @Param('id') storeId: string,
     @Param('stream') stream: string,
-    @Query() { from }: SubscribeQueryParams,
     @Req() req: Request,
     @Res() res: WritableHeaderStream,
   ) {
@@ -63,19 +94,15 @@ export class SubscribeController {
       stream,
     );
 
-    await this.streamAsServerSentEvents(
-      req,
-      res,
-      (position, signal) => store.readStream(stream, position, signal),
-      (event: EventInStore) => event.position + 1n,
-    );
+    await this.streamAsServerSentEvents(store, req, res, 'stream', stream);
   }
 
   private async streamAsServerSentEvents(
+    store: IEventStore,
     req: Request,
     res: WritableHeaderStream,
-    streamFetcher: (position, signal) => AsyncIterable<EventInStore>,
-    eventPositionResolver: (event: EventInStore) => bigint,
+    type: 'stream' | 'category',
+    identifier: string,
   ) {
     let lastEventId = req.headers['last-event-id'];
     if (Array.isArray(lastEventId)) {
@@ -83,6 +110,7 @@ export class SubscribeController {
     }
 
     const manager = new Subscription(
+      store,
       new InMemoryCheckpointStore(lastEventId ? BigInt(lastEventId) : 0n),
       new CheckpointAfterNMessages(1),
     );
@@ -96,9 +124,11 @@ export class SubscribeController {
     const stream = new SseStream(req);
     stream.pipe(res, {});
 
-    await manager.subscribe(
-      streamFetcher,
-      eventPositionResolver,
+    const eventPositionResolver = (event: EventInStore) =>
+      type === 'category' ? event.global_position : event.position + 1n;
+
+    await manager[type === 'stream' ? 'subscribeStream' : 'subscribeCategory'](
+      identifier,
       (event) => {
         return new Promise<void>((resolve, reject) => {
           stream.writeMessage(

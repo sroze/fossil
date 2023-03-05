@@ -3,7 +3,7 @@ import {
   Subscription,
   WithEventsCheckpointStore,
 } from 'subscription';
-import { EventInStore, EventWritten, IEventStore } from 'event-store';
+import { EventWritten, IEventStore } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 
@@ -20,18 +20,13 @@ export type SubscriptionCreated = EventWritten<
 
 export function main(pool: Pool, store: IEventStore, abortSignal: AbortSignal) {
   const subscription = new Subscription(
+    store,
     new WithEventsCheckpointStore(store, 'ConsumerCheckpoint-api-v1'),
     new CheckpointAfterNMessages(1)
   );
 
-  void subscription.subscribe<AnySubscriptionEvent>(
-    (position, signal) =>
-      store.readCategory<AnySubscriptionEvent>(
-        'Subscription',
-        position,
-        signal
-      ),
-    (event: EventInStore) => event.global_position,
+  void subscription.subscribeCategory(
+    'Subscription',
     async ({ data, type }) => {
       if (type === 'SubscriptionCreated') {
         await pool.query(

@@ -7,6 +7,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from '@remix-run/react';
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 export const meta: MetaFunction = () => ({
   charset: 'utf-8',
@@ -19,6 +21,8 @@ import styles from './styles/app.css';
 export const links: LinksFunction = () => [{ rel: 'stylesheet', href: styles }];
 
 export default function App() {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <html lang="en" className="h-full bg-white">
       <head>
@@ -26,7 +30,9 @@ export default function App() {
         <Links />
       </head>
       <body className="h-full">
-        <Outlet />
+        <QueryClientProvider client={queryClient}>
+          <Outlet />
+        </QueryClientProvider>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

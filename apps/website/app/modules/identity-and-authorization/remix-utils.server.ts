@@ -34,6 +34,7 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
 }
 
 export function actionWithAuthorization(
+  args: DataFunctionArgs,
   action: (
     args: DataFunctionArgs & { profile: Auth0Profile }
   ) => Promise<Response> | Response | Promise<any> | any

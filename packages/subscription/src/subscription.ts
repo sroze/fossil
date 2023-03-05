@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import type { EventInStore } from 'event-store';
+import type { EventInStore, IEventStore } from 'event-store';
 import type { ICheckpointStore } from './checkpoint-store/interfaces';
 import type { CheckpointStrategy } from './checkpoint-strategy/interfaces';
 
@@ -14,12 +14,41 @@ export type PositionResolver<EventType = EventInStore> = (
 
 export class Subscription {
   constructor(
+    private readonly store: IEventStore,
     private readonly checkpointStore: ICheckpointStore,
     private readonly checkpointStrategy: CheckpointStrategy,
     private readonly pollingFrequencyInMs = 100
   ) {}
 
-  async subscribe<EventType = EventInStore>(
+  async subscribeCategory<EventType extends EventInStore = EventInStore>(
+    category: string,
+    handler: (event: EventType) => Promise<void>,
+    signal: AbortSignal
+  ): Promise<void> {
+    return this.subscribe<EventType>(
+      (position, signal) =>
+        this.store.readCategory<EventType>(category, position, signal),
+      (event: EventType) => event.global_position,
+      handler,
+      signal
+    );
+  }
+
+  async subscribeStream<EventType extends EventInStore = EventInStore>(
+    stream: string,
+    handler: (event: EventType) => Promise<void>,
+    signal: AbortSignal
+  ): Promise<void> {
+    return this.subscribe<EventType>(
+      (position, signal) =>
+        this.store.readStream<EventType>(stream, position, signal),
+      (event: EventType) => event.position + 1n,
+      handler,
+      signal
+    );
+  }
+
+  private async subscribe<EventType = EventInStore>(
     streamFetcher: StreamFetcher<EventType>,
     positionResolver: PositionResolver<EventType>,
     handler: (event: EventType) => Promise<void>,

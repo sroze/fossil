@@ -46,13 +46,13 @@ export interface IEventStore {
 
   readCategory<EventType extends EventInStore = EventInStore>(
     category: string,
-    fromPosition: bigint,
+    fromPosition?: bigint,
     signal?: AbortSignal
   ): AsyncIterable<EventType>;
 
   readStream<EventType extends EventInStore = EventInStore>(
     stream: string,
-    fromPosition: bigint,
+    fromPosition?: bigint,
     signal?: AbortSignal
   ): AsyncIterable<EventType>;
 

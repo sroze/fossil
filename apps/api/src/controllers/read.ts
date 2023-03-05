@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import {
   ApiOkResponse,
+  ApiOperation,
   ApiProperty,
   ApiPropertyOptional,
   ApiTags,
@@ -55,12 +56,13 @@ class ReadQueryParams {
   from?: string;
 }
 
-@ApiTags('Store')
+@ApiTags('Read')
 @Controller()
 export class ReadController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
 
   @Get('stores/:id/streams/:stream/events')
+  @ApiOperation({ summary: 'List events from a stream' })
   @ApiOkResponse({ type: PaginatedEventList })
   async stream(
     @Param('id') storeId: string,
@@ -98,6 +100,7 @@ export class ReadController {
   }
 
   @Get('stores/:id/streams/:stream/head')
+  @ApiOperation({ summary: 'Read the last event of a stream' })
   @ApiOkResponse({ type: EventInStoreDto })
   async streamHead(
     @Param('id') storeId: string,
@@ -116,6 +119,7 @@ export class ReadController {
   }
 
   @Get('stores/:id/categories/:category/events')
+  @ApiOperation({ summary: 'List events from a category' })
   @ApiOkResponse({ type: PaginatedEventList })
   async category(
     @Param('id') storeId: string,

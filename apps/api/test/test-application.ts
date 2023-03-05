@@ -6,12 +6,13 @@ import {
   generateToken,
 } from 'store-security';
 import { Test } from '@nestjs/testing';
-import { AppModule, KeyLocatorSymbol } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 import { InMemoryKeyLocator } from './key-locator';
 import { configureApplication } from '../src/application/configure';
 import type { Plugin, SuperAgentRequest } from 'superagent';
 import { DateTime } from 'luxon';
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { KeyLocatorSymbol } from '../src/symbols';
 
 const asyncPlugin = (
   plugin: (req: SuperAgentRequest) => Promise<void>,

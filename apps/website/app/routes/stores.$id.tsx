@@ -8,11 +8,11 @@ import {
   LockClosedIcon,
   QueueListIcon,
 } from '@heroicons/react/24/solid';
-import { StoreState } from '../modules/stores/domain/store';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
 import { classNames } from '../modules/remix-utils/front-end';
 import { Navbar } from '../modules/layout/organisms/Navbar';
+import { StoreState } from '~/modules/stores/decider';
 
 type LoaderData = {
   store: StoreState;
@@ -23,7 +23,7 @@ export const loader: LoaderFunction = (args) =>
     const store = await StoreService.resolve().load(params.id!);
 
     return {
-      store: store.state,
+      store,
     };
   });
 

@@ -1,6 +1,6 @@
 import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import { WriteController } from './controllers/write';
-import { SystemStore } from './symbols';
+import { KeyLocatorSymbol, SystemStore, SystemDatabasePool } from './symbols';
 import { Pool } from 'pg';
 import { IEventStore, MessageDbClient, MessageDbStore } from 'event-store';
 import { KeyLocator, TokenAuthenticator } from 'store-security';
@@ -10,9 +10,7 @@ import { ReadController } from './controllers/read';
 import { HttpAuthenticator } from './services/http-authenticator';
 import { HttpStoreLocator } from './services/http-store-locator';
 import { SubscribeController } from './controllers/subscribe';
-
-const SystemStoreDatabasePool = Symbol('SystemStoreDatabasePool');
-export const KeyLocatorSymbol = Symbol('KeyLocator');
+import { DatabaseKeyLocator } from './services/database-key-locator';
 
 @Module({
   imports: [],
@@ -21,7 +19,7 @@ export const KeyLocatorSymbol = Symbol('KeyLocator');
     HttpAuthenticator,
     HttpStoreLocator,
     {
-      provide: SystemStoreDatabasePool,
+      provide: SystemDatabasePool,
       useFactory: () =>
         new Pool({
           connectionString: process.env.DATABASE_URL!,
@@ -32,7 +30,8 @@ export const KeyLocatorSymbol = Symbol('KeyLocator');
     },
     {
       provide: KeyLocatorSymbol,
-      useFactory: () => new InMemoryKeyLocator([]),
+      inject: [SystemDatabasePool],
+      useFactory: (pool: Pool) => new DatabaseKeyLocator(pool),
     },
     {
       provide: TokenAuthenticator,
@@ -43,7 +42,7 @@ export const KeyLocatorSymbol = Symbol('KeyLocator');
     {
       provide: SystemStore,
       useFactory: (pool: Pool) => new MessageDbStore(new MessageDbClient(pool)),
-      inject: [SystemStoreDatabasePool],
+      inject: [SystemDatabasePool],
     },
     {
       provide: StoreLocator,
@@ -54,7 +53,7 @@ export const KeyLocatorSymbol = Symbol('KeyLocator');
 })
 export class AppModule implements OnApplicationShutdown {
   constructor(
-    @Inject(SystemStoreDatabasePool)
+    @Inject(SystemDatabasePool)
     private readonly systemPool: Pool,
   ) {}
 

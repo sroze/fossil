@@ -12,6 +12,7 @@ import {
   ApiPropertyOptional,
   ApiTags,
   ApiOkResponse,
+  ApiOperation,
 } from '@nestjs/swagger';
 import { EventToWrite, WrongExpectedVersionError } from 'event-store';
 import { IsUUID, IsNotEmpty, IsJSON } from 'class-validator';
@@ -37,7 +38,7 @@ class EventToWriteDto implements EventToWrite {
     description: 'Event payload (must be a JSON object)',
   })
   @IsJSON()
-  data: string;
+  data: object;
 }
 
 class WriteRequestDto {
@@ -72,7 +73,7 @@ class WriteResultDto {
   global_position: string;
 }
 
-@ApiTags('Store')
+@ApiTags('Write')
 @Controller()
 export class WriteController {
   constructor(
@@ -81,6 +82,9 @@ export class WriteController {
   ) {}
 
   @Post('/stores/:id/events')
+  @ApiOperation({
+    summary: 'Write an event',
+  })
   @ApiOkResponse({ type: WriteResultDto })
   async write(
     @Param('id') storeId: string,

@@ -1,4 +1,4 @@
-import { createPool } from './pg';
+import { createPool } from './pg.backend';
 import { MessageDbClient, MessageDbStore } from 'event-store';
 
 export const pool = createPool(process.env.DATABASE_URL!);

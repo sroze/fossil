@@ -1,70 +1,59 @@
-import { v4 } from 'uuid';
-import { AnyStoreEvent, StoreCreated } from './domain/events';
-import { Store } from './domain/store';
-import {
-  AppendResult,
-  EventWrittenWithMetadata,
-  IEventStore,
-} from 'event-store';
-import { accumulate } from '../event-store/accumulate';
+import { IEventStore } from 'event-store';
 import { fossilEventStore } from '../event-store/store.backend';
+import { Aggregate, createAggregate, Writer } from '~/utils/ddd';
+import * as Decider from './decider';
+import { Command, State, StoreState } from './decider';
+import { GeneratedKey, generateKey } from 'store-security';
+import { v4 } from 'uuid';
 
-// TODO: Simplify all of this with `eskit`'s `createTransact`  (https://github.com/birdiecare/node-packages/tree/main/packages/eskit)
 // TODO: Add `users` to stores, who have access to these stores.
 // TODO: Create a read-model that has the list of stores per user.
 
-// Commands
-type CreateStoreCommand = {
-  name: string;
-  region: 'london';
-};
-
-type GrantAccessToUserCommand = {
-  user_id: string;
-};
-
 export class StoreService {
+  private readonly aggregate: Aggregate<State, Command>;
+
   public static resolve(): StoreService {
     return new StoreService(fossilEventStore);
   }
 
-  constructor(private readonly client: IEventStore) {}
+  constructor(private readonly client: IEventStore) {
+    this.aggregate = createAggregate(client, Decider);
+  }
 
-  async create(command: CreateStoreCommand): Promise<string> {
-    const identifier = v4();
-    const created: StoreCreated = {
-      id: v4(),
-      type: 'StoreCreated',
+  async execute(id: string, command: Command) {
+    return await this.aggregate.write({}, `Store-${id}`, command);
+  }
+
+  async load(identifier: string): Promise<StoreState> {
+    const { state } = await this.aggregate.read(`Store-${identifier}`);
+    if (!state) {
+      throw new Error(`Unable to find store.`);
+    }
+
+    return state;
+  }
+
+  async createKey(
+    id: string,
+    data: { name: string; type: 'private' | 'hosted' }
+  ): Promise<GeneratedKey> {
+    const key = await generateKey();
+    const r = await StoreService.resolve().execute(id, {
+      type: 'StoreGeneratedKey',
       data: {
-        ...command,
-        store_id: identifier,
+        key: {
+          key_id: v4(),
+          name: data.name,
+          type: data.type,
+          public_key: key.public,
+          // @ts-expect-error we need to be better at typing this one.
+          private_key: data.type === 'hosted' ? key.private : undefined,
+        },
       },
-    };
+    });
 
-    await this.write(identifier, [created], -1n);
+    console.log('r', r);
 
-    return identifier;
-  }
-
-  grantAccess;
-
-  write(
-    identifier: string,
-    events: Omit<AnyStoreEvent, 'id'>[],
-    expectedVersion?: bigint
-  ): Promise<AppendResult> {
-    return this.client.appendEvents(
-      `Store-${identifier}`,
-      events,
-      expectedVersion === undefined ? null : expectedVersion
-    );
-  }
-
-  async load(identifier: string): Promise<Store> {
-    const events = await accumulate(
-      this.client.readStream(`Store-${identifier}`, 0n)
-    );
-
-    return new Store(events as EventWrittenWithMetadata<AnyStoreEvent>[]);
+    return key;
   }
 }

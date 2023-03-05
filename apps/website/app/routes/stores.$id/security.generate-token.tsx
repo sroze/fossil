@@ -7,7 +7,7 @@ import { validationError } from 'remix-validated-form';
 import { DateTime } from 'luxon';
 import { H2 } from '../../modules/design-system/h2';
 import { useActionData } from '@remix-run/react';
-import { generateToken } from 'store-security';
+import { generateToken } from '~/modules/security/security.backend';
 
 // TODO: Support URI templates and `*`
 const streamTemplate = z.string().min(1);
@@ -48,7 +48,7 @@ export const action: ActionFunction = async ({ params, request }) => {
     return validationError(error);
   }
 
-  const key = store.state.jwks.find((key) => key.id === data.key_id);
+  const key = store.jwks.find((key) => key.key_id === data.key_id);
   if (!key) {
     throw new Error(`Key was not found`);
   } else if (key.type !== 'hosted' || !key.private_key) {
@@ -59,6 +59,7 @@ export const action: ActionFunction = async ({ params, request }) => {
   const claims = {
     exp: DateTime.fromISO(data.exp).valueOf() / 1000,
     fossil: {
+      store_id: store.id,
       read,
       write,
       metadata,

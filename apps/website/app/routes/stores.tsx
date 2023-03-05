@@ -1,4 +1,9 @@
-import { DataFunctionArgs, LoaderFunction, redirect } from '@remix-run/node';
+import {
+  ActionFunction,
+  DataFunctionArgs,
+  LoaderFunction,
+  redirect,
+} from '@remix-run/node';
 import { withZod } from '@remix-validated-form/with-zod';
 import { ValidatedForm, validationError } from 'remix-validated-form';
 import { z } from 'zod';
@@ -10,6 +15,7 @@ import {
   loaderWithAuthorization,
 } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
+import { v4 } from 'uuid';
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization(args, async () => {
@@ -25,21 +31,27 @@ export const generateStoreValidator = withZod(
   })
 );
 
-export const action = actionWithAuthorization(async ({ request, profile }) => {
-  const { data, error } = await generateStoreValidator.validate(
-    await request.formData()
-  );
+export const action: ActionFunction = (args) =>
+  actionWithAuthorization(args, async ({ request, profile }) => {
+    const { data, error } = await generateStoreValidator.validate(
+      await request.formData()
+    );
 
-  if (error) {
-    return validationError(error);
-  }
+    if (error) {
+      return validationError(error);
+    }
 
-  const identifier = await StoreService.resolve().create(data);
+    const identifier = v4();
+    await StoreService.resolve().execute(identifier, {
+      type: 'CreateStoreCommand',
+      data: {
+        id: identifier,
+        ...data,
+      },
+    });
 
-  console.log('grant access to', profile);
-
-  return redirect(`/stores/${identifier}`);
-});
+    return redirect(`/stores/${identifier}`);
+  });
 
 export default function Demo() {
   return (
