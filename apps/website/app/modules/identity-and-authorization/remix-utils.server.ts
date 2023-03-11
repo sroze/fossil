@@ -33,21 +33,19 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
   return json({ profile });
 }
 
-export function actionWithAuthorization(
+export async function actionWithAuthorization(
   args: DataFunctionArgs,
   action: (
     args: DataFunctionArgs & { profile: Auth0Profile }
   ) => Promise<Response> | Response | Promise<any> | any
 ) {
-  return async (args: DataFunctionArgs) => {
-    const profile: Auth0Profile = authenticationIsEnabled()
-      ? await authenticator.isAuthenticated(args.request, {
-          failureRedirect: '/auth/login',
-        })
-      : developmentProfile;
+  const profile: Auth0Profile = authenticationIsEnabled()
+    ? await authenticator.isAuthenticated(args.request, {
+        failureRedirect: '/auth/login',
+      })
+    : developmentProfile;
 
-    return action({ ...args, profile });
-  };
+  return action({ ...args, profile });
 }
 
 const developmentProfile: Auth0Profile = {

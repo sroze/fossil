@@ -91,13 +91,23 @@ export class MessageDbClient {
     fromPosition: bigint,
     maxCount: number
   ): Promise<EventType[]> {
-    const prefix = prefixFromCategory(category);
-    if (prefix === undefined && category.indexOf('-') !== -1) {
-      throw new Error(`"${category}" is not a valid category.`);
+    let prefix: string | undefined;
+    let wildcard: boolean = category === '*';
+
+    if (!wildcard) {
+      prefix = prefixFromCategory(category);
+      if (prefix === undefined && category.indexOf('-') !== -1) {
+        throw new Error(`"${category}" is not a valid category.`);
+      }
     }
 
     const client = await this.pool.connect();
     try {
+      const parameters = [String(fromPosition), maxCount];
+      if (!wildcard) {
+        parameters.push(prefix || category);
+      }
+
       const result = await client.query(
         `SELECT
       id::varchar,
@@ -111,11 +121,15 @@ export class MessageDbClient {
     FROM
       messages
     WHERE
-      ${prefix ? 'prefix' : 'category'}(stream_name) = $1
-      AND global_position >= $2
+      ${
+        wildcard
+          ? ''
+          : `${prefix ? 'prefix' : 'category'}(stream_name) = $3 AND `
+      }
+      global_position >= $1
     ORDER BY global_position ASC
-    LIMIT $3`,
-        [prefix || category, String(fromPosition), maxCount]
+    LIMIT $2`,
+        parameters
       );
       return result.rows.map(fromDb<EventType>);
     } finally {

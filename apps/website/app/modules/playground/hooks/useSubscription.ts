@@ -15,7 +15,9 @@ export function useSubscription<T>(
     const list: T[] = [];
     setData(list);
 
-    const eventSource = new EventSource(url, init);
+    const eventSource = new EventSource(url, {
+      withCredentials: true,
+    });
     eventSource.addEventListener('event', handler);
 
     function handler({ data }: MessageEvent) {

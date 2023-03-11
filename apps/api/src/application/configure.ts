@@ -1,5 +1,6 @@
 import { ValidationPipe, INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 export function configureApplication(app: INestApplication): INestApplication {
   const config = new DocumentBuilder()
@@ -12,7 +13,11 @@ export function configureApplication(app: INestApplication): INestApplication {
   SwaggerModule.setup('docs', app, document);
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  app.enableCors();
+  app.enableCors({
+    origin: ['http://localhost:3000'],
+    credentials: true,
+  });
+  app.use(cookieParser());
 
   return app;
 }

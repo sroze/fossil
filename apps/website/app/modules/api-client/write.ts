@@ -33,21 +33,11 @@ export type SuccessfulWriteResponse = {
 const storeIdFromToken = (token: string) =>
   JSON.parse(atob(token.split('.')[1])).fossil.store_id;
 
-export function appendEvent(
-  token: string,
-  request: z.infer<typeof appendEventSchema>
-): Promise<SuccessfulWriteResponse> {
-  return fetch(
-    `http://localhost:3001/stores/${storeIdFromToken(token)}/events`,
-    {
-      method: 'post',
-      headers: {
-        authorization: `Bearer ${token}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    }
-  )
+function request<T>(
+  url: string,
+  options: Parameters<typeof fetch>[1]
+): Promise<T> {
+  return fetch(url, options)
     .then((response) => {
       if (response.status >= 200 && response.status < 300) {
         return response;
@@ -56,4 +46,34 @@ export function appendEvent(
       throw new Error(`Something went wrong.`);
     })
     .then((response) => response.json());
+}
+
+export function cookieHandshake(token: string): Promise<void> {
+  return request(
+    `http://localhost:3001/stores/${storeIdFromToken(token)}/cookie-handshake`,
+    {
+      method: 'post',
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    }
+  );
+}
+
+export function appendEvent(
+  token: string,
+  body: z.infer<typeof appendEventSchema>
+): Promise<SuccessfulWriteResponse> {
+  return request(
+    `http://localhost:3001/stores/${storeIdFromToken(token)}/events`,
+    {
+      method: 'post',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    }
+  );
 }

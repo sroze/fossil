@@ -6,18 +6,14 @@ import {
 } from 'event-store';
 import { PrefixedStreamEventEncoder } from './prefix-encoder';
 
-export class TenantedStore implements IEventStore {
+export class PrefixedStore implements IEventStore {
   private encoder: PrefixedStreamEventEncoder;
 
   constructor(
     private readonly implementation: IEventStore,
-    private readonly tenantIdentifier: string
+    private readonly prefix: string
   ) {
-    if (tenantIdentifier.indexOf('-') !== -1) {
-      throw new Error(`Tenant identifier cannot contain a dash.`);
-    }
-
-    this.encoder = new PrefixedStreamEventEncoder(tenantIdentifier + '#');
+    this.encoder = new PrefixedStreamEventEncoder(prefix);
   }
 
   appendEvents(

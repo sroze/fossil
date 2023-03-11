@@ -8,7 +8,7 @@ export class HttpAuthenticator {
   constructor(private readonly tokenAuthenticator: TokenAuthenticator) {}
 
   async authenticate(storeId: string, request: Request): Promise<FossilClaims> {
-    const token = extractTokenFromRequest(request);
+    const token = extractTokenFromRequest(request, storeId);
     if (!token) {
       throw new UnauthorizedException(
         'You must bring a token to interact with this event store.',

@@ -1,13 +1,5 @@
 import { ReadClaims, WriteClaims } from './interfaces';
-
-const categoryFromStream = (stream: string): string => {
-  const firstDashPosition = stream.indexOf('-');
-  if (firstDashPosition === -1) {
-    throw new Error(`Stream "${stream}" does not work.`);
-  }
-
-  return stream.substring(0, firstDashPosition);
-};
+import { categoryFromStream } from 'event-store';
 
 function authorizeStream(
   { streams }: WriteClaims | ReadClaims,

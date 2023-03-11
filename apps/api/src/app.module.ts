@@ -11,10 +11,16 @@ import { HttpAuthenticator } from './services/http-authenticator';
 import { HttpStoreLocator } from './services/http-store-locator';
 import { SubscribeController } from './controllers/subscribe';
 import { DatabaseKeyLocator } from './services/database-key-locator';
+import { CookieHandshakeController } from './controllers/cookie-handshake';
 
 @Module({
   imports: [],
-  controllers: [WriteController, ReadController, SubscribeController],
+  controllers: [
+    WriteController,
+    ReadController,
+    SubscribeController,
+    CookieHandshakeController,
+  ],
   providers: [
     HttpAuthenticator,
     HttpStoreLocator,

@@ -3,7 +3,8 @@ import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { H2 } from '../../modules/design-system/h2';
 import { locator } from '~/modules/stores/locator';
-import { DefaultCategory } from 'store-locator';
+import { pool } from '~/modules/event-store/store.backend';
+import sql from 'sql-template-tag';
 
 type StreamSummary = { name: string; position: string; last_time: string };
 type LoaderData = {
@@ -12,24 +13,16 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params, request }) => {
-  const store = await locator.locate(params.id!);
-  const streams: Record<string, StreamSummary> = {};
-
-  for await (const event of store.readCategory(
-    DefaultCategory,
-    0n,
-    request.signal
-  )) {
-    streams[event.stream_name] = {
-      name: event.stream_name,
-      position: event.position.toString(),
-      last_time: event.time.toISOString(),
-    };
-  }
+  const { rows: streams } = await pool.query<StreamSummary>(
+    sql`SELECT stream_name as name, position, last_written_in_at as last_time
+        FROM store_streams
+        WHERE store_id = ${params.id!}
+        ORDER BY stream_name ASC`
+  );
 
   return json<LoaderData>({
     store_id: params.id!,
-    streams: Object.values(streams),
+    streams,
   });
 };
 

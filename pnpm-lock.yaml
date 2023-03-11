@@ -20,6 +20,7 @@ importers:
       '@nestjs/schematics': ^9.0.0
       '@nestjs/swagger': ^6.2.1
       '@nestjs/testing': ^9.3.5
+      '@types/cookie-parser': ^1.4.3
       '@types/express': ^4.17.13
       '@types/jest': 29.2.4
       '@types/luxon': ^3.2.0
@@ -33,6 +34,7 @@ importers:
       class-transformer: ^0.5.1
       class-validator: ^0.14.0
       concurrently: ^7.6.0
+      cookie-parser: ^1.4.6
       dotenv: ^16.0.3
       eslint: ^8.0.1
       eslint-config-prettier: ^8.3.0
@@ -66,6 +68,7 @@ importers:
       '@nestjs/swagger': 6.2.1_jwhthynhjmc53rsvxm3vss4ax4
       class-transformer: 0.5.1
       class-validator: 0.14.0
+      cookie-parser: 1.4.6
       event-serialization: link:../../packages/event-serialization
       event-store: link:../../packages/event-store
       luxon: 3.2.1
@@ -81,6 +84,7 @@ importers:
       '@nestjs/cli': 9.2.0
       '@nestjs/schematics': 9.0.4_n7i3t5jmyrdrkypb5pvfihcmg4
       '@nestjs/testing': 9.3.5_gte4otuhprkwlbpkkzqdvajwni
+      '@types/cookie-parser': 1.4.3
       '@types/express': 4.17.17
       '@types/jest': 29.2.4
       '@types/luxon': 3.2.0
@@ -200,7 +204,7 @@ importers:
       eslint-plugin-react: 7.28.0
       typescript: ^4.8.3
     dependencies:
-      eslint-config-next: 13.2.3_4vsywjlpuriuw3tl5oq6zy5a64
+      eslint-config-next: 13.2.4_4vsywjlpuriuw3tl5oq6zy5a64
       eslint-config-prettier: 8.6.0_eslint@8.33.0
       eslint-config-turbo: 0.0.9_eslint@8.33.0
       eslint-plugin-react: 7.28.0_eslint@8.33.0
@@ -279,6 +283,7 @@ importers:
       '@types/luxon': ^3.2.0
       '@types/node': ^18.11.9
       '@types/node-jose': ^1.1.10
+      '@types/uuid': ^9.0.0
       eslint: ^7.32.0
       eslint-config-custom: workspace:*
       event-store: workspace:*
@@ -286,14 +291,17 @@ importers:
       jest-presets: workspace:*
       tsconfig: workspace:*
       typescript: ^4.8.3
+      uuid: ^9.0.0
     dependencies:
       event-store: link:../event-store
+      uuid: 9.0.0
     devDependencies:
       '@types/jest': 26.0.24
       '@types/jsonwebtoken': 9.0.1
       '@types/luxon': 3.2.0
       '@types/node': 18.11.19
       '@types/node-jose': 1.1.10
+      '@types/uuid': 9.0.0
       eslint: 7.32.0
       eslint-config-custom: link:../eslint-config-custom
       jest: 29.3.1_@types+node@18.11.19
@@ -310,6 +318,7 @@ importers:
       '@types/node-jose': ^1.1.10
       eslint: ^7.32.0
       eslint-config-custom: workspace:*
+      event-store: workspace:*
       jest: ^29.3.1
       jest-presets: workspace:*
       jsonwebtoken: ^9.0.0
@@ -318,6 +327,7 @@ importers:
       tsconfig: workspace:*
       typescript: ^4.8.3
     dependencies:
+      event-store: link:../event-store
       jsonwebtoken: 9.0.0
       luxon: 3.2.1
       node-jose: 2.1.1
@@ -2668,8 +2678,8 @@ packages:
       tslib: 2.5.0
     dev: true
 
-  /@next/eslint-plugin-next/13.2.3:
-    resolution: {integrity: sha512-QmMPItnU7VeojI1KnuwL9SLFWEwmaNHNlnOGpoTwdLoSiP9sc8KYiAHWEc4/44L+cAdCxcZYvn7frcRNP5l84Q==}
+  /@next/eslint-plugin-next/13.2.4:
+    resolution: {integrity: sha512-ck1lI+7r1mMJpqLNa3LJ5pxCfOB1lfJncKmRJeJxcJqcngaFwylreLP7da6Rrjr6u2gVRTfmnkSkjc80IiQCwQ==}
     dependencies:
       glob: 7.1.7
     dev: false
@@ -3166,6 +3176,12 @@ packages:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
       '@types/node': 18.11.19
+    dev: true
+
+  /@types/cookie-parser/1.4.3:
+    resolution: {integrity: sha512-CqSKwFwefj4PzZ5n/iwad/bow2hTCh0FlNAeWLtQM3JA/NX/iYagIpWG2cf1bQKQ2c9gU2log5VUCrn7LDOs0w==}
+    dependencies:
+      '@types/express': 4.17.17
     dev: true
 
   /@types/cookie/0.4.1:
@@ -4764,12 +4780,25 @@ packages:
   /convert-source-map/2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
+  /cookie-parser/1.4.6:
+    resolution: {integrity: sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==}
+    engines: {node: '>= 0.8.0'}
+    dependencies:
+      cookie: 0.4.1
+      cookie-signature: 1.0.6
+    dev: false
+
   /cookie-signature/1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
 
   /cookie-signature/1.2.0:
     resolution: {integrity: sha512-R0BOPfLGTitaKhgKROKZQN6iyq2iDQcH1DOF8nJoaWapguX5bC2w+Q/I9NmmM5lfcvEarnLZr+cCvmEYYSXvYA==}
     engines: {node: '>=6.6.0'}
+
+  /cookie/0.4.1:
+    resolution: {integrity: sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==}
+    engines: {node: '>= 0.6'}
+    dev: false
 
   /cookie/0.4.2:
     resolution: {integrity: sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==}
@@ -5323,8 +5352,8 @@ packages:
       source-map: 0.6.1
     dev: true
 
-  /eslint-config-next/13.2.3_4vsywjlpuriuw3tl5oq6zy5a64:
-    resolution: {integrity: sha512-kPulHiQEHGei9hIaaNGygHRc0UzlWM+3euOmYbxNkd2Nbhci5rrCDeMBMPSV8xgUssphDGmwDHWbk4VZz3rlZQ==}
+  /eslint-config-next/13.2.4_4vsywjlpuriuw3tl5oq6zy5a64:
+    resolution: {integrity: sha512-lunIBhsoeqw6/Lfkd6zPt25w1bn0znLA/JCL+au1HoEpSb4/PpsOYsYtgV/q+YPsoKIOzFyU5xnb04iZnXjUvg==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
       typescript: '>=3.3.1'
@@ -5332,7 +5361,7 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@next/eslint-plugin-next': 13.2.3
+      '@next/eslint-plugin-next': 13.2.4
       '@rushstack/eslint-patch': 1.2.0
       '@typescript-eslint/parser': 5.50.0_4vsywjlpuriuw3tl5oq6zy5a64
       eslint: 8.33.0

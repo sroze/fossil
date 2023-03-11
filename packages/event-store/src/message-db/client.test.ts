@@ -47,12 +47,12 @@ describe('MessageDB client', () => {
       const category = v4().replace(/-/g, '');
       await Promise.all([
         store.appendEvents(
-          `${category}-${v4}`,
+          `${category}-${v4()}`,
           [{ type: 'EventOne', data: {} }],
           null
         ),
         store.appendEvents(
-          `${category}-${v4}`,
+          `${category}-${v4()}`,
           [{ type: 'EventTwo', data: {} }],
           null
         ),
@@ -63,7 +63,7 @@ describe('MessageDB client', () => {
     });
 
     describe('wildcards', () => {
-      it.each(['*', 'Foo-*', 'Pre-fix#*', 'Bar*'])(
+      it.each(['Foo-*', 'Pre-fix#*', 'Bar*'])(
         'does not support invalid category matcher (%s)',
         async (category) => {
           expect.assertions(1);
@@ -83,12 +83,12 @@ describe('MessageDB client', () => {
 
         await Promise.all([
           store.appendEvents(
-            `${prefix}#${category1}-${v4}`,
+            `${prefix}#${category1}-${v4()}`,
             [{ type: 'EventOne', data: {} }],
             null
           ),
           store.appendEvents(
-            `${prefix}#${category2}-${v4}`,
+            `${prefix}#${category2}-${v4()}`,
             [{ type: 'EventTwo', data: {} }],
             null
           ),
@@ -96,6 +96,11 @@ describe('MessageDB client', () => {
 
         const events = await accumulate(store.readCategory(`${prefix}#*`));
         expect(events.length).toEqual(2);
+      });
+
+      it('supports reading everything', async () => {
+        const events = await accumulate(store.readCategory(`*`), 10);
+        expect(events.length).toBeGreaterThanOrEqual(1);
       });
     });
   });
