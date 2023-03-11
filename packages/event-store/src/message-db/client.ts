@@ -49,10 +49,6 @@ export class MessageDbClient {
 
     const client = await this.pool.connect();
     try {
-      // There is a risk of leaking sensitive data to data dog if
-      // the pg instrumentation is allowed to display the query
-      // as it is not parameterised for performance reasons
-      //
       // The any type is here because the PG types don't document that when you
       // give it multiple statements you get back an array of results
       const res: any = await client.query(queryParts.join('\n'));

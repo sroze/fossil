@@ -1,20 +1,25 @@
 -- Inspired from MessageDB 1.3.0
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TYPE message AS (
-  id varchar,
-  stream_name varchar,
-  type varchar,
-  position bigint,
-  global_position bigint,
-  data varchar,
-  metadata varchar,
-  time timestamp
-);
+-- `message` type
+DO $$ BEGIN
+    CREATE TYPE message AS (
+      id varchar,
+      stream_name varchar,
+      type varchar,
+      position bigint,
+      global_position bigint,
+      data varchar,
+      metadata varchar,
+      time timestamp
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Tables
 CREATE TABLE IF NOT EXISTS messages (
-  global_position bigserial NOT NULL,
+  global_position BIGSERIAL PRIMARY KEY,
   position bigint NOT NULL,
   time TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc') NOT NULL,
   stream_name text NOT NULL,
@@ -23,8 +28,6 @@ CREATE TABLE IF NOT EXISTS messages (
   metadata jsonb,
   id UUID NOT NULL DEFAULT gen_random_uuid()
 );
-
-ALTER TABLE messages ADD PRIMARY KEY (global_position) NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 -- Core functions
 CREATE OR REPLACE FUNCTION category(
@@ -39,20 +42,17 @@ $$ LANGUAGE plpgsql
 IMMUTABLE;
 
 -- Indexes
-DROP INDEX IF EXISTS messages_category;
-CREATE INDEX messages_category ON messages (
+CREATE INDEX IF NOT EXISTS messages_category ON messages (
   category(stream_name),
   global_position,
   category(metadata->>'correlationStreamName')
 );
 
-DROP INDEX IF EXISTS messages_id;
-CREATE UNIQUE INDEX messages_id ON messages (
+CREATE UNIQUE INDEX IF NOT EXISTS messages_id ON messages (
   id
 );
 
-DROP INDEX IF EXISTS messages_stream;
-CREATE UNIQUE INDEX messages_stream ON messages (
+CREATE UNIQUE INDEX IF NOT EXISTS messages_stream ON messages (
   stream_name,
   position
 );
@@ -361,6 +361,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 VOLATILE;
+
 CREATE OR REPLACE FUNCTION hash_64(
   value varchar
 )
@@ -502,5 +503,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql
 VOLATILE;
-
-
