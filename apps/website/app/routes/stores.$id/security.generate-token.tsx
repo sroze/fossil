@@ -6,10 +6,10 @@ import { zValidJsonAsString } from '../../modules/zod-forms/validators/json';
 import { validationError } from 'remix-validated-form';
 import { DateTime } from 'luxon';
 import { H2 } from '../../modules/design-system/h2';
-import { useActionData } from '@remix-run/react';
+import { useActionData, useLoaderData } from '@remix-run/react';
 import { generateToken } from '~/modules/security/security.backend';
+import { storeApiBaseUrl } from '~/modules/api-client/config';
 
-// TODO: Support URI templates and `*`
 const streamTemplate = z.string().min(1);
 const streamTemplateList = z.preprocess(
   (value) => (typeof value === 'string' ? [value] : value),
@@ -35,8 +35,15 @@ export const generateTokenValidator = withZod(
   })
 );
 
-export type GenerateTokenSuccessfulResponse = {
-  token: any;
+type ActionData = { token: string };
+type LoaderData = { store_id: string };
+
+export const loader = async ({ params }) => {
+  await StoreService.resolve().load(params.id!);
+
+  return json<LoaderData>({
+    store_id: params.id!,
+  });
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
@@ -66,18 +73,36 @@ export const action: ActionFunction = async ({ params, request }) => {
     },
   };
 
-  return json<GenerateTokenSuccessfulResponse>({
+  return json<ActionData>({
     token: await generateToken(key.private_key, claims),
   });
 };
 
 export default function GeneratedToken() {
-  const action = useActionData();
+  const { store_id } = useLoaderData<LoaderData>();
+  const action = useActionData<ActionData>();
+  const token = action ? action.token : '{protected}';
+
+  const body = {
+    stream: 'Foo-123',
+    events: [{ type: 'FirstType', data: { my_key: 123 } }],
+  };
+  const request = `curl ${storeApiBaseUrl}/stores/${store_id}/events \\
+  -X POST \\
+  -H 'authorization: Bearer ${token}' \\
+  -H 'content-Type: application/json' \\
+  --data '${JSON.stringify(body)}'`;
 
   return (
-    <div>
-      <H2>Yay!</H2>
-      <pre>{JSON.stringify(action.token)}</pre>
+    <div className="pt-5">
+      <H2>Token generated</H2>
+      <p>
+        Use it in the <code>Authorization</code> header for your HTTP requests.
+      </p>
+      <pre className="my-3">{token}</pre>
+
+      <H2>Example: writing an event</H2>
+      <pre>{request}</pre>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export const AppendEventForm: React.FC<{
       events: [
         {
           type: data.type,
-          data: data.data,
+          data: JSON.parse(data.data),
         },
       ],
     });

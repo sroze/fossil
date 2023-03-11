@@ -53,7 +53,12 @@ export default function Playground() {
         order (i.e. latest first).
       </div>
 
-      <EventsStream uri={`/api/stores/${store.id}/subscribe`} />
+      <EventsStream
+        token={token}
+        uri={`/stores/${store.id}/categories/${encodeURIComponent(
+          '*'
+        )}/subscribe`}
+      />
 
       <H2>Generate a token</H2>
       <div>To write events programmatically, generate a token.</div>

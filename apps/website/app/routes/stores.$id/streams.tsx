@@ -2,7 +2,6 @@ import { Table } from '../../modules/design-system/table';
 import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { H2 } from '../../modules/design-system/h2';
-import { locator } from '~/modules/stores/locator';
 import { pool } from '~/modules/event-store/store.backend';
 import sql from 'sql-template-tag';
 

@@ -10,7 +10,7 @@ function isJsonString(string: string) {
   return true;
 }
 
-export const zValidJsonAsString = z.custom<{ arg: string }>(
+export const zValidJsonAsString = z.custom<string>(
   (arg) => (arg ? (typeof arg === 'string' ? isJsonString(arg) : false) : true),
   { message: 'Must be a valid JSON object.' }
 );

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zValidJsonAsString } from '~/modules/zod-forms/validators/json';
+import { storeApiBaseUrl } from '~/modules/api-client/config';
 
 export const streamNameSchema = z
   .string()
@@ -50,7 +51,7 @@ function request<T>(
 
 export function cookieHandshake(token: string): Promise<void> {
   return request(
-    `http://localhost:3001/stores/${storeIdFromToken(token)}/cookie-handshake`,
+    `${storeApiBaseUrl}/stores/${storeIdFromToken(token)}/cookie-handshake`,
     {
       method: 'post',
       headers: {
@@ -66,7 +67,7 @@ export function appendEvent(
   body: z.infer<typeof appendEventSchema>
 ): Promise<SuccessfulWriteResponse> {
   return request(
-    `http://localhost:3001/stores/${storeIdFromToken(token)}/events`,
+    `${storeApiBaseUrl}/stores/${storeIdFromToken(token)}/events`,
     {
       method: 'post',
       headers: {

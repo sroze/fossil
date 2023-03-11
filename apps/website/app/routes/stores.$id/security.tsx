@@ -40,7 +40,6 @@ export default function Security() {
         <Table.Header>
           <tr>
             <Table.Header.Column>Name</Table.Header.Column>
-            <Table.Header.Column>Added at</Table.Header.Column>
             <Table.Header.Column>Type</Table.Header.Column>
             <Table.Header.Column></Table.Header.Column>
           </tr>
@@ -49,7 +48,6 @@ export default function Security() {
           {store.jwks.map((key, i) => (
             <tr key={`jwt-${i}`}>
               <Table.Column>{key.name}</Table.Column>
-              <Table.Column>{key.added_at}</Table.Column>
               <Table.Column>
                 {key.type === 'hosted' ? (
                   <span>

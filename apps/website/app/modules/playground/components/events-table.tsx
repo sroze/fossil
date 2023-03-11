@@ -24,7 +24,7 @@ export const EventsTable: React.FC<{ events: EventOverTheWire[] }> = ({
           <Table.Column>{event.stream_name}</Table.Column>
           <Table.Column>{event.position}</Table.Column>
           <Table.Column>{event.type}</Table.Column>
-          <Table.Column>{event.data}</Table.Column>
+          <Table.Column>{JSON.stringify(event.data)}</Table.Column>
         </tr>
       ))}
     </Table.Body>
