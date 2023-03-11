@@ -7,6 +7,7 @@ import {
   EventToWrite,
   WrongExpectedVersionError,
 } from '../interfaces';
+import { prefixFromCategory } from './prefix';
 
 const sql = (parts: TemplateStringsArray, ...values: any[]) => {
   let text = '';
@@ -90,11 +91,31 @@ export class MessageDbClient {
     fromPosition: bigint,
     maxCount: number
   ): Promise<EventType[]> {
+    const prefix = prefixFromCategory(category);
+    if (prefix === undefined && category.indexOf('-') !== -1) {
+      throw new Error(`"${category}" is not a valid category.`);
+    }
+
     const client = await this.pool.connect();
     try {
       const result = await client.query(
-        'select * from get_category_messages($1, $2, $3)',
-        [category, String(fromPosition), maxCount]
+        `SELECT
+      id::varchar,
+      stream_name::varchar,
+      type::varchar,
+      position::bigint,
+      global_position::bigint,
+      data::varchar,
+      metadata::varchar,
+      time::timestamp
+    FROM
+      messages
+    WHERE
+      ${prefix ? 'prefix' : 'category'}(stream_name) = $1
+      AND global_position >= $2
+    ORDER BY global_position ASC
+    LIMIT $3`,
+        [prefix || category, String(fromPosition), maxCount]
       );
       return result.rows.map(fromDb<EventType>);
     } finally {

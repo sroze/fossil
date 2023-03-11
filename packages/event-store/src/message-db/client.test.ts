@@ -62,6 +62,41 @@ describe('MessageDB client', () => {
       expect(events.length).toEqual(2);
     });
 
-    it.todo('supports wildcards for prefixes');
+    describe('wildcards', () => {
+      it.each(['*', 'Foo-*', 'Pre-fix#*', 'Bar*'])(
+        'does not support invalid category matcher (%s)',
+        async (category) => {
+          expect.assertions(1);
+
+          try {
+            await accumulate(store.readCategory(category));
+          } catch (e) {
+            expect(e).toBeInstanceOf(Error);
+          }
+        }
+      );
+
+      it('supports reading from multiple categories with prefixes', async () => {
+        const prefix = v4().replace(/-/g, '');
+        const category1 = v4().replace(/-/g, '');
+        const category2 = v4().replace(/-/g, '');
+
+        await Promise.all([
+          store.appendEvents(
+            `${prefix}#${category1}-${v4}`,
+            [{ type: 'EventOne', data: {} }],
+            null
+          ),
+          store.appendEvents(
+            `${prefix}#${category2}-${v4}`,
+            [{ type: 'EventTwo', data: {} }],
+            null
+          ),
+        ]);
+
+        const events = await accumulate(store.readCategory(`${prefix}#*`));
+        expect(events.length).toEqual(2);
+      });
+    });
   });
 });
