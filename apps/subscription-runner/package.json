@@ -1,0 +1,37 @@
+{
+  "name": "subscription-runner",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "tsup src/main.ts src/runner/task.ts --format cjs",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "dev": "tsup src/main.ts src/runner/task.ts --format cjs --watch --onSuccess \"node dist/main.js\"",
+    "start": "node dist/main",
+    "test": "jest",
+    "migrate": "pg-migrations apply --directory migrations"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.289.0",
+    "event-store": "workspace:*",
+    "store-locator": "workspace:*",
+    "pg": "^8.9.0",
+    "subscription": "workspace:*",
+    "threads": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "29.2.4",
+    "@types/pg": "^8.6.6",
+    "dotenv": "^16.0.3",
+    "jest": "^29.3.1",
+    "ts-jest": "29.0.3",
+    "ts-loader": "^9.2.3",
+    "ts-node": "^10.0.0",
+    "tsconfig": "workspace:*",
+    "tsconfig-paths": "4.1.1",
+    "typescript": "^4.7.4",
+    "jest-presets": "workspace:*"
+  },
+  "jest": {
+    "preset": "jest-presets/jest/node"
+  }
+}

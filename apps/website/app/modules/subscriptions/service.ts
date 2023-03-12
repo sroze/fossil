@@ -1,13 +1,13 @@
 import { fossilEventStore } from '~/modules/event-store/store.backend';
-import { IEventStore } from 'event-store';
+import { EventToWrite, IEventStore } from 'event-store';
 import { v4 } from 'uuid';
 import { SubscriptionCreated } from '~/modules/subscriptions/domain/events';
 
 // Commands
 type CreateSubscriptionCommand = {
   store_id: string;
+  category: string;
   name: string;
-  type: string;
 };
 
 export class DurableSubscriptionService {
@@ -19,12 +19,12 @@ export class DurableSubscriptionService {
 
   async create(command: CreateSubscriptionCommand): Promise<string> {
     const identifier = v4();
-    const created: SubscriptionCreated = {
+    const created: EventToWrite<SubscriptionCreated> = {
       id: v4(),
       type: 'SubscriptionCreated',
       data: {
         ...command,
-        subscription_id: identifier,
+        type: 'managed-queue',
       },
     };
 

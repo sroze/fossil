@@ -20,12 +20,7 @@ export const NewSubscriptionForm: React.FC<{ store_id: string }> = ({
     >
       <FormInput className="mb-5" name="name" label="Name" required />
 
-      <SelectInput
-        name="type"
-        label="Type"
-        options={[{ value: 'poll', label: 'Polling' }]}
-        required
-      />
+      <FormInput name="category" label="Category" required />
 
       <div>
         <SubmitButton>Generate</SubmitButton>

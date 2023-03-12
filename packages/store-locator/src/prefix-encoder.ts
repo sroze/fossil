@@ -1,4 +1,4 @@
-import type { EventInStore } from 'event-store';
+import type { EventInStore, MinimumEventType } from 'event-store';
 
 export class PrefixedStreamEventEncoder {
   constructor(private readonly prefix: string) {}
@@ -15,10 +15,13 @@ export class PrefixedStreamEventEncoder {
     return stream.slice(this.prefix.length);
   }
 
-  public decodeEvent({ stream_name, ...rest }: EventInStore): EventInStore {
+  public decodeEvent<T extends MinimumEventType>({
+    stream_name,
+    ...rest
+  }: EventInStore<T>): EventInStore<T> {
     return {
       ...rest,
       stream_name: this.decodeStream(stream_name),
-    };
+    } as EventInStore<T>;
   }
 }

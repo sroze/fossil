@@ -2,14 +2,38 @@
 import type { EventInStore, IEventStore } from 'event-store';
 import type { ICheckpointStore } from './checkpoint-store/interfaces';
 import type { CheckpointStrategy } from './checkpoint-strategy/interfaces';
+import { sleep } from './sleep';
+import { MinimumEventType } from 'event-store';
 
-export type StreamFetcher<EventType = EventInStore> = (
+type MessageFunctionHandler<EventType extends MinimumEventType> = (
+  event: EventInStore<EventType>
+) => Promise<void>;
+type AdvancedHandler<EventType extends MinimumEventType> = {
+  onMessage: MessageFunctionHandler<EventType>;
+  onEOF: () => Promise<void>;
+};
+
+export type Handler<EventType extends MinimumEventType> =
+  | MessageFunctionHandler<EventType>
+  | AdvancedHandler<EventType>;
+
+function asAdvancedHandler<T extends MinimumEventType>(
+  handler: Handler<T>
+): AdvancedHandler<T> {
+  if (typeof handler === 'function') {
+    return { onMessage: handler, onEOF: () => Promise.resolve() };
+  }
+
+  return handler;
+}
+
+export type StreamFetcher<EventType extends MinimumEventType> = (
   position: bigint,
   signal: AbortSignal
-) => AsyncIterable<EventType>;
+) => AsyncIterable<EventInStore<EventType>>;
 
-export type PositionResolver<EventType = EventInStore> = (
-  event: EventType
+export type PositionResolver<EventType extends MinimumEventType> = (
+  event: EventInStore<EventType>
 ) => bigint;
 
 export class Subscription {
@@ -20,47 +44,51 @@ export class Subscription {
     private readonly pollingFrequencyInMs = 100
   ) {}
 
-  async subscribeCategory<EventType extends EventInStore = EventInStore>(
+  async subscribeCategory<
+    EventType extends MinimumEventType = MinimumEventType
+  >(
     category: string,
-    handler: (event: EventType) => Promise<void>,
+    handler: Handler<EventType>,
     signal: AbortSignal
   ): Promise<void> {
     return this.subscribe<EventType>(
       (position, signal) =>
         this.store.readCategory<EventType>(category, position, signal),
-      (event: EventType) => event.global_position,
+      (event) => event.global_position,
       handler,
       signal
     );
   }
 
-  async subscribeStream<EventType extends EventInStore = EventInStore>(
+  async subscribeStream<EventType extends MinimumEventType = MinimumEventType>(
     stream: string,
-    handler: (event: EventType) => Promise<void>,
+    handler: Handler<EventType>,
     signal: AbortSignal
   ): Promise<void> {
     return this.subscribe<EventType>(
       (position, signal) =>
         this.store.readStream<EventType>(stream, position, signal),
-      (event: EventType) => event.position + 1n,
+      (event) => event.position + 1n,
       handler,
       signal
     );
   }
 
-  private async subscribe<EventType = EventInStore>(
+  private async subscribe<EventType extends MinimumEventType>(
     streamFetcher: StreamFetcher<EventType>,
     positionResolver: PositionResolver<EventType>,
-    handler: (event: EventType) => Promise<void>,
+    handler: Handler<EventType>,
     signal: AbortSignal
   ): Promise<void> {
+    const { onMessage, onEOF } = asAdvancedHandler(handler);
     let position = await this.checkpointStore.getCheckpoint();
+    let hasEOF: boolean = false;
 
     while (!signal.aborted) {
       let hasConsumedEvents: boolean = false;
 
       for await (const event of streamFetcher(position, signal)) {
-        await handler(event);
+        await onMessage(event);
 
         hasConsumedEvents = true;
         position = positionResolver(event);
@@ -73,6 +101,11 @@ export class Subscription {
       // If we didn't receive any event, we'll wait a bit before bombarding the database with
       // yet another request.
       if (!hasConsumedEvents) {
+        if (!hasEOF) {
+          await onEOF();
+          hasEOF = true;
+        }
+
         await sleep(this.pollingFrequencyInMs, signal).catch(() => {});
       }
     }
@@ -83,26 +116,4 @@ export class AbortError extends Error {
   constructor() {
     super('Aborted');
   }
-}
-
-function sleep(dueTime: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      reject(new AbortError());
-    }
-    const id = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
-      if (signal.aborted) {
-        onAbort();
-        return;
-      }
-      resolve();
-    }, dueTime);
-    signal.addEventListener('abort', onAbort, { once: true });
-
-    function onAbort() {
-      clearTimeout(id);
-      reject(new AbortError());
-    }
-  });
 }

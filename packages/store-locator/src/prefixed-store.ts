@@ -3,6 +3,7 @@ import {
   EventInStore,
   EventToWrite,
   IEventStore,
+  MinimumEventType,
 } from 'event-store';
 import { PrefixedStreamEventEncoder } from './prefix-encoder';
 
@@ -28,46 +29,46 @@ export class PrefixedStore implements IEventStore {
     );
   }
 
-  async lastEventFromStream<EventType extends EventInStore = EventInStore>(
+  async lastEventFromStream<EventType extends MinimumEventType>(
     stream: string,
     type?: string
-  ): Promise<EventType | undefined> {
+  ): Promise<EventInStore<EventType> | undefined> {
     const event = await this.implementation.lastEventFromStream(
       this.encoder.encodeStream(stream),
       type
     );
     if (event) {
-      return this.encoder.decodeEvent(event) as EventType;
+      return this.encoder.decodeEvent(event) as EventInStore<EventType>;
     }
 
     return undefined;
   }
 
-  async *readCategory<EventType extends EventInStore = EventInStore>(
+  async *readCategory<EventType extends MinimumEventType = MinimumEventType>(
     category: string,
     fromPosition?: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventType> {
+  ): AsyncIterable<EventInStore<EventType>> {
     for await (const event of this.implementation.readCategory(
       this.encoder.encodeStream(category),
       fromPosition,
       signal
     )) {
-      yield this.encoder.decodeEvent(event) as EventType;
+      yield this.encoder.decodeEvent(event) as EventInStore<EventType>;
     }
   }
 
-  async *readStream<EventType extends EventInStore = EventInStore>(
+  async *readStream<EventType extends MinimumEventType = MinimumEventType>(
     stream: string,
     fromPosition: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventType> {
+  ): AsyncIterable<EventInStore<EventType>> {
     for await (const event of this.implementation.readStream(
       this.encoder.encodeStream(stream),
       fromPosition,
       signal
     )) {
-      yield this.encoder.decodeEvent(event) as EventType;
+      yield this.encoder.decodeEvent(event) as EventInStore<EventType>;
     }
   }
 }

@@ -17,7 +17,11 @@ import {
 //       abstracting away where the customer stores are and spread them across different
 //       databases or even underlying storage mechanism. For performance reasons, this
 //       future durable subscription needs to be headers-only.
-export function main(pool: Pool, store: IEventStore, abortSignal: AbortSignal) {
+export async function main(
+  pool: Pool,
+  store: IEventStore,
+  abortSignal: AbortSignal
+) {
   const subscription = new Subscription(
     store,
     new WithEventsCheckpointStore(
@@ -27,7 +31,7 @@ export function main(pool: Pool, store: IEventStore, abortSignal: AbortSignal) {
     new CheckpointAfterNMessages(100)
   );
 
-  void subscription.subscribeCategory(
+  await subscription.subscribeCategory(
     '*',
     async (event) => {
       let storeIdentifier: string | undefined;

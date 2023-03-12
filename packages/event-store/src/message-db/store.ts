@@ -3,6 +3,7 @@ import {
   EventInStore,
   EventToWrite,
   IEventStore,
+  MinimumEventType,
 } from '../interfaces';
 import { MessageDbClient } from './client';
 
@@ -17,18 +18,14 @@ export class MessageDbStore implements IEventStore {
     return this.client.writeMessages(streamName, events, expectedVersion);
   }
 
-  async *readCategory<EventType extends EventInStore = EventInStore>(
+  async *readCategory<EventType extends MinimumEventType>(
     category: string,
     fromPosition: bigint = 0n,
     signal?: AbortSignal
-  ): AsyncIterable<EventType> {
-    yield* streamByBatch<EventType>(
+  ): AsyncIterable<EventInStore<EventType>> {
+    yield* streamByBatch(
       (position, batchSize) =>
-        this.client.getCategoryMessages<EventType>(
-          category,
-          position,
-          batchSize
-        ),
+        this.client.getCategoryMessages(category, position, batchSize),
 
       // IEventStore positions are exclusive, MessageDb positions are inclusive
       // We want the API to be "give me all events that occured *after* what I've currently seen
@@ -37,14 +34,14 @@ export class MessageDbStore implements IEventStore {
     );
   }
 
-  async *readStream<EventType extends EventInStore = EventInStore>(
+  async *readStream<EventType extends MinimumEventType>(
     stream: string,
     fromPosition: bigint = 0n,
     signal?: AbortSignal
-  ): AsyncIterable<EventType> {
+  ): AsyncIterable<EventInStore<EventType>> {
     yield* streamByBatch<EventType>(
       (position, batchSize) =>
-        this.client.getStreamMessages<EventType>(stream, position, batchSize),
+        this.client.getStreamMessages(stream, position, batchSize),
       fromPosition,
       signal
     );
@@ -60,11 +57,14 @@ export class MessageDbStore implements IEventStore {
 
 // TODO: This can be optimised to pre-fetch next batch's while yielding the
 //       currently fetched items.
-async function* streamByBatch<EventType extends EventInStore>(
-  fetcher: (fromPosition: bigint, batchSize: number) => Promise<EventType[]>,
+async function* streamByBatch<EventType extends MinimumEventType>(
+  fetcher: (
+    fromPosition: bigint,
+    batchSize: number
+  ) => Promise<EventInStore<EventType>[]>,
   fromPosition: bigint,
   signal?: AbortSignal
-): AsyncIterable<EventType> {
+): AsyncIterable<EventInStore<EventType>> {
   const batchSize = 100;
 
   while (signal === undefined || !signal.aborted) {

@@ -33,6 +33,7 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+.turbo
 
 # System Files
 .DS_Store
@@ -41,4 +42,3 @@ Thumbs.db
 # Remix files
 apps/**/build
 apps/**/.cache
-  

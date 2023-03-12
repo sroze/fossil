@@ -4,7 +4,6 @@ import { KeyLocatorSymbol, SystemStore, SystemDatabasePool } from './symbols';
 import { Pool } from 'pg';
 import { IEventStore, MessageDbClient, MessageDbStore } from 'event-store';
 import { KeyLocator, TokenAuthenticator } from 'store-security';
-import { InMemoryKeyLocator } from '../test/key-locator';
 import { StoreLocator } from 'store-locator';
 import { ReadController } from './controllers/read';
 import { HttpAuthenticator } from './services/http-authenticator';

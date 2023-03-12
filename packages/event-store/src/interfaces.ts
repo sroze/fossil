@@ -1,25 +1,24 @@
-export type EventWritten<Type = string, Data = any> = {
-  id: string;
-  type: Type;
-  data: Data;
-  metadata?: any;
+export type MinimumEventType = {
+  type: string;
+  data: any;
 };
 
-export type WrittenEventMetadata = {
+type WrittenEventMetadata = {
+  id: string;
   time: Date;
   stream_name: string;
   position: bigint;
   global_position: bigint;
+  metadata?: any;
 };
 
-export type EventWrittenWithMetadata<Event> = Event & WrittenEventMetadata;
-
-// Identifier will be automatically created if not provided.
-export type EventToWrite = Omit<EventWritten, 'id'> & {
-  id?: string;
-};
-
-export type EventInStore = EventWrittenWithMetadata<EventWritten>;
+export type EventInStore<Event extends MinimumEventType = MinimumEventType> =
+  Event & WrittenEventMetadata;
+export type EventToWrite<Event extends MinimumEventType = MinimumEventType> =
+  Event & {
+    id?: string;
+    metadata?: any;
+  };
 
 export type AppendResult = {
   /* The new position of the stream */
@@ -29,7 +28,6 @@ export type AppendResult = {
   global_position: bigint;
 };
 
-// TODO: We probably should remove the `EventType`
 export interface IEventStore {
   /**
    * Append events to a stream transactionally.
@@ -38,28 +36,28 @@ export interface IEventStore {
    * @param events The list of events to append
    * @param expectedVersion The version we expect the stream to be at for OCC. -1 for "no stream"
    */
-  appendEvents<EventType extends EventToWrite = EventToWrite>(
+  appendEvents<EventType extends MinimumEventType = MinimumEventType>(
     streamName: string,
-    events: EventToWrite[],
+    events: EventToWrite<EventType>[],
     expectedVersion: bigint | null
   ): Promise<AppendResult>;
 
-  readCategory<EventType extends EventInStore = EventInStore>(
+  readCategory<EventType extends MinimumEventType = MinimumEventType>(
     category: string,
     fromPosition?: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventType>;
+  ): AsyncIterable<EventInStore<EventType>>;
 
-  readStream<EventType extends EventInStore = EventInStore>(
+  readStream<EventType extends MinimumEventType = MinimumEventType>(
     stream: string,
     fromPosition?: bigint,
     signal?: AbortSignal
-  ): AsyncIterable<EventType>;
+  ): AsyncIterable<EventInStore<EventType>>;
 
-  lastEventFromStream<EventType extends EventInStore = EventInStore>(
+  lastEventFromStream<EventType extends MinimumEventType = MinimumEventType>(
     stream: string,
     type?: string
-  ): Promise<EventType | undefined>;
+  ): Promise<EventInStore<EventType> | undefined>;
 }
 
 export class WrongExpectedVersionError extends Error {}

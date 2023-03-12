@@ -5,6 +5,7 @@ import {
   AppendResult,
   EventInStore,
   EventToWrite,
+  MinimumEventType,
   WrongExpectedVersionError,
 } from '../interfaces';
 import { prefixFromCategory } from './prefix';
@@ -20,9 +21,9 @@ const sql = (parts: TemplateStringsArray, ...values: any[]) => {
 export class MessageDbClient {
   constructor(private readonly pool: Pool) {}
 
-  async writeMessages(
+  async writeMessages<EventType extends MinimumEventType>(
     streamName: string,
-    messages: EventToWrite[],
+    messages: EventToWrite<EventType>[],
     expectedVersion: bigint | null
   ): Promise<AppendResult> {
     const queryParts = ['BEGIN;'];
@@ -69,11 +70,11 @@ export class MessageDbClient {
     }
   }
 
-  async getStreamMessages<EventType extends EventInStore = EventInStore>(
+  async getStreamMessages<EventType extends MinimumEventType>(
     streamName: string,
     fromPosition: bigint,
     maxCount: number
-  ): Promise<EventType[]> {
+  ): Promise<EventInStore<EventType>[]> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -86,11 +87,11 @@ export class MessageDbClient {
     }
   }
 
-  async getCategoryMessages<EventType extends EventInStore = EventInStore>(
+  async getCategoryMessages<EventType extends MinimumEventType>(
     category: string,
     fromPosition: bigint,
     maxCount: number
-  ): Promise<EventType[]> {
+  ): Promise<EventInStore<EventType>[]> {
     let prefix: string | undefined;
     let wildcard: boolean = category === '*';
 
@@ -137,10 +138,10 @@ export class MessageDbClient {
     }
   }
 
-  async getLastStreamMessage<EventType extends EventInStore = EventInStore>(
+  async getLastStreamMessage<EventType extends MinimumEventType>(
     streamName: string,
     type?: string
-  ): Promise<EventType | undefined> {
+  ): Promise<EventInStore<EventType> | undefined> {
     const client = await this.pool.connect();
     try {
       const result = await client.query(
@@ -154,8 +155,8 @@ export class MessageDbClient {
   }
 }
 
-function fromDb<T extends EventInStore = EventInStore>(row: any): T {
-  return {
+function fromDb<T extends MinimumEventType>(row: any): EventInStore<T> {
+  const event: EventInStore = {
     id: row.id,
     stream_name: row.stream_name,
     time: new Date(row.time),
@@ -164,5 +165,7 @@ function fromDb<T extends EventInStore = EventInStore>(row: any): T {
     metadata: JSON.parse(row.metadata || 'null'),
     global_position: BigInt(row.global_position),
     position: BigInt(row.position),
-  } as T;
+  };
+
+  return event as EventInStore<T>;
 }

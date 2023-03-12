@@ -3,36 +3,36 @@ import {
   Subscription,
   WithEventsCheckpointStore,
 } from 'subscription';
-import { EventWritten, IEventStore } from 'event-store';
+import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
+import { AnySubscriptionEvent } from '~/modules/subscriptions/domain/events';
 
-export type AnySubscriptionEvent = SubscriptionCreated;
-export type SubscriptionCreated = EventWritten<
-  'SubscriptionCreated',
-  {
-    subscription_id: string;
-    store_id: string;
-    type: string;
-    name: string;
-  }
->;
-
-export function main(pool: Pool, store: IEventStore, abortSignal: AbortSignal) {
+export async function main(
+  pool: Pool,
+  store: IEventStore,
+  abortSignal: AbortSignal
+) {
   const subscription = new Subscription(
     store,
     new WithEventsCheckpointStore(store, 'ConsumerCheckpoint-api-v1'),
     new CheckpointAfterNMessages(1)
   );
 
-  void subscription.subscribeCategory(
+  await subscription.subscribeCategory<AnySubscriptionEvent>(
     'Subscription',
-    async ({ data, type }) => {
+    async ({ data, type, stream_name }) => {
+      const { identifier } = StreamName.decompose(stream_name);
+
       if (type === 'SubscriptionCreated') {
         await pool.query(
-          sql`INSERT INTO subscriptions (subscription_id, store_id, name, type, status)
-            VALUES (${data.subscription_id}, ${data.store_id}, ${data.name}, ${data.type}, 'idle')
+          sql`INSERT INTO subscriptions (subscription_id, store_id, name, category, status)
+            VALUES (${identifier}, ${data.store_id}, ${data.name}, ${data.category}, 'creating')
             ON CONFLICT DO NOTHING`
+        );
+      } else if (type === 'SubscriptionReady') {
+        await pool.query(
+          sql`UPDATE subscriptions SET status = 'ready' WHERE subscription_id = ${identifier}`
         );
       }
     },

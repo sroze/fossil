@@ -21,8 +21,8 @@ const pool = new Pool({
 export const store = new MessageDbStore(new MessageDbClient(pool));
 
 (async () => {
-  subscription(pool, store, abortController.signal);
-  streams(pool, store, abortController.signal);
+  await Promise.race([
+    subscription(pool, store, abortController.signal),
+    streams(pool, store, abortController.signal),
+  ]);
 })();
-
-export {};

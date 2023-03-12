@@ -14,7 +14,7 @@ import sql from 'sql-template-tag';
 export const createSubscriptionValidator = withZod(
   z.object({
     name: z.string(),
-    type: z.enum(['poll']),
+    category: z.string(),
   })
 );
 
@@ -39,7 +39,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 type SubscriptionSummary = {
   subscription_id: string;
   name: string;
-  type: string;
+  category: string;
   status: string;
 };
 
@@ -50,7 +50,7 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async ({ params, request }) => {
   const { rows: subscriptions } = await pool.query<SubscriptionSummary>(
-    sql`SELECT subscription_id, name, type, status FROM subscriptions WHERE store_id = ${params.id!}`
+    sql`SELECT subscription_id, name, category, status FROM subscriptions WHERE store_id = ${params.id!}`
   );
 
   return json<LoaderData>({
@@ -78,8 +78,8 @@ export default function Subscriptions() {
       <Table>
         <Table.Header>
           <tr>
-            <Table.Header.Column>Key</Table.Header.Column>
-            <Table.Header.Column>Type</Table.Header.Column>
+            <Table.Header.Column>Name</Table.Header.Column>
+            <Table.Header.Column>Category</Table.Header.Column>
             <Table.Header.Column>Status</Table.Header.Column>
             <Table.Header.Column>Lag</Table.Header.Column>
             <Table.Header.Column></Table.Header.Column>
@@ -91,7 +91,7 @@ export default function Subscriptions() {
               <Table.Column>
                 <code>{subscription.name}</code>
               </Table.Column>
-              <Table.Column>{subscription.type}</Table.Column>
+              <Table.Column>{subscription.category}</Table.Column>
               <Table.Column>
                 <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
                   <svg
