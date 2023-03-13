@@ -14,7 +14,7 @@ export default function Index() {
     <div className="relative flex min-h-screen flex-col">
       {/* Navbar */}
       <Navbar />
-      // TODO: Create a store. // TODO: Create a subscription.
+      // TODO: list of stores
     </div>
   );
 }

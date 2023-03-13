@@ -68,7 +68,7 @@ export class TestApplication {
     return new TestApplication();
   }
 
-  async init(): Promise<TestApplication> {
+  async init(defaultStoreIdentifier = '123'): Promise<TestApplication> {
     this.keyForStore = await generateKey();
 
     const moduleRef = await Test.createTestingModule({
@@ -78,7 +78,7 @@ export class TestApplication {
       .useValue(
         new InMemoryKeyLocator([
           {
-            storeId: '123',
+            storeId: defaultStoreIdentifier,
             keyId: this.keyForStore.private.kid,
             key: this.keyForStore.public,
           },

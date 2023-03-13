@@ -10,7 +10,7 @@ type MessageFunctionHandler<EventType extends MinimumEventType> = (
 ) => Promise<void>;
 type AdvancedHandler<EventType extends MinimumEventType> = {
   onMessage: MessageFunctionHandler<EventType>;
-  onEOF: () => Promise<void>;
+  onEOF: (position: bigint) => Promise<void>;
 };
 
 export type Handler<EventType extends MinimumEventType> =
@@ -102,7 +102,7 @@ export class Subscription {
       // yet another request.
       if (!hasConsumedEvents) {
         if (!hasEOF) {
-          await onEOF();
+          await onEOF(position);
           hasEOF = true;
         }
 

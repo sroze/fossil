@@ -96,6 +96,7 @@ describe('Subscription', () => {
 
     expect(onMessage).toHaveBeenCalledTimes(1);
     expect(onEOF).toHaveBeenCalledTimes(1);
+    expect(onEOF).toHaveBeenCalledWith(0n);
 
     eventsInStore.push({
       id: v4(),

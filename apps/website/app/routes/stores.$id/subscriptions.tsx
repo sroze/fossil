@@ -10,6 +10,8 @@ import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { pool } from '~/modules/event-store/store.backend';
 import sql from 'sql-template-tag';
+import React from 'react';
+import { SubscriptionStatusBadge } from '~/modules/subscriptions/components/status-badge';
 
 export const createSubscriptionValidator = withZod(
   z.object({
@@ -81,7 +83,6 @@ export default function Subscriptions() {
             <Table.Header.Column>Name</Table.Header.Column>
             <Table.Header.Column>Category</Table.Header.Column>
             <Table.Header.Column>Status</Table.Header.Column>
-            <Table.Header.Column>Lag</Table.Header.Column>
             <Table.Header.Column></Table.Header.Column>
           </tr>
         </Table.Header>
@@ -93,23 +94,14 @@ export default function Subscriptions() {
               </Table.Column>
               <Table.Column>{subscription.category}</Table.Column>
               <Table.Column>
-                <span className="inline-flex items-center rounded bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                  <svg
-                    className="mr-1.5 h-2 w-2 text-yellow-400"
-                    fill="currentColor"
-                    viewBox="0 0 8 8"
-                  >
-                    <circle cx={4} cy={4} r={3} />
-                  </svg>
-                  {subscription.status}
-                </span>
+                <SubscriptionStatusBadge status={subscription.status} />
               </Table.Column>
               <Table.Column>
-                <code>0</code>
-              </Table.Column>
-              <Table.Column>
-                <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                  More
+                <a
+                  href={`/stores/${store_id}/subscriptions/${subscription.subscription_id}`}
+                  className="text-indigo-600 hover:text-indigo-900"
+                >
+                  View
                 </a>
               </Table.Column>
             </tr>

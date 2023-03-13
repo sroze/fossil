@@ -74,10 +74,10 @@ export default function Demo() {
               <p className="mt-2 text-sm text-gray-600">
                 Or{' '}
                 <a
-                  href="#"
+                  href="/"
                   className="font-medium text-indigo-600 hover:text-indigo-500"
                 >
-                  do something else
+                  go back to the list
                 </a>
               </p>
             </div>

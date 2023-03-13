@@ -14,7 +14,11 @@ export class TokenAuthenticator {
    * - Has a valid Fossil payload.
    */
   async authorize(storeId: string, token: string): Promise<FossilClaims> {
-    const unverifiedToken = decode(token, { complete: true }) as Jwt;
+    const unverifiedToken = decode(token, { complete: true });
+    if (!unverifiedToken) {
+      throw new Error(`Provided token was invalid.`);
+    }
+
     const unverifiedPayload = unverifiedToken.payload as JwtPayload;
     if (!('fossil' in unverifiedPayload)) {
       throw new Error(`Token's payload is not a Fossil one.`);

@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "build:task": "tsup src/modules/sqs-subscription/runner/threads/task.ts --format cjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "dev": "concurrently \"nest start --watch\" \"npm run dev:read-models\"",
-    "dev:read-models": "nest start --entryFile entrypoints/read-models --watch",
+    "dev": "concurrently \"nest start --watch\" \"npm run dev:processes\"",
+    "dev:processes": "nest start --entryFile entrypoints/processes --watch",
     "dev:debug": "nest start --debug --watch",
     "start": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -17,11 +18,13 @@
     "migrate": "pg-migrations apply --directory migrations"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.289.0",
     "@databases/pg-migrations": "^5.0.2",
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "^6.2.1",
+    "axios": "^1.3.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.6",
@@ -35,6 +38,7 @@
     "store-locator": "workspace:*",
     "store-security": "workspace:*",
     "subscription": "workspace:*",
+    "threads": "^1.7.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

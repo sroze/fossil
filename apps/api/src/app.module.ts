@@ -1,16 +1,23 @@
 import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
-import { WriteController } from './controllers/write';
+import { WriteController } from './modules/store/controllers/write';
 import { KeyLocatorSymbol, SystemStore, SystemDatabasePool } from './symbols';
 import { Pool } from 'pg';
 import { IEventStore, MessageDbClient, MessageDbStore } from 'event-store';
 import { KeyLocator, TokenAuthenticator } from 'store-security';
 import { StoreLocator } from 'store-locator';
-import { ReadController } from './controllers/read';
-import { HttpAuthenticator } from './services/http-authenticator';
-import { HttpStoreLocator } from './services/http-store-locator';
-import { SubscribeController } from './controllers/subscribe';
-import { DatabaseKeyLocator } from './services/database-key-locator';
-import { CookieHandshakeController } from './controllers/cookie-handshake';
+import { ReadController } from './modules/store/controllers/read';
+import { HttpAuthenticator } from './modules/store/services/http-authenticator';
+import { HttpStoreLocator } from './modules/store/services/http-store-locator';
+import { SubscribeController } from './modules/ephemeral-subscription/controllers/subscribe';
+import { DatabaseKeyLocator } from './modules/store/services/database-key-locator';
+import { CookieHandshakeController } from './modules/ephemeral-subscription/controllers/cookie-handshake';
+import { ReceiveSubscriptionController } from './modules/sqs-subscription/controllers/receive-subscription';
+import { SQSClient } from '@aws-sdk/client-sqs';
+import { PrepareSubscriptionProcess } from './modules/sqs-subscription/processes/prepare-subscription';
+import { SqsSubscriptionsReadModel } from './modules/sqs-subscription/read-models/sqs-subscriptions';
+import { SubscriptionRunner } from './modules/sqs-subscription/runner/runner';
+import { PublicKeysReadModel } from './modules/store/read-models/public-keys';
+import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/manager';
 
 @Module({
   imports: [],
@@ -19,6 +26,7 @@ import { CookieHandshakeController } from './controllers/cookie-handshake';
     ReadController,
     SubscribeController,
     CookieHandshakeController,
+    ReceiveSubscriptionController,
   ],
   providers: [
     HttpAuthenticator,
@@ -54,6 +62,23 @@ import { CookieHandshakeController } from './controllers/cookie-handshake';
       useFactory: (system: IEventStore) => new StoreLocator(system),
       inject: [SystemStore],
     },
+    {
+      provide: SQSClient,
+      useFactory: () =>
+        new SQSClient({
+          credentials: {
+            accessKeyId: 'test',
+            secretAccessKey: 'test',
+          },
+          region: 'us-east-1', // is needed for `localstack`
+          endpoint: 'http://127.0.0.1:4566',
+        }),
+    },
+    PrepareSubscriptionProcess,
+    SqsSubscriptionsReadModel,
+    RunningSubscriptionsManager,
+    SubscriptionRunner,
+    PublicKeysReadModel,
   ],
 })
 export class AppModule implements OnApplicationShutdown {
