@@ -4,11 +4,11 @@ import { NewSubscriptionForm } from '~/modules/subscriptions/organisms/new-subsc
 import { H2 } from '~/modules/design-system/h2';
 import React from 'react';
 import { json, LoaderFunction } from '@remix-run/node';
-import { pool } from '~/modules/event-store/store.backend';
 import sql from 'sql-template-tag';
 import { SubscriptionStatusBadge } from '~/modules/subscriptions/components/status-badge';
 import { storeApiBaseUrl } from '~/modules/api-client/config';
 import { generatePlaygroundToken } from '~/modules/playground/backend/token-generator';
+import { pool } from '~/config.backend';
 
 type SubscriptionSummary = {
   subscription_id: string;

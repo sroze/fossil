@@ -2,6 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "pipeline": {
+    "migrate": {
+      "dependsOn": ["^build"]
+    },
     "build": {
       "outputs": [
         "dist/**",
@@ -14,7 +17,7 @@
     },
     "test": {
       "outputs": ["coverage/**"],
-      "dependsOn": []
+      "dependsOn": ["migrate"]
     },
     "lint": {
       "dependsOn": ["^build"]

@@ -1,10 +1,10 @@
 import { IEventStore } from 'event-store';
-import { fossilEventStore } from '../event-store/store.backend';
 import { Aggregate, createAggregate, Writer } from '~/utils/ddd';
 import * as Decider from './decider';
 import { Command, State, StoreState } from './decider';
 import { GeneratedKey, generateKey } from 'store-security';
 import { v4 } from 'uuid';
+import { fossilEventStore } from '~/config.backend';
 
 // TODO: Add `users` to stores, who have access to these stores.
 // TODO: Create a read-model that has the list of stores per user.

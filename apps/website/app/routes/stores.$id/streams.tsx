@@ -2,8 +2,8 @@ import { Table } from '../../modules/design-system/table';
 import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { H2 } from '../../modules/design-system/h2';
-import { pool } from '~/modules/event-store/store.backend';
 import sql from 'sql-template-tag';
+import { pool } from '~/config.backend';
 
 type StreamSummary = { name: string; position: string; last_time: string };
 type LoaderData = {

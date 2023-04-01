@@ -35,7 +35,7 @@ import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/m
       provide: SystemDatabasePool,
       useFactory: () =>
         new Pool({
-          connectionString: process.env.DATABASE_URL!,
+          connectionString: process.env.API_DATABASE_URL!,
           max: 10,
           connectionTimeoutMillis: 10000,
           statement_timeout: 60000,

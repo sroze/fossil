@@ -42,3 +42,6 @@ Thumbs.db
 # Remix files
 apps/**/build
 apps/**/.cache
+
+# Environment files
+.env

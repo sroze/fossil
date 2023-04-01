@@ -8,10 +8,10 @@ import { DurableSubscriptionService } from '~/modules/subscriptions/service';
 import { validationError } from 'remix-validated-form';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
-import { pool } from '~/modules/event-store/store.backend';
 import sql from 'sql-template-tag';
 import React from 'react';
 import { SubscriptionStatusBadge } from '~/modules/subscriptions/components/status-badge';
+import { pool } from '~/config.backend';
 
 export const createSubscriptionValidator = withZod(
   z.object({
