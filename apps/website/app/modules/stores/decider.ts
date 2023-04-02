@@ -12,7 +12,7 @@ export type KeyDeleted = {
   key_id: string;
 };
 
-export type Event =
+export type AnyStoreEvent =
   | { type: 'StoreCreated'; data: StoreCreated }
   | { type: 'KeyGenerated'; data: KeyGenerated }
   | { type: 'KeyDeleted'; data: KeyDeleted };
@@ -50,7 +50,7 @@ export type Command =
   | { type: 'StoreGeneratedKey'; data: StoreGeneratedKeyCommand }
   | { type: 'DeleteKey'; data: { key_id: string } };
 
-export const evolve = (state: State, { type, data }: Event): State => {
+export const evolve = (state: State, { type, data }: AnyStoreEvent): State => {
   if (type === 'StoreCreated') {
     return {
       id: data.id,
@@ -76,7 +76,7 @@ export const evolve = (state: State, { type, data }: Event): State => {
   return state;
 };
 
-export const decide = (command: Command, state: State): Event[] => {
+export const decide = (command: Command, state: State): AnyStoreEvent[] => {
   if (command.type === 'CreateStoreCommand') {
     return state ? [] : [{ type: 'StoreCreated', data: command.data }];
   } else if (!state) {
