@@ -1,6 +1,10 @@
 import { DataFunctionArgs, json } from '@remix-run/node';
 import { authenticationIsEnabled, authenticator } from './authenticator.server';
 import type { Auth0Profile } from 'remix-auth-auth0';
+import {
+  Profile,
+  profileFromOAuthProfile,
+} from '~/modules/identity-and-authorization/profile';
 
 export type LoaderParamsWithAuthentication = {
   profile: Auth0Profile;
@@ -9,13 +13,15 @@ export type LoaderParamsWithAuthentication = {
 export async function loaderWithAuthorization<ReturnType extends object = any>(
   args: DataFunctionArgs,
   loader?: (
-    args: DataFunctionArgs & { profile: Auth0Profile }
+    args: DataFunctionArgs & { profile: Profile }
   ) => Promise<ReturnType | Response>
 ): Promise<(ReturnType & LoaderParamsWithAuthentication) | Response> {
-  const profile: Auth0Profile = authenticationIsEnabled()
-    ? await authenticator.isAuthenticated(args.request, {
-        failureRedirect: '/auth/login',
-      })
+  const profile: Profile = authenticationIsEnabled()
+    ? profileFromOAuthProfile(
+        await authenticator.isAuthenticated(args.request, {
+          failureRedirect: '/auth/login',
+        })
+      )
     : developmentProfile;
 
   if (loader) {
@@ -33,30 +39,30 @@ export async function loaderWithAuthorization<ReturnType extends object = any>(
   return json({ profile });
 }
 
-export async function actionWithAuthorization(
+export async function actionWithAuthorization<ReturnType extends object = any>(
   args: DataFunctionArgs,
   action: (
-    args: DataFunctionArgs & { profile: Auth0Profile }
-  ) => Promise<Response> | Response | Promise<any> | any
+    args: DataFunctionArgs & { profile: Profile }
+  ) => Promise<Response> | Response | Promise<ReturnType> | ReturnType
 ) {
-  const profile: Auth0Profile = authenticationIsEnabled()
-    ? await authenticator.isAuthenticated(args.request, {
-        failureRedirect: '/auth/login',
-      })
+  const profile: Profile = authenticationIsEnabled()
+    ? profileFromOAuthProfile(
+        await authenticator.isAuthenticated(args.request, {
+          failureRedirect: '/auth/login',
+        })
+      )
     : developmentProfile;
 
-  return action({ ...args, profile });
+  const response = await action({ ...args, profile });
+  if (response instanceof Response) {
+    return response;
+  }
+
+  return json(response);
 }
 
-const developmentProfile: Auth0Profile = {
+const developmentProfile: Profile = {
   id: '00000000-0000-0000-0000-000000000000',
-  name: { givenName: 'Software', familyName: 'Engineer' },
   displayName: 'Developer',
-  emails: [{ value: 'engineer@example.com' }],
-  photos: [
-    {
-      value: 'https://eu.ui-avatars.com/api/?name=Software+Engineer&size=250',
-    },
-  ],
-  provider: 'auth0',
+  email: 'engineer@example.com',
 };

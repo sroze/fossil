@@ -6,7 +6,7 @@ import { SubmitButton } from '../../zod-forms/components/submit-button';
 import {
   generateKeyValidator,
   SuccessfulGenerateKeyResponse,
-} from '../../../routes/api.stores.$id/keys.generate';
+} from '../../../routes/api/stores.$id/keys.generate';
 import { PrimaryButton } from '../../design-system/buttons';
 import { LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
 import { RadioFieldset } from '../../zod-forms/components/radio-fieldset';

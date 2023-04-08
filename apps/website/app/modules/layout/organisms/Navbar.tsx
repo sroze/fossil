@@ -1,39 +1,59 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/20/solid';
 import { Menu, Transition } from '@headlessui/react';
 import { ProfilePicture } from '../components/profile-picture';
-import { Fragment } from 'react';
+import { Fragment, PropsWithChildren } from 'react';
 import { classNames } from '../../remix-utils/front-end';
 import { useLoaderData } from '@remix-run/react';
 import { LoaderParamsWithAuthentication } from '../../identity-and-authorization/remix-utils.server';
-import md5 from 'md5';
+import { profilePictureUrl } from '~/modules/identity-and-authorization/profile';
 
 const userNavigation = [{ name: 'Sign out', href: '/auth/logout' }];
 
-export function Navbar() {
-  const { profile } = useLoaderData<LoaderParamsWithAuthentication>();
+type Props = {
+  breadcrumbItems?: { href: string; label: string }[];
+};
 
-  const profilePictureUrl =
-    profile.photos && profile.photos.length > 0
-      ? profile.photos[0].value
-      : profile.emails
-      ? `https://www.gravatar.com/avatar/${md5(profile.emails[0].value)}`
-      : 'https://picsum.photos/id/27/40/40';
+export function Navbar({ breadcrumbItems = [] }: PropsWithChildren<Props>) {
+  const { profile } = useLoaderData<LoaderParamsWithAuthentication>();
 
   return (
     <nav className="flex-shrink-0 bg-indigo-600">
       <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
         <div className="relative flex h-16 items-center justify-between">
-          {/* Logo section */}
-          <div className="flex items-center px-2 lg:px-0 xl:w-64">
-            <div className="flex-shrink-0">
-              <span>🪨</span>
-            </div>
-          </div>
-
-          {/*<SearchBar />*/}
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol role="list" className="flex items-center space-x-4">
+              <li>
+                <a
+                  href="/"
+                  className="p-2 rounded-md bg-slate-100 hover:bg-slate-200"
+                >
+                  🪨
+                </a>
+              </li>
+              {breadcrumbItems.map((item) => (
+                <li key={item.href}>
+                  <div className="flex items-center">
+                    <svg
+                      className="h-5 w-5 flex-shrink-0 text-gray-300"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+                    </svg>
+                    <a
+                      href={item.href}
+                      className="ml-4 text-sm font-medium text-gray-300 hover:text-white"
+                    >
+                      {item.label}
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </nav>
 
           {/* Links section */}
-          <div className="hidden lg:block lg:w-80">
+          <div className="hidden lg:block">
             <div className="flex items-center justify-end">
               <div className="flex">
                 <a
@@ -48,7 +68,7 @@ export function Navbar() {
               <Menu as="div" className="relative ml-4 flex-shrink-0">
                 <div>
                   <Menu.Button className="flex rounded-full bg-indigo-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700">
-                    <ProfilePicture src={profilePictureUrl} />
+                    <ProfilePicture src={profilePictureUrl(profile)} />
                   </Menu.Button>
                 </div>
                 <Transition

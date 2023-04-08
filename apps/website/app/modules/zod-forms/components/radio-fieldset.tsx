@@ -3,7 +3,11 @@ import { useField } from 'remix-validated-form';
 
 export const RadioFieldset: React.FC<{
   name: string;
-  options: { value: string; label: React.ReactElement; description: string }[];
+  options: {
+    value: string;
+    label: string | React.ReactElement;
+    description?: string;
+  }[];
 }> = ({ name, options }) => {
   const { error, getInputProps } = useField(name);
 
@@ -31,7 +35,9 @@ export const RadioFieldset: React.FC<{
               >
                 {option.label}
               </label>
-              <p className="text-gray-500">{option.description}</p>
+              {option.description ? (
+                <p className="text-gray-500">{option.description}</p>
+              ) : null}
             </div>
           </div>
         ))}

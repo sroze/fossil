@@ -1,6 +1,4 @@
 import { INestApplication, Type } from '@nestjs/common';
-import { PublicKeysReadModel } from '../modules/store/read-models/public-keys';
-import { SqsSubscriptionsReadModel } from '../modules/sqs-subscription/read-models/sqs-subscriptions';
 
 export interface Runnable {
   run(abortSignal: AbortSignal, onEOF?: () => Promise<void>): Promise<void>;

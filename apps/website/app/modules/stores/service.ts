@@ -38,7 +38,8 @@ export class StoreService {
     data: { name: string; type: 'private' | 'hosted' }
   ): Promise<GeneratedKey> {
     const key = await generateKey();
-    const r = await StoreService.resolve().execute(id, {
+
+    await StoreService.resolve().execute(id, {
       type: 'StoreGeneratedKey',
       data: {
         key: {
@@ -51,8 +52,6 @@ export class StoreService {
         },
       },
     });
-
-    console.log('r', r);
 
     return key;
   }

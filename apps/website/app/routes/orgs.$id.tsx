@@ -1,57 +1,52 @@
 import { LoaderFunction } from '@remix-run/node';
 import { Outlet, useLoaderData, useLocation } from '@remix-run/react';
 import {
-  FireIcon,
-  HomeIcon,
-  InboxStackIcon,
-  LockClosedIcon,
-  QueueListIcon,
+  CubeTransparentIcon,
+  UsersIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/solid';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { StoreService } from '../modules/stores/service';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { StoreState } from '~/modules/stores/decider';
 import { Nav } from '~/modules/design-system/nav';
+import { organisation } from '~/modules/organisations/service';
+import { State } from '~/modules/organisations/domain';
 
 type LoaderData = {
-  store: StoreState;
+  org_id: string;
+  org: State;
 };
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization(args, async ({ params }) => {
-    // TODO: Validate that the user has access to the store!
-    const store = await StoreService.resolve().load(params.id!);
+    const org_id = params.id!;
+    const { state: org } = await organisation(org_id).read();
+    if (!org) {
+      throw new Error('Not found');
+    }
 
     return {
-      store,
+      org_id,
+      org,
     };
   });
 
 export default function Store() {
-  const { store } = useLoaderData<LoaderData>();
+  const { org, org_id } = useLoaderData<LoaderData>();
   const currentLocation = useLocation();
 
   const navigation = [
-    { name: 'Overview', href: `/stores/${store.id}`, icon: HomeIcon },
+    { name: 'Stores', href: `/orgs/${org_id}`, icon: CubeTransparentIcon },
     {
-      name: 'Streams',
-      href: `/stores/${store.id}/streams`,
-      icon: QueueListIcon,
+      name: 'People',
+      href: `/orgs/${org_id}/people`,
+      icon: UsersIcon,
     },
     {
-      name: 'Durable subscriptions',
-      href: `/stores/${store.id}/subscriptions`,
-      icon: InboxStackIcon,
-    },
-    {
-      name: 'Security',
-      href: `/stores/${store.id}/security`,
-      icon: LockClosedIcon,
-    },
-    {
-      name: 'Playground',
-      href: `/stores/${store.id}/playground`,
-      icon: FireIcon,
+      name: 'Billing',
+      href: `/stores/${org_id}/billing`,
+      icon: BanknotesIcon,
     },
   ].map((item) => ({
     ...item,
@@ -61,7 +56,7 @@ export default function Store() {
   return (
     <div className="relative flex min-h-full flex-col bg-gray-100">
       <Navbar
-        breadcrumbItems={[{ label: store.name, href: `/stores/${store.id}` }]}
+        breadcrumbItems={[{ label: org.name, href: `/orgs/${org_id}` }]}
       />
 
       <div className="flex flex-row">

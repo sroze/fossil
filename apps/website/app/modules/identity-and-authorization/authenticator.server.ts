@@ -5,7 +5,7 @@ import { createCookieSessionStorage } from '@remix-run/node';
 export const authenticationIsEnabled = (): boolean =>
   !!process.env.AUTH0_DOMAIN;
 
-const sessionStorage = createCookieSessionStorage({
+export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: '_session',
     sameSite: 'lax',

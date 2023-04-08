@@ -111,7 +111,7 @@ export const createAggregate = <
 
   const write: Writer<Command, Context> = async (ctx, streamName, command) => {
     const { version, state } = await read(streamName);
-    if (decider.isTerminal?.(state)) {
+    if (version !== -1n && decider.isTerminal?.(state)) {
       throw new Error(
         `Stream is terminal. ${streamName} cannot accept new decisions`
       );

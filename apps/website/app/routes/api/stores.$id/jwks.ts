@@ -1,6 +1,6 @@
 import { LoaderFunctionArgs } from '@remix-run/router';
 import { json } from '@remix-run/node';
-import { StoreService } from '../../modules/stores/service';
+import { StoreService } from '../../../modules/stores/service';
 import type { PublicKey } from 'store-security';
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

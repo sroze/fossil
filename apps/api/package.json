@@ -14,7 +14,6 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
     "migrate": "if [[ -f .env ]]; then source .env; fi && pg-migrations apply --directory migrations -c $API_DATABASE_URL"
   },
   "dependencies": {
