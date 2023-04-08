@@ -39,10 +39,11 @@ export const InviteUserForm: React.FC<{
     >
       <FormInput className="mb-5" name="email" label="Email" required />
       <RadioFieldset
+        label="Role"
         name="role"
         options={[
           { value: 'admin', label: 'Admin' },
-          { value: 'user', label: 'User' },
+          { value: 'member', label: 'Member' },
         ]}
       />
 

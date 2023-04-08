@@ -1,3 +1,5 @@
+import { Role } from './events';
+
 export type AnyOrganisationCommand =
   | CreateOrganisationCommand
   | AddMemberCommand
@@ -15,7 +17,7 @@ export type AddMemberCommand = {
   type: 'AddMemberCommand';
   data: {
     user_id: string;
-    role: 'admin' | 'member';
+    role: Role;
   };
 };
 

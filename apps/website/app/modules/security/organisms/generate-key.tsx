@@ -47,6 +47,7 @@ export const GenerateKeyForm: React.FC<{
 
       <RadioFieldset
         name="type"
+        label="Type"
         options={[
           {
             value: 'private',

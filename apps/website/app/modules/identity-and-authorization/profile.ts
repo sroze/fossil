@@ -1,5 +1,5 @@
-import { OAuth2Profile } from 'remix-auth-oauth2';
 import md5 from 'md5';
+import { Auth0Profile } from 'remix-auth-auth0';
 
 export type Profile = {
   id: string;
@@ -7,7 +7,7 @@ export type Profile = {
   email: string;
 };
 
-export function profileFromOAuthProfile(profile: OAuth2Profile): Profile {
+export function profileFromOAuthProfile(profile: Auth0Profile): Profile {
   if (!profile.id) {
     throw new Error('Profile does not have an identifier.');
   }

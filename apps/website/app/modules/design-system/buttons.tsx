@@ -74,7 +74,7 @@ export const DangerButton: React.FC<{
   </button>
 );
 
-export const PrimaryLink: React.FC<{ href: string; className: string }> = ({
+export const PrimaryLink: React.FC<{ href: string; className?: string }> = ({
   children,
   href,
   className,

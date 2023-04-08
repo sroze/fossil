@@ -1,33 +1,33 @@
 import { IEventStore } from 'event-store';
 import { Aggregate, createAggregate, Writer } from '~/utils/ddd';
-import * as Decider from './decider';
-import { Command, State, StoreState } from './decider';
 import { GeneratedKey, generateKey } from 'store-security';
 import { v4 } from 'uuid';
 import { fossilEventStore } from '~/config.backend';
+import { AnyStoreCommand, decider } from './domain';
 
-// TODO: Add `users` to stores, who have access to these stores.
-// TODO: Create a read-model that has the list of stores per user.
+export const store = (id: string) => {
+  const aggregate = createAggregate(fossilEventStore, decider);
+
+  return {
+    read: () => aggregate.read(`Store-${id}`),
+    write: (command: AnyStoreCommand) =>
+      aggregate.write({}, `Store-${id}`, command),
+  };
+};
 
 export class StoreService {
-  private readonly aggregate: Aggregate<State, Command>;
-
   public static resolve(): StoreService {
-    return new StoreService(fossilEventStore);
+    return new StoreService();
   }
 
-  constructor(private readonly client: IEventStore) {
-    this.aggregate = createAggregate(client, Decider);
+  async execute(id: string, command: AnyStoreCommand) {
+    return await store(id).write(command);
   }
 
-  async execute(id: string, command: Command) {
-    return await this.aggregate.write({}, `Store-${id}`, command);
-  }
-
-  async load(identifier: string): Promise<StoreState> {
-    const { state } = await this.aggregate.read(`Store-${identifier}`);
+  async load(identifier: string) {
+    const { state } = await store(identifier).read();
     if (!state) {
-      throw new Error(`Unable to find store.`);
+      throw new Error('Store not found');
     }
 
     return state;

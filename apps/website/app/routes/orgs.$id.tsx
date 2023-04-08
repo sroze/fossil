@@ -6,9 +6,7 @@ import {
   BanknotesIcon,
 } from '@heroicons/react/24/solid';
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
-import { StoreService } from '../modules/stores/service';
 import { Navbar } from '../modules/layout/organisms/Navbar';
-import { StoreState } from '~/modules/stores/decider';
 import { Nav } from '~/modules/design-system/nav';
 import { organisation } from '~/modules/organisations/service';
 import { State } from '~/modules/organisations/domain';
@@ -45,7 +43,7 @@ export default function Store() {
     },
     {
       name: 'Billing',
-      href: `/stores/${org_id}/billing`,
+      href: `/orgs/${org_id}/billing`,
       icon: BanknotesIcon,
     },
   ].map((item) => ({

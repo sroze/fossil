@@ -1,19 +1,21 @@
 import React from 'react';
 import { useField } from 'remix-validated-form';
+import { FormComponentWithError } from '~/modules/zod-forms/components/input';
 
 export const RadioFieldset: React.FC<{
   name: string;
+  label: string;
   options: {
     value: string;
     label: string | React.ReactElement;
     description?: string;
   }[];
-}> = ({ name, options }) => {
-  const { error, getInputProps } = useField(name);
+}> = ({ name, label, options }) => {
+  const { getInputProps } = useField(name);
 
   return (
     <fieldset className="mb-4">
-      <legend className="text-sm font-medium text-gray-900">Type</legend>
+      <legend className="text-sm font-medium text-gray-900">{label}</legend>
       <div className="mt-2 space-y-5">
         {options.map((option) => (
           <div className="relative flex items-start" key={option.value}>
@@ -42,6 +44,7 @@ export const RadioFieldset: React.FC<{
           </div>
         ))}
       </div>
+      <FormComponentWithError name={name} />
     </fieldset>
   );
 };

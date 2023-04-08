@@ -3,7 +3,7 @@ import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 import { ReadOnlyFromCallback } from 'subscription/dist/checkpoint-store/read-only-from-callback';
-import { AnyStoreEvent } from '~/modules/stores/decider';
+import { AnyStoreEvent } from '~/modules/stores/domain';
 
 export async function main(
   pool: Pool,
@@ -31,11 +31,14 @@ export async function main(
 
       if (type === 'StoreCreated') {
         await pool.query(
-          sql`INSERT INTO stores (store_id, name, last_known_checkpoint)
-            VALUES (${identifier}, ${data.name}, ${String(global_position)})
+          sql`INSERT INTO stores (store_id, org_id, name, last_known_checkpoint)
+            VALUES (${identifier}, ${data.owning_org_id}, ${
+            data.name
+          }, ${String(global_position)})
             ON CONFLICT (store_id) DO UPDATE
-                SET name = ${data.name},
-                last_known_checkpoint = EXCLUDED.last_known_checkpoint`
+                SET name = EXCLUDED.name,
+                  org_id = EXCLUDED.org_id,
+                  last_known_checkpoint = EXCLUDED.last_known_checkpoint`
         );
       }
     },

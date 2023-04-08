@@ -11,7 +11,10 @@ import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { v4 } from 'uuid';
 import { organisation } from '~/modules/organisations/service';
-import { lastKnownCheckpoint } from '~/utils/eventual-consistency';
+import {
+  lastKnownCheckpoint,
+  setCookieForCheckpoint,
+} from '~/utils/eventual-consistency';
 
 export const generateOrganisationValidator = withZod(
   z.object({
@@ -41,12 +44,7 @@ export const action: ActionFunction = (args) =>
     });
 
     return redirect(`/orgs/${identifier}`, {
-      headers: {
-        'set-cookie': await lastKnownCheckpoint.serialize({
-          value: String(global_position),
-          expires: null,
-        }),
-      },
+      headers: await setCookieForCheckpoint({ global_position }),
     });
   });
 

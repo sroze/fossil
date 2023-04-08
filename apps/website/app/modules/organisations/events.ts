@@ -4,6 +4,7 @@ export type AnyOrganisationEvent =
   | UserJoinedOrganisation
   | UserLeftOrganisation;
 
+export type Role = 'member' | 'admin';
 export type OrganisationCreated = {
   type: 'OrganisationCreated';
   data: {
@@ -21,7 +22,7 @@ export type UserJoinedOrganisation = {
   type: 'UserJoinedOrganisation';
   data: {
     user_id: string;
-    role: 'member' | 'admin';
+    role: Role;
   };
 };
 

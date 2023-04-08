@@ -1,45 +1,45 @@
 import { LoaderFunction } from '@remix-run/node';
-import { H2 } from '~/modules/design-system/h2';
 import { Table } from '~/modules/design-system/table';
 import { pool } from '~/config.backend';
 import sql from 'sql-template-tag';
 import { useLoaderData } from '@remix-run/react';
-import { classNames } from '~/modules/remix-utils/front-end';
-import {
-  buttonClassNames,
-  colorSchemeClassNames,
-  PrimaryLink,
-  sizeClassNames,
-} from '~/modules/design-system/buttons';
 import { SectionHeader } from '~/modules/design-system/section-header';
+import { loaderWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
+import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
+import { NewStoreForm } from '~/modules/stores/frontend/organisms/new-store-form';
 
 type StoreSummary = { id: string; name: string };
+
 type LoaderData = {
+  org_id: string;
   stores: StoreSummary[];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
-  // TODO: Filter by org_id.
-  const { rows: stores } = await pool.query<StoreSummary>(
-    sql`SELECT store_id as id, name FROM stores`
-  );
+export const loader: LoaderFunction = (args) =>
+  loaderWithAuthorization<LoaderData>(args, async ({ params }) => {
+    const org_id = params.id!;
 
-  return {
-    stores,
-  };
-};
+    const { rows: stores } = await pool.query<StoreSummary>(
+      sql`SELECT store_id as id, name FROM stores WHERE org_id = ${org_id}`
+    );
+
+    return {
+      org_id,
+      stores,
+    };
+  });
 
 export default function Index() {
-  const { stores } = useLoaderData<LoaderData>();
+  const { stores, org_id } = useLoaderData<LoaderData>();
 
   return (
     <div className="p-5">
       <SectionHeader
         title="Stores"
         right={
-          <PrimaryLink href="/orgs/new" className="float-right">
-            New
-          </PrimaryLink>
+          <ButtonAndPopup title="New store" variant="primary">
+            <NewStoreForm org_id={org_id} />
+          </ButtonAndPopup>
         }
       />
 

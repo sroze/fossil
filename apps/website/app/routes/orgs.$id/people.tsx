@@ -5,13 +5,13 @@ import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
 import { InviteUserForm } from '~/modules/organisations/frontend/organisms/invite-user-form';
 import { SectionHeader } from '~/modules/design-system/section-header';
 import { loaderWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
-import { organisation } from '~/modules/organisations/service';
-import { profileFromUserIdentifier } from '~/modules/identity-and-authorization/identity-resolver.server';
-import { DangerButton, PrimaryButton } from '~/modules/design-system/buttons';
+import { DangerButton } from '~/modules/design-system/buttons';
+import { pool } from '~/config.backend';
+import sql from 'sql-template-tag';
 
 type Person = {
   id: string;
-  displayName: string;
+  email: string;
   role: string;
 };
 
@@ -22,25 +22,16 @@ type LoaderData = {
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization<LoaderData>(args, async ({ params }) => {
-    const { state } = await organisation(params.id!).read();
-    if (!state) {
-      throw new Error(`Organisation not found.`);
-    }
-
-    const people = await Promise.all(
-      state.members.map(async (member) => {
-        const profile = await profileFromUserIdentifier(member.user_id);
-
-        return {
-          id: member.user_id,
-          displayName: profile.displayName,
-          role: member.role,
-        };
-      })
+    const org_id = params.id!;
+    const { rows: people } = await pool.query<Person>(
+      sql`SELECT p.user_id as id, p.email, uio.role
+          FROM users_in_orgs uio
+          INNER JOIN profiles p ON p.user_id = uio.user_id
+          WHERE uio.org_id = ${org_id}`
     );
 
     return {
-      org_id: params.id!,
+      org_id,
       people,
     };
   });
@@ -53,20 +44,16 @@ export default function People() {
       <SectionHeader
         title="People"
         right={
-          <>
-            <ButtonAndPopup title="Invite" variant="primary">
-              {({ close }) => (
-                <InviteUserForm org_id={org_id} onClose={close} />
-              )}
-            </ButtonAndPopup>
-          </>
+          <ButtonAndPopup title="Invite" variant="primary">
+            {({ close }) => <InviteUserForm org_id={org_id} onClose={close} />}
+          </ButtonAndPopup>
         }
       />
 
       <Table>
         <Table.Header>
           <tr>
-            <Table.Header.Column>Username</Table.Header.Column>
+            <Table.Header.Column>Email</Table.Header.Column>
             <Table.Header.Column>Role</Table.Header.Column>
             <Table.Header.Column></Table.Header.Column>
           </tr>
@@ -74,7 +61,7 @@ export default function People() {
         <Table.Body>
           {people.map((person) => (
             <tr key={person.id}>
-              <Table.Column>{person.displayName}</Table.Column>
+              <Table.Column>{person.email}</Table.Column>
               <Table.Column>{person.role}</Table.Column>
               <Table.Column>
                 <form
