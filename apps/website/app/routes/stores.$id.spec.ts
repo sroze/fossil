@@ -6,11 +6,7 @@ import { store } from '~/modules/stores/service';
 import { factory as orgsFactory } from '~/read-models/orgs';
 import { factory as storeFactory } from '~/read-models/store';
 import { fossilEventStore, pool } from '~/config.backend';
-import {
-  composeHandlers,
-  runUntilEof,
-  subscribeUntil,
-} from '~/utils/subscription';
+import { runUntilEof } from '~/utils/subscription';
 import * as identityResolver from '~/modules/identity-and-authorization/identity-resolver.server';
 
 // We have a user, yay.
