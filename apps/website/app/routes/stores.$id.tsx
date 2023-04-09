@@ -30,7 +30,12 @@ export default function Store() {
   const currentLocation = useLocation();
 
   const navigation = [
-    { name: 'Overview', href: `/stores/${store_id}`, icon: HomeIcon },
+    {
+      name: 'Overview',
+      href: `/stores/${store_id}`,
+      icon: HomeIcon,
+      match: 'exact',
+    },
     {
       name: 'Streams',
       href: `/stores/${store_id}/streams`,
@@ -53,7 +58,10 @@ export default function Store() {
     },
   ].map((item) => ({
     ...item,
-    current: currentLocation.pathname === item.href,
+    current:
+      item.match === 'exact'
+        ? currentLocation.pathname === item.href
+        : currentLocation.pathname.startsWith(item.href),
   }));
 
   return (
