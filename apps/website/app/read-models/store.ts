@@ -1,32 +1,32 @@
-import { CheckpointAfterNMessages, Subscription } from 'subscription';
+import { Subscription } from 'subscription';
 import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 import { ReadOnlyFromCallback } from 'subscription/dist/checkpoint-store/read-only-from-callback';
 import { AnyStoreEvent } from '~/modules/stores/domain';
+import { RunnableSubscription } from '~/utils/subscription';
 
-export async function main(
-  pool: Pool,
+export function factory(
   store: IEventStore,
-  abortSignal: AbortSignal
-) {
-  const subscription = new Subscription(
-    store,
-    new ReadOnlyFromCallback(async () => {
-      const {
-        rows: [{ checkpoint }],
-      } = await pool.query(
-        sql`SELECT max(last_known_checkpoint) as checkpoint FROM stores`
-      );
+  pool: Pool
+): RunnableSubscription<AnyStoreEvent> {
+  return {
+    subscription: new Subscription(
+      store,
+      { category: 'Store' },
+      {
+        checkpointStore: new ReadOnlyFromCallback(async () => {
+          const {
+            rows: [{ checkpoint }],
+          } = await pool.query(
+            sql`SELECT max(last_known_checkpoint) as checkpoint FROM stores`
+          );
 
-      return checkpoint ? BigInt(checkpoint) : 0n;
-    }),
-    new CheckpointAfterNMessages(1)
-  );
-
-  await subscription.subscribeCategory<AnyStoreEvent>(
-    'Store',
-    async ({ data, type, stream_name, global_position }) => {
+          return checkpoint ? BigInt(checkpoint) : 0n;
+        }),
+      }
+    ),
+    handler: async ({ data, type, stream_name, global_position }) => {
       const { identifier } = StreamName.decompose(stream_name);
 
       if (type === 'StoreCreated') {
@@ -42,6 +42,5 @@ export async function main(
         );
       }
     },
-    abortSignal
-  );
+  };
 }

@@ -7,10 +7,10 @@ describe('Sleep', () => {
     setTimeout(() => controller.abort(), 20);
 
     const start = performance.now();
-    const result = await sleep(100, controller.signal).catch((e) => e);
+    const result = await sleep(100, controller.signal);
     const timeTaken = performance.now() - start;
 
     expect(timeTaken).toBeLessThan(100);
-    expect(result).toBeInstanceOf(Error);
+    expect(result).toEqual('aborted');
   });
 });

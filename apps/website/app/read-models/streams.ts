@@ -24,51 +24,50 @@ export async function main(
 ) {
   const subscription = new Subscription(
     store,
-    new WithEventsCheckpointStore(
-      store,
-      'WebsiteReadModelCheckpoints-Streams-v4'
-    ),
-    new CheckpointAfterNMessages(100)
+    { category: '*' },
+    {
+      checkpointStore: new WithEventsCheckpointStore(
+        store,
+        'WebsiteReadModelCheckpoints-Streams-v4'
+      ),
+      checkpointStrategy: new CheckpointAfterNMessages(100),
+    }
   );
 
-  await subscription.subscribeCategory(
-    '*',
-    async (event) => {
-      let storeIdentifier: string | undefined;
-      try {
-        storeIdentifier = storeIdentifierFromStreamName(event.stream_name);
-      } catch (e) {
-        console.error(
-          `Unable to identify store identifier from stream "${event.stream_name}". Skipping.`
-        );
-      }
-
-      if (!storeIdentifier) {
-        return;
-      }
-
-      const streamNameDecoder = new PrefixedStreamEventEncoder(
-        storeIdentifierToStreamPrefix(storeIdentifier)
+  await subscription.start(async (event) => {
+    let storeIdentifier: string | undefined;
+    try {
+      storeIdentifier = storeIdentifierFromStreamName(event.stream_name);
+    } catch (e) {
+      console.error(
+        `Unable to identify store identifier from stream "${event.stream_name}". Skipping.`
       );
+    }
 
-      const streamName = streamNameDecoder.decodeStream(event.stream_name);
-      const category = categoryFromStream(streamName);
+    if (!storeIdentifier) {
+      return;
+    }
 
-      await pool.query(
-        sql`INSERT INTO store_streams (store_id, stream_name, category, position, first_written_in_at, last_written_in_at)
+    const streamNameDecoder = new PrefixedStreamEventEncoder(
+      storeIdentifierToStreamPrefix(storeIdentifier)
+    );
+
+    const streamName = streamNameDecoder.decodeStream(event.stream_name);
+    const category = categoryFromStream(streamName);
+
+    await pool.query(
+      sql`INSERT INTO store_streams (store_id, stream_name, category, position, first_written_in_at, last_written_in_at)
             VALUES (${storeIdentifier}, ${streamName}, ${category}, ${String(
-          event.position
-        )}, ${event.time.toISOString()}, ${event.time.toISOString()})
+        event.position
+      )}, ${event.time.toISOString()}, ${event.time.toISOString()})
             ON CONFLICT (store_id, stream_name)
                 DO UPDATE SET position = EXCLUDED.position, last_written_in_at = EXCLUDED.last_written_in_at`
-      );
+    );
 
-      await pool.query(
-        sql`INSERT INTO store_categories (store_id, category)
+    await pool.query(
+      sql`INSERT INTO store_categories (store_id, category)
             VALUES (${storeIdentifier}, ${category})
             ON CONFLICT DO NOTHING`
-      );
-    },
-    abortSignal
-  );
+    );
+  }, abortSignal);
 }

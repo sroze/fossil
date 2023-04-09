@@ -20,8 +20,9 @@ import { profileFromUserIdentifier } from '~/modules/identity-and-authorization/
 import React, { useEffect } from 'react';
 import { classNames } from '~/modules/remix-utils/front-end';
 import { fossilEventStore } from '~/config.backend';
-import { subscribeUntil } from '~/utils/subscription';
+import { ConditionNotReachedError, subscribeUntil } from '~/utils/subscription';
 import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
+import { InMemoryCheckpointStore, Subscription } from 'subscription';
 
 type LoaderData = {
   org_name: string;
@@ -47,27 +48,37 @@ export const action: ActionFunction = (args) =>
       },
     });
 
-    const added = await subscribeUntil(
+    const subscription = new Subscription(
       fossilEventStore,
-      `Invitation-${invitation_id}`,
-      -1n, // we are going through the whole history, it's fine if it was added by a previous command.
-      (event: AnyInviteEvent) =>
-        event.type === 'UserAddedToOrganisation' ? event : undefined,
-      2_000 // 2 seconds
+      { stream: `Invitation-${invitation_id}` },
+      { checkpointStore: new InMemoryCheckpointStore(-1n) }
     );
 
-    if (!added) {
-      throw new Error(
-        'It took too long to add the user to the organisation. Please try again later.'
+    try {
+      const added = await subscribeUntil(
+        subscription,
+        (event: AnyInviteEvent) =>
+          Promise.resolve(
+            event.type === 'UserAddedToOrganisation' ? event : undefined
+          ),
+        2_000 // 2 seconds
       );
-    }
 
-    return redirect(`/orgs/${invite.org_id}`, {
-      headers: await setCookieForCheckpoint({
-        stream_name: `Organisation-${invite.org_id}`,
-        position: BigInt(added.data.org_version),
-      }),
-    });
+      return redirect(`/orgs/${invite.org_id}`, {
+        headers: await setCookieForCheckpoint({
+          stream_name: `Organisation-${invite.org_id}`,
+          position: BigInt(added.data.org_version),
+        }),
+      });
+    } catch (e) {
+      if (e instanceof ConditionNotReachedError) {
+        throw new Error(
+          'It took too long to add the user to the organisation. Please try again later.'
+        );
+      }
+
+      throw e;
+    }
   });
 
 export const loader: LoaderFunction = (args) =>

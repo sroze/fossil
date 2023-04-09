@@ -7,7 +7,7 @@ import {
 } from '~/modules/identity-and-authorization/profile';
 
 export type LoaderParamsWithAuthentication = {
-  profile: Auth0Profile;
+  profile: Profile;
 };
 
 export async function loaderWithAuthorization<ReturnType extends object = any>(

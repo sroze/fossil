@@ -54,9 +54,8 @@ describe('Subscription', () => {
 
     subscription = new Subscription(
       store,
-      new InMemoryCheckpointStore(),
-      new CheckpointAfterNMessages(1),
-      pollingFrequencyInMs
+      { stream: 'Foo-123' },
+      { checkpointStore: new InMemoryCheckpointStore(), pollingFrequencyInMs }
     );
   });
 
@@ -67,13 +66,9 @@ describe('Subscription', () => {
   it('fetches events from the store and returns them, until abort', async () => {
     const controller = new AbortController();
     const events = [];
-    const promise = subscription.subscribeStream(
-      'Foo-123',
-      async (event) => {
-        events.push(event);
-      },
-      controller.signal
-    );
+    const promise = subscription.start(async (event) => {
+      events.push(event);
+    }, controller.signal);
 
     await sleep(pollingFrequencyInMs * 5);
     controller.abort();
@@ -87,11 +82,7 @@ describe('Subscription', () => {
     const onEOF = jest.fn();
 
     const controller = new AbortController();
-    const promise = subscription.subscribeStream(
-      'Foo-123',
-      { onMessage, onEOF },
-      controller.signal
-    );
+    const promise = subscription.start({ onMessage, onEOF }, controller.signal);
     await sleep(pollingFrequencyInMs * 5);
 
     expect(onMessage).toHaveBeenCalledTimes(1);

@@ -21,16 +21,21 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = (args) =>
-  loaderWithAuthorization<LoaderData>(args, async ({ params }) => {
+  loaderWithAuthorization<LoaderData>(args, async ({ params, profile }) => {
     const store_id = params.id!;
     const {
       rows: [data],
     } = await pool.query<LoaderData>(
       sql`SELECT s.store_id, s.name as store_name, o.org_id, o.name as org_name
-          FROM stores s
+          FROM users_in_orgs uio
+          INNER JOIN stores s ON s.org_id = uio.org_id
           INNER JOIN orgs o ON o.org_id = s.org_id
-          WHERE store_id = ${store_id}`
+          WHERE s.store_id = ${store_id} AND uio.user_id = ${profile.id}`
     );
+
+    if (!data) {
+      throw new Response('Not found', { status: 404 });
+    }
 
     return data;
   });

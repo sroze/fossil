@@ -1,15 +1,21 @@
 import { AbortError } from './subscription';
 
-export function sleep(time: number, signal?: AbortSignal): Promise<void> {
+export function sleep(
+  time: number,
+  signal?: AbortSignal
+): Promise<void | 'aborted'> {
   return signal
     ? sleepWithSignal(time, signal)
     : new Promise((resolve) => setTimeout(resolve, time));
 }
 
-function sleepWithSignal(dueTime: number, signal: AbortSignal): Promise<void> {
+function sleepWithSignal(
+  dueTime: number,
+  signal: AbortSignal
+): Promise<void | 'aborted'> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
-      reject(new AbortError());
+      resolve('aborted');
     }
     const id = setTimeout(() => {
       signal.removeEventListener('abort', onAbort);
@@ -23,7 +29,7 @@ function sleepWithSignal(dueTime: number, signal: AbortSignal): Promise<void> {
 
     function onAbort() {
       clearTimeout(id);
-      reject(new AbortError());
+      resolve('aborted');
     }
   });
 }

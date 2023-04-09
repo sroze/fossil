@@ -1,8 +1,4 @@
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
@@ -15,12 +11,16 @@ export async function main(
 ) {
   const subscription = new Subscription(
     store,
-    new WithEventsCheckpointStore(store, 'ConsumerCheckpoint-api-v1'),
-    new CheckpointAfterNMessages(1)
+    { category: 'Subscription' },
+    {
+      checkpointStore: new WithEventsCheckpointStore(
+        store,
+        'ConsumerCheckpoint-api-v1'
+      ),
+    }
   );
 
-  await subscription.subscribeCategory<AnySubscriptionEvent>(
-    'Subscription',
+  await subscription.start<AnySubscriptionEvent>(
     async ({ data, type, stream_name }) => {
       const { identifier } = StreamName.decompose(stream_name);
 

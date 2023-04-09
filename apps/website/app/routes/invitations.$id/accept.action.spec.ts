@@ -2,14 +2,10 @@ import { action } from './accept';
 import { v4 } from 'uuid';
 import { organisation } from '~/modules/organisations/service';
 import { invitation } from '~/modules/organisations/invitations/domain';
-import {
-  authenticator,
-  sessionStorage,
-} from '~/modules/identity-and-authorization/authenticator.server';
-import { Auth0Profile } from 'remix-auth-auth0';
 import { Response } from '@remix-run/node';
 import { main as invitationAccepted } from '~/modules/organisations/invitations/processes/add-user-when-invite-is-accepted';
 import { fossilEventStore } from '~/config.backend';
+import { authenticatedAsUser } from '~/utils/testing';
 
 const abortController = new AbortController();
 
@@ -58,23 +54,16 @@ describe('POST /api/invitations/:id/accept', () => {
     });
 
     it('returns the org id and version when successful', async () => {
-      let session = await sessionStorage.getSession(); // get a new Session object
-      const profile: Auth0Profile = {
-        id: me,
-        emails: [{ value: 'foo@example.com' }],
-        name: { familyName: 'Sam', givenName: 'Roze' },
-        provider: 'auth0',
-      };
-
-      session.set(authenticator.sessionKey, profile);
-
-      // Accept the invite.
-      const request = new Request(
-        `http://localhost:8080/invitations/${invite_id}/accept`,
-        {
+      const request = await authenticatedAsUser(
+        new Request(`http://localhost:8080/invitations/${invite_id}/accept`, {
           method: 'POST',
           body: null,
-          headers: { Cookie: await sessionStorage.commitSession(session) },
+        }),
+        {
+          id: me,
+          emails: [{ value: 'foo@example.com' }],
+          name: { familyName: 'Sam', givenName: 'Roze' },
+          provider: 'auth0',
         }
       );
 
@@ -86,11 +75,8 @@ describe('POST /api/invitations/:id/accept', () => {
         context: {},
       });
 
-      expect(response.status).toEqual(200);
-      expect(await response.json()).toEqual({
-        org_id,
-        org_version: '0',
-      });
+      expect(response.status).toEqual(302);
+      expect(response.headers.get('location')).toEqual(`/orgs/${org_id}`);
     });
   });
 });

@@ -1,28 +1,27 @@
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 import { AnyOrganisationEvent, Role } from '~/modules/organisations/events';
 import { profileFromUserIdentifier } from '~/modules/identity-and-authorization/identity-resolver.server';
+import { RunnableSubscription } from '~/utils/subscription';
 
-export async function main(
-  pool: Pool,
+export function factory(
   store: IEventStore,
-  abortSignal: AbortSignal
-) {
-  const subscription = new Subscription(
-    store,
-    new WithEventsCheckpointStore(store, 'OrgsReadModel-v3'),
-    new CheckpointAfterNMessages(1)
-  );
-
-  await subscription.subscribeCategory<AnyOrganisationEvent>(
-    'Organisation',
-    async ({ data, type, stream_name }) => {
+  pool: Pool
+): RunnableSubscription<AnyOrganisationEvent> {
+  return {
+    subscription: new Subscription(
+      store,
+      { category: 'Organisation' },
+      {
+        checkpointStore: new WithEventsCheckpointStore(
+          store,
+          'OrgsReadModel-v3'
+        ),
+      }
+    ),
+    handler: async ({ data, type, stream_name }) => {
       const { identifier } = StreamName.decompose(stream_name);
 
       const addUserToOrg = async (user_id: string, role: Role) => {
@@ -60,6 +59,5 @@ export async function main(
         await pool.query(sql`DELETE FROM orgs WHERE org_id = ${identifier}`);
       }
     },
-    abortSignal
-  );
+  };
 }

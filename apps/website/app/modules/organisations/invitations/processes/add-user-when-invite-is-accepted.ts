@@ -1,10 +1,5 @@
-import { Pool } from 'pg';
 import { IEventStore, StreamName } from 'event-store';
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import {
   AnyInviteEvent,
   invitation,
@@ -14,12 +9,16 @@ import { organisation } from '~/modules/organisations/service';
 export async function main(store: IEventStore, abortSignal: AbortSignal) {
   const subscription = new Subscription(
     store,
-    new WithEventsCheckpointStore(store, 'InvitationAcceptedProcess-v1'),
-    new CheckpointAfterNMessages(1)
+    { category: 'Invitation' },
+    {
+      checkpointStore: new WithEventsCheckpointStore(
+        store,
+        'InvitationAcceptedProcess-v1'
+      ),
+    }
   );
 
-  await subscription.subscribeCategory<AnyInviteEvent>(
-    'Invitation',
+  await subscription.start<AnyInviteEvent>(
     async ({ data, type, stream_name }) => {
       const { identifier } = StreamName.decompose(stream_name);
 

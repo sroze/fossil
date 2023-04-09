@@ -4,27 +4,41 @@ import type { ICheckpointStore } from './checkpoint-store/interfaces';
 import type { CheckpointStrategy } from './checkpoint-strategy/interfaces';
 import { sleep } from './sleep';
 import { MinimumEventType } from 'event-store';
+import { CheckpointAfterNMessages } from './checkpoint-strategy/message-count';
 
-type MessageFunctionHandler<EventType extends MinimumEventType> = (
-  event: EventInStore<EventType>
-) => Promise<void>;
-type AdvancedHandler<EventType extends MinimumEventType> = {
-  onMessage: MessageFunctionHandler<EventType>;
-  onEOF: (position: bigint) => Promise<void>;
+export type MessageFunctionHandler<
+  EventType extends MinimumEventType,
+  ReturnType = void
+> = (event: EventInStore<EventType>) => Promise<ReturnType>;
+
+export type AdvancedHandler<
+  EventType extends MinimumEventType,
+  ReturnType = void
+> = {
+  onMessage: MessageFunctionHandler<EventType, ReturnType>;
+  onEOF: (position: bigint) => Promise<ReturnType>;
 };
 
-export type Handler<EventType extends MinimumEventType> =
-  | MessageFunctionHandler<EventType>
-  | AdvancedHandler<EventType>;
+export type Handler<EventType extends MinimumEventType, ReturnType = void> =
+  | MessageFunctionHandler<EventType, ReturnType>
+  | AdvancedHandler<EventType, ReturnType>;
 
-function asAdvancedHandler<T extends MinimumEventType>(
-  handler: Handler<T>
-): AdvancedHandler<T> {
+export function asAdvancedHandler<
+  EventType extends MinimumEventType,
+  ReturnType = void
+>(
+  handler:
+    | MessageFunctionHandler<EventType, ReturnType>
+    | Partial<AdvancedHandler<EventType, ReturnType>>
+): AdvancedHandler<EventType, ReturnType | void> {
   if (typeof handler === 'function') {
     return { onMessage: handler, onEOF: () => Promise.resolve() };
   }
 
-  return handler;
+  return {
+    onMessage: handler.onMessage ?? (() => Promise.resolve()),
+    onEOF: handler.onEOF ?? (() => Promise.resolve()),
+  };
 }
 
 export type StreamFetcher<EventType extends MinimumEventType> = (
@@ -36,48 +50,71 @@ export type PositionResolver<EventType extends MinimumEventType> = (
   event: EventInStore<EventType>
 ) => bigint;
 
+export type SubscribeTo = { stream: string } | { category: string };
+
+type SubscriptionOptions = {
+  checkpointStore: ICheckpointStore;
+  pollingFrequencyInMs?: number;
+  checkpointStrategy?: CheckpointStrategy;
+};
+
+const defaultOptions = {
+  pollingFrequencyInMs: 100,
+  checkpointStrategy: new CheckpointAfterNMessages(1),
+};
+
 export class Subscription {
+  private readonly pollingFrequencyInMs: number;
+  private readonly checkpointStore: ICheckpointStore;
+  private readonly checkpointStrategy: CheckpointStrategy;
+
   constructor(
     private readonly store: IEventStore,
-    private readonly checkpointStore: ICheckpointStore,
-    private readonly checkpointStrategy: CheckpointStrategy,
-    private readonly pollingFrequencyInMs = 100
-  ) {}
+    private readonly subscribeTo: SubscribeTo,
+    private readonly options: SubscriptionOptions
+  ) {
+    this.checkpointStore = options.checkpointStore;
+    this.pollingFrequencyInMs =
+      options.pollingFrequencyInMs ?? defaultOptions.pollingFrequencyInMs;
+    this.checkpointStrategy =
+      options.checkpointStrategy ?? defaultOptions.checkpointStrategy;
+  }
 
-  async subscribeCategory<
-    EventType extends MinimumEventType = MinimumEventType
+  async start<
+    EventType extends MinimumEventType = MinimumEventType,
+    ReturnType = void
   >(
-    category: string,
-    handler: Handler<EventType>,
+    handler: Handler<EventType, ReturnType>,
     signal: AbortSignal
   ): Promise<void> {
-    return this.subscribe<EventType>(
-      (position, signal) =>
-        this.store.readCategory<EventType>(category, position, signal),
-      (event) => event.global_position,
+    return this.subscribe<EventType, ReturnType>(
+      (position, signal) => {
+        return 'category' in this.subscribeTo
+          ? this.store.readCategory<EventType>(
+              this.subscribeTo.category,
+              position,
+              signal
+            )
+          : this.store.readStream<EventType>(
+              this.subscribeTo.stream,
+              position,
+              signal
+            );
+      },
+      (event) => {
+        return 'category' in this.subscribeTo
+          ? event.global_position
+          : event.position + 1n;
+      },
       handler,
       signal
     );
   }
 
-  async subscribeStream<EventType extends MinimumEventType = MinimumEventType>(
-    stream: string,
-    handler: Handler<EventType>,
-    signal: AbortSignal
-  ): Promise<void> {
-    return this.subscribe<EventType>(
-      (position, signal) =>
-        this.store.readStream<EventType>(stream, position, signal),
-      (event) => event.position + 1n,
-      handler,
-      signal
-    );
-  }
-
-  private async subscribe<EventType extends MinimumEventType>(
+  private async subscribe<EventType extends MinimumEventType, ReturnType>(
     streamFetcher: StreamFetcher<EventType>,
     positionResolver: PositionResolver<EventType>,
-    handler: Handler<EventType>,
+    handler: Handler<EventType, ReturnType>,
     signal: AbortSignal
   ): Promise<void> {
     const { onMessage, onEOF } = asAdvancedHandler(handler);
@@ -106,7 +143,7 @@ export class Subscription {
           hasEOF = true;
         }
 
-        await sleep(this.pollingFrequencyInMs, signal).catch(() => {});
+        await sleep(this.pollingFrequencyInMs, signal);
       }
     }
   }

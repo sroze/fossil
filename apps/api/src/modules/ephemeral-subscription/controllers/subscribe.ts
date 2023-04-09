@@ -13,7 +13,7 @@ import { Req } from '@nestjs/common';
 import {
   Subscription,
   InMemoryCheckpointStore,
-  CheckpointAfterNMessages,
+  SubscribeTo,
 } from 'subscription';
 import { serializeEventInStoreForWire } from 'event-serialization';
 import { EventInStore, IEventStore } from 'event-store';
@@ -74,7 +74,7 @@ export class SubscribeController {
       category,
     );
 
-    await this.streamAsServerSentEvents(store, req, res, 'category', category);
+    await this.streamAsServerSentEvents(store, req, res, { category });
   }
 
   @ApiOperation({
@@ -94,26 +94,25 @@ export class SubscribeController {
       stream,
     );
 
-    await this.streamAsServerSentEvents(store, req, res, 'stream', stream);
+    await this.streamAsServerSentEvents(store, req, res, { stream });
   }
 
   private async streamAsServerSentEvents(
     store: IEventStore,
     req: Request,
     res: WritableHeaderStream,
-    type: 'stream' | 'category',
-    identifier: string,
+    subscribeTo: SubscribeTo,
   ) {
     let lastEventId = req.headers['last-event-id'];
     if (Array.isArray(lastEventId)) {
       lastEventId = lastEventId[0];
     }
 
-    const manager = new Subscription(
-      store,
-      new InMemoryCheckpointStore(lastEventId ? BigInt(lastEventId) : 0n),
-      new CheckpointAfterNMessages(1),
-    );
+    const manager = new Subscription(store, subscribeTo, {
+      checkpointStore: new InMemoryCheckpointStore(
+        lastEventId ? BigInt(lastEventId) : 0n,
+      ),
+    });
 
     const controller = new AbortController();
     req.on('close', () => {
@@ -125,29 +124,25 @@ export class SubscribeController {
     stream.pipe(res, {});
 
     const eventPositionResolver = (event: EventInStore) =>
-      type === 'category' ? event.global_position : event.position + 1n;
+      'category' in subscribeTo ? event.global_position : event.position + 1n;
 
-    await manager[type === 'stream' ? 'subscribeStream' : 'subscribeCategory'](
-      identifier,
-      (event) => {
-        return new Promise<void>((resolve, reject) => {
-          stream.writeMessage(
-            {
-              type: 'event',
-              data: JSON.stringify(serializeEventInStoreForWire(event)),
-              id: eventPositionResolver(event).toString(),
-            },
-            (error) => {
-              if (error) {
-                reject(error);
-              } else {
-                resolve();
-              }
-            },
-          );
-        });
-      },
-      controller.signal,
-    );
+    await manager.start((event) => {
+      return new Promise<void>((resolve, reject) => {
+        stream.writeMessage(
+          {
+            type: 'event',
+            data: JSON.stringify(serializeEventInStoreForWire(event)),
+            id: eventPositionResolver(event).toString(),
+          },
+          (error) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve();
+            }
+          },
+        );
+      });
+    }, controller.signal);
   }
 }

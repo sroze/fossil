@@ -1,8 +1,4 @@
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { StoreLocator } from 'store-locator';
 import { Injectable } from '@nestjs/common';
@@ -29,18 +25,18 @@ export class SubscriptionRunner {
     const store = await this.storeLocator.locate(store_id);
     const subscription = new Subscription(
       store,
-      new WithEventsCheckpointStore(
-        store,
-        `SubscriptionOffsets-${subscription_id}`,
-      ),
-      // FIXME: We need more performant checkpointing mechanisms.
-      new CheckpointAfterNMessages(1),
+      { category: subscription_category },
+      {
+        checkpointStore: new WithEventsCheckpointStore(
+          store,
+          `SubscriptionOffsets-${subscription_id}`,
+        ),
+      },
     );
 
     // TODO: Explicit locking for each running subscription?
     // TODO: We need to be able to consume and produce by batch, for performance reasons.
-    await subscription.subscribeCategory(
-      subscription_category,
+    await subscription.start(
       {
         onMessage: async (event) => {
           await this.sqsClient.send(

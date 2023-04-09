@@ -8,7 +8,7 @@ describe('checkpoint', () => {
     expect(
       deserializeCheckpoint(serializeCheckpoint({ global_position: 10n }))
     ).toEqual({
-      globalPosition: 10n,
+      global_position: 10n,
     });
   });
 
@@ -18,7 +18,7 @@ describe('checkpoint', () => {
         serializeCheckpoint({ stream_name: 'foo', position: 10n })
       )
     ).toEqual({
-      streamName: 'foo',
+      stream_name: 'foo',
       position: 10n,
     });
   });

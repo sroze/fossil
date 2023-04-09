@@ -1,9 +1,5 @@
 import { EventInStore, IEventStore, StreamName } from 'event-store';
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import { AnySubscriptionEvent, SubscriptionReady } from '../domain/events';
 import {
   SQSClient,
@@ -28,12 +24,16 @@ export class PrepareSubscriptionProcess {
   ): Promise<void> {
     const subscription = new Subscription(
       this.store,
-      new WithEventsCheckpointStore(this.store, 'SubscriptionManager-v4'),
-      new CheckpointAfterNMessages(1),
+      { category: 'Subscription' },
+      {
+        checkpointStore: new WithEventsCheckpointStore(
+          this.store,
+          'SubscriptionManager-v4',
+        ),
+      },
     );
 
-    await subscription.subscribeCategory<AnySubscriptionEvent>(
-      'Subscription',
+    await subscription.start<AnySubscriptionEvent>(
       { onMessage: (e) => this.handle(e), onEOF: () => onEOF && onEOF() },
       abortSignal,
     );

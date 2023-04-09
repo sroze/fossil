@@ -1,10 +1,6 @@
 import { Pool } from 'pg';
 import { EventInStore, IEventStore, StreamName } from 'event-store';
-import {
-  CheckpointAfterNMessages,
-  Subscription,
-  WithEventsCheckpointStore,
-} from 'subscription';
+import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import sql from 'sql-template-tag';
 import { Inject, Injectable } from '@nestjs/common';
 import { SystemDatabasePool, SystemStore } from '../../../symbols';
@@ -25,12 +21,16 @@ export class PublicKeysReadModel {
   ): Promise<void> {
     const subscription = new Subscription(
       this.store,
-      new WithEventsCheckpointStore(this.store, 'ConsumerCheckpoint-api-v2'),
-      new CheckpointAfterNMessages(1),
+      { category: 'Store' },
+      {
+        checkpointStore: new WithEventsCheckpointStore(
+          this.store,
+          'ConsumerCheckpoint-api-v2',
+        ),
+      },
     );
 
-    return subscription.subscribeCategory<AnyStoreEvent>(
-      'Store',
+    return subscription.start<AnyStoreEvent>(
       { onMessage: (e) => this.handle(e), onEOF: () => onEOF && onEOF() },
       abortSignal,
     );
