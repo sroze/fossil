@@ -1,4 +1,3 @@
-import { H2 } from '../../modules/design-system/h2';
 import { Table } from '../../modules/design-system/table';
 import { ButtonAndPopup } from '../../modules/design-system/button-and-popup';
 import { GenerateKeyForm } from '../../modules/security/organisms/generate-key';
@@ -6,35 +5,41 @@ import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { StoreService } from '../../modules/stores/service';
 import { LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
-import { StoreState } from '~/modules/stores/decider';
+import { SectionHeader } from '~/modules/design-system/section-header';
 
 type LoaderData = {
-  store: StoreState;
+  store_id: string;
+  jwks: Array<{ id: string; name: string; type: string }>;
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const store = await StoreService.resolve().load(params.id!);
+  const store_id = params.id!;
+  const store = await StoreService.resolve().load(store_id);
 
   return json<LoaderData>({
-    store,
+    store_id,
+    jwks: store.jwks.map((k) => ({
+      id: k.key_id,
+      name: k.name,
+      type: k.type,
+    })),
   });
 };
 
 export default function Security() {
-  const { store } = useLoaderData<LoaderData>();
+  const { store_id, jwks } = useLoaderData<LoaderData>();
 
   return (
     <div className="p-5">
-      <div className="float-right">
-        <ButtonAndPopup title="Generate a new key" variant="primary">
-          <GenerateKeyForm store_id={store.id} />
-        </ButtonAndPopup>
-      </div>
-
-      <H2>Encryption keys</H2>
-      <div>
-        Keys are used to sign tokens to be able to read & write from the store.
-      </div>
+      <SectionHeader
+        title="Encryption keys"
+        subtitle="Keys are used to sign tokens to be able to read & write from the store."
+        right={
+          <ButtonAndPopup title="Generate a new key" variant="primary">
+            <GenerateKeyForm store_id={store_id} />
+          </ButtonAndPopup>
+        }
+      />
 
       <Table>
         <Table.Header>
@@ -45,7 +50,7 @@ export default function Security() {
           </tr>
         </Table.Header>
         <Table.Body>
-          {store.jwks.map((key, i) => (
+          {jwks.map((key, i) => (
             <tr key={`jwt-${i}`}>
               <Table.Column>{key.name}</Table.Column>
               <Table.Column>
@@ -64,7 +69,7 @@ export default function Security() {
               <Table.Column>
                 <form
                   method="post"
-                  action={`/stores/${store.id}/security/keys/${key.key_id}/delete`}
+                  action={`/stores/${store_id}/security/keys/${key.id}/delete`}
                 >
                   <button
                     type="submit"

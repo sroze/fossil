@@ -1,4 +1,3 @@
-import { H2 } from '../../modules/design-system/h2';
 import { Table } from '../../modules/design-system/table';
 import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
 import { ActionFunction, json, LoaderFunction } from '@remix-run/node';
@@ -12,6 +11,7 @@ import sql from 'sql-template-tag';
 import React from 'react';
 import { SubscriptionStatusBadge } from '~/modules/subscriptions/components/status-badge';
 import { pool } from '~/config.backend';
+import { SectionHeader } from '~/modules/design-system/section-header';
 
 export const createSubscriptionValidator = withZod(
   z.object({
@@ -66,16 +66,15 @@ export default function Subscriptions() {
 
   return (
     <div className="p-5">
-      <div className="float-right">
-        <ButtonAndPopup title="New subscription" variant="primary">
-          <NewSubscriptionForm store_id={store_id} />
-        </ButtonAndPopup>
-      </div>
-
-      <H2>Durable subscriptions</H2>
-      <div>
-        Funnel events to other processes or systems automatically and in order.
-      </div>
+      <SectionHeader
+        title="Durable subscriptions"
+        subtitle="Funnel events to other processes or systems automatically and in order."
+        right={
+          <ButtonAndPopup title="New subscription" variant="primary">
+            <NewSubscriptionForm store_id={store_id} />
+          </ButtonAndPopup>
+        }
+      />
 
       <Table>
         <Table.Header>
