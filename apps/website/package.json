@@ -11,7 +11,7 @@
     "test": "jest",
     "postinstall": "npx remix setup node",
     "start": "npx remix-serve build",
-    "migrate": "if [[ -f .env ]]; then source .env; fi && pg-migrations apply --directory migrations -c $WEBSITE_DATABASE_URL"
+    "migrate": "if [ -f .env ]; then source .env; fi && pg-migrations apply --directory migrations -c $WEBSITE_DATABASE_URL"
   },
   "dependencies": {
     "@databases/pg-migrations": "^5.0.2",
