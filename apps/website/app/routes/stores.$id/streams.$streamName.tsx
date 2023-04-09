@@ -13,7 +13,7 @@ type LoaderData = {
 export const loader: LoaderFunction = async ({ params }) => {
   return json<LoaderData>({
     store_id: params.id!,
-    stream_name: params.stream_name!,
+    stream_name: params.streamName!,
     token: await generatePlaygroundToken(params.id!),
   });
 };
