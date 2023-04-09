@@ -1,9 +1,10 @@
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
-import { ActionFunction, DataFunctionArgs, json } from '@remix-run/node';
+import { ActionFunction, json } from '@remix-run/node';
 import { invitation } from '~/modules/organisations/invitations/domain';
 import { v4 } from 'uuid';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
+import { assertPermissionOnOrg } from '~/utils/security';
 
 export type SuccessfullyInvitedUserResponse = {
   invitation_id: string;
@@ -20,6 +21,9 @@ export const inviteUserValidator = withZod(
 
 export const action: ActionFunction = (args) =>
   actionWithAuthorization(args, async ({ request, params, profile }) => {
+    const org_id = params.id!;
+    await assertPermissionOnOrg(org_id, profile.id);
+
     const { data, error } = await inviteUserValidator.validate(
       await request.formData()
     );
@@ -32,7 +36,7 @@ export const action: ActionFunction = (args) =>
     await invitation(invitation_id).write({
       type: 'CreateInviteCommand',
       data: {
-        org_id: params.id!,
+        org_id,
         invited_email: data.email,
         invited_role: data.role,
         invited_by: profile.id,

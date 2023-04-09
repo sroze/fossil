@@ -10,8 +10,7 @@ import {
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
-import { pool } from '~/config.backend';
-import sql from 'sql-template-tag';
+import { assertPermissionOnStore } from '~/utils/security';
 
 type LoaderData = {
   store_id: string;
@@ -22,22 +21,7 @@ type LoaderData = {
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization<LoaderData>(args, async ({ params, profile }) => {
-    const store_id = params.id!;
-    const {
-      rows: [data],
-    } = await pool.query<LoaderData>(
-      sql`SELECT s.store_id, s.name as store_name, o.org_id, o.name as org_name
-          FROM users_in_orgs uio
-          INNER JOIN stores s ON s.org_id = uio.org_id
-          INNER JOIN orgs o ON o.org_id = s.org_id
-          WHERE s.store_id = ${store_id} AND uio.user_id = ${profile.id}`
-    );
-
-    if (!data) {
-      throw new Response('Not found', { status: 404 });
-    }
-
-    return data;
+    return assertPermissionOnStore(params.id!, profile.id);
   });
 
 export default function Store() {

@@ -1,5 +1,4 @@
-import { IEventStore } from 'event-store';
-import { Aggregate, createAggregate, Writer } from '~/utils/ddd';
+import { createAggregate } from '~/utils/ddd';
 import { GeneratedKey, generateKey } from 'store-security';
 import { v4 } from 'uuid';
 import { fossilEventStore } from '~/config.backend';

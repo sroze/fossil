@@ -17,8 +17,8 @@ type LoaderData = {
   orgs: UserInOrg[];
 };
 
-export const loader: LoaderFunction = (args) => {
-  return loaderWithAuthorization<LoaderData>(args, async ({ profile }) => {
+export const loader: LoaderFunction = (args) =>
+  loaderWithAuthorization<LoaderData>(args, async ({ profile }) => {
     const { rows: orgs } = await pool.query<UserInOrg>(
       sql`SELECT o.name, o.org_id, uio.role
           FROM users_in_orgs uio
@@ -34,7 +34,6 @@ export const loader: LoaderFunction = (args) => {
       orgs,
     };
   });
-};
 
 export default function Orgs() {
   const { orgs } = useLoaderData<LoaderData>();

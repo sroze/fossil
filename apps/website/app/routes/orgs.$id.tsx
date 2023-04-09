@@ -10,6 +10,7 @@ import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
 import { pool } from '~/config.backend';
 import sql from 'sql-template-tag';
+import { assertPermissionOnOrg } from '~/utils/security';
 
 type LoaderData = {
   org_id: string;
@@ -18,21 +19,7 @@ type LoaderData = {
 
 export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization<LoaderData>(args, async ({ params, profile }) => {
-    const org_id = params.id!;
-    const {
-      rows: [data],
-    } = await pool.query<{ org_id: string; org_name: string }>(
-      sql`SELECT o.org_id, o.name as org_name
-          FROM users_in_orgs uio
-          INNER JOIN orgs o ON o.org_id = uio.org_id
-          WHERE uio.org_id = ${org_id} AND uio.user_id = ${profile.id}`
-    );
-
-    if (!data) {
-      throw new Response('Not found', { status: 404 });
-    }
-
-    return data;
+    return assertPermissionOnOrg(params.id!, profile.id);
   });
 
 export default function Store() {
