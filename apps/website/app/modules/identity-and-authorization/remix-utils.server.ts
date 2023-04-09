@@ -1,6 +1,5 @@
 import { DataFunctionArgs, json } from '@remix-run/node';
-import { authenticationIsEnabled, authenticator } from './authenticator.server';
-import type { Auth0Profile } from 'remix-auth-auth0';
+import { authenticator } from './authenticator.server';
 import {
   Profile,
   profileFromOAuthProfile,
@@ -10,19 +9,21 @@ export type LoaderParamsWithAuthentication = {
   profile: Profile;
 };
 
+export async function profileFromRequest(request: Request): Promise<Profile> {
+  return profileFromOAuthProfile(
+    await authenticator.isAuthenticated(request, {
+      failureRedirect: '/auth/login',
+    })
+  );
+}
+
 export async function loaderWithAuthorization<ReturnType extends object = any>(
   args: DataFunctionArgs,
   loader?: (
     args: DataFunctionArgs & { profile: Profile }
   ) => Promise<ReturnType | Response>
 ): Promise<(ReturnType & LoaderParamsWithAuthentication) | Response> {
-  const profile: Profile = authenticationIsEnabled()
-    ? profileFromOAuthProfile(
-        await authenticator.isAuthenticated(args.request, {
-          failureRedirect: '/auth/login',
-        })
-      )
-    : developmentProfile;
+  const profile = await profileFromRequest(args.request);
 
   if (loader) {
     const result: ReturnType | Response = await loader({ ...args, profile });
@@ -45,14 +46,7 @@ export async function actionWithAuthorization<ReturnType extends object = any>(
     args: DataFunctionArgs & { profile: Profile }
   ) => Promise<Response> | Response | Promise<ReturnType> | ReturnType
 ) {
-  const profile: Profile = authenticationIsEnabled()
-    ? profileFromOAuthProfile(
-        await authenticator.isAuthenticated(args.request, {
-          failureRedirect: '/auth/login',
-        })
-      )
-    : developmentProfile;
-
+  const profile = await profileFromRequest(args.request);
   const response = await action({ ...args, profile });
   if (response instanceof Response) {
     return response;
@@ -60,9 +54,3 @@ export async function actionWithAuthorization<ReturnType extends object = any>(
 
   return json(response);
 }
-
-const developmentProfile: Profile = {
-  id: '00000000-0000-0000-0000-000000000000',
-  displayName: 'Developer',
-  email: 'engineer@example.com',
-};

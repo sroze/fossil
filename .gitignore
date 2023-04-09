@@ -45,3 +45,4 @@ apps/**/.cache
 
 # Environment files
 .env
+.env.local

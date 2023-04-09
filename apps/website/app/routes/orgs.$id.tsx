@@ -8,30 +8,35 @@ import {
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
-import { organisation } from '~/modules/organisations/service';
-import { State } from '~/modules/organisations/domain';
+import { pool } from '~/config.backend';
+import sql from 'sql-template-tag';
 
 type LoaderData = {
   org_id: string;
-  org: State;
+  org_name: string;
 };
 
 export const loader: LoaderFunction = (args) =>
-  loaderWithAuthorization(args, async ({ params }) => {
+  loaderWithAuthorization<LoaderData>(args, async ({ params, profile }) => {
     const org_id = params.id!;
-    const { state: org } = await organisation(org_id).read();
-    if (!org) {
-      throw new Error('Not found');
+    const {
+      rows: [data],
+    } = await pool.query<{ org_id: string; org_name: string }>(
+      sql`SELECT o.org_id, o.name as org_name
+          FROM users_in_orgs uio
+          INNER JOIN orgs o ON o.org_id = uio.org_id
+          WHERE uio.org_id = ${org_id} AND uio.user_id = ${profile.id}`
+    );
+
+    if (!data) {
+      throw new Response('Not found', { status: 404 });
     }
 
-    return {
-      org_id,
-      org,
-    };
+    return data;
   });
 
 export default function Store() {
-  const { org, org_id } = useLoaderData<LoaderData>();
+  const { org_name, org_id } = useLoaderData<LoaderData>();
   const currentLocation = useLocation();
 
   const navigation = [
@@ -54,7 +59,7 @@ export default function Store() {
   return (
     <div className="relative flex min-h-full flex-col bg-gray-100">
       <Navbar
-        breadcrumbItems={[{ label: org.name, href: `/orgs/${org_id}` }]}
+        breadcrumbItems={[{ label: org_name, href: `/orgs/${org_id}` }]}
       />
 
       <div className="flex flex-row">

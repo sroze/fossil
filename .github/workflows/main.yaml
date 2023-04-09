@@ -33,7 +33,6 @@ jobs:
       WEBSITE_DATABASE_URL: postgres://postgres:postgres@localhost:5432/website
       # libs/*
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
-      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v2

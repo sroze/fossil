@@ -2,9 +2,6 @@ import { Authenticator } from 'remix-auth';
 import { Auth0Profile, Auth0Strategy } from 'remix-auth-auth0';
 import { createCookieSessionStorage } from '@remix-run/node';
 
-export const authenticationIsEnabled = (): boolean =>
-  !!process.env.AUTH0_DOMAIN;
-
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: '_session',
