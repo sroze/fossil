@@ -34,6 +34,8 @@ export class RunningSubscriptionsManager {
               subscription_category: data.category,
               sqs_queue_url: data.sqs_queue_url,
             });
+          } else if (type === 'SubscriptionDeleted') {
+            await supervisor.removeSubscription(identifier);
           }
         },
         onEOF: async () => {

@@ -15,7 +15,7 @@ export async function main(
     {
       checkpointStore: new WithEventsCheckpointStore(
         store,
-        'ConsumerCheckpoint-api-v1'
+        'WebsiteSubscriptionsReadModel-v2'
       ),
     }
   );
@@ -33,6 +33,10 @@ export async function main(
       } else if (type === 'SubscriptionReady') {
         await pool.query(
           sql`UPDATE subscriptions SET status = 'ready' WHERE subscription_id = ${identifier}`
+        );
+      } else if (type === 'SubscriptionDeleted') {
+        await pool.query(
+          sql`DELETE FROM subscriptions WHERE subscription_id = ${identifier}`
         );
       }
     },

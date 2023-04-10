@@ -1,4 +1,7 @@
-export type AnySubscriptionEvent = SubscriptionCreated | SubscriptionReady;
+export type AnySubscriptionEvent =
+  | SubscriptionCreated
+  | SubscriptionReady
+  | SubscriptionDeleted;
 
 export type SubscriptionType = 'managed-queue' /** | 'provided-sqs' **/;
 export type SubscriptionCreated = {
@@ -18,4 +21,9 @@ export type SubscriptionReady = {
     category: string;
     sqs_queue_url: string;
   };
+};
+
+export type SubscriptionDeleted = {
+  type: 'SubscriptionDeleted';
+  data: {};
 };

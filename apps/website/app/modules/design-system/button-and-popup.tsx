@@ -1,15 +1,25 @@
 import React, { ReactNode, useState } from 'react';
-import { PrimaryButton, SecondaryButton } from './buttons';
+import {
+  ButtonVariant,
+  DangerButton,
+  PrimaryButton,
+  SecondaryButton,
+} from './buttons';
 import { Popup } from './popup';
 
 export const ButtonAndPopup: React.FC<{
   title: string;
-  variant?: 'primary' | 'secondary';
+  variant?: ButtonVariant;
   className?: string;
   children: ReactNode | ((args: { close: () => void }) => ReactNode);
 }> = ({ title, variant, children, className }) => {
   const [open, setOpen] = useState(false);
-  const Button = variant === 'primary' ? PrimaryButton : SecondaryButton;
+  const Button =
+    variant === 'primary'
+      ? PrimaryButton
+      : variant === 'danger'
+      ? DangerButton
+      : SecondaryButton;
 
   return (
     <>

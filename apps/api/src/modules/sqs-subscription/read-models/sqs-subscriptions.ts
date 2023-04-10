@@ -60,6 +60,10 @@ export class SqsSubscriptionsReadModel {
             ON CONFLICT (store_id, subscription_id)
                 DO UPDATE SET subscription_category = EXCLUDED.subscription_category, sqs_queue_url = EXCLUDED.sqs_queue_url, position = EXCLUDED.position`,
       );
+    } else if (type === 'SubscriptionDeleted') {
+      await this.pool.query(
+        sql`DELETE FROM sqs_subscriptions WHERE subscription_id = ${subscriptionId}`,
+      );
     }
   }
 }

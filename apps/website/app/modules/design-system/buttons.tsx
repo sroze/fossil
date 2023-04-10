@@ -1,7 +1,7 @@
 import { classNames } from '../remix-utils/front-end';
 import React from 'react';
 
-type Scheme = 'primary' | 'secondary' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'danger';
 type Size = 'small' | 'medium';
 
 export const buttonClassNames = (): string =>
@@ -10,7 +10,7 @@ export const buttonClassNames = (): string =>
 export const sizeClassNames = (size: Size): string =>
   size === 'small' ? 'mr-2 px-2.5 py-1.5 text-xs' : 'mr-3 py-2 px-4 text-sm';
 
-export const colorSchemeClassNames = (scheme: Scheme): string => {
+export const colorSchemeClassNames = (scheme: ButtonVariant): string => {
   if (scheme === 'danger') {
     return 'border-transparent bg-red-600 text-white hover:bg-red-700 focus:ring-red-500';
   } else if (scheme === 'primary') {

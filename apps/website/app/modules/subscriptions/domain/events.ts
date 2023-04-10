@@ -1,4 +1,7 @@
-export type AnySubscriptionEvent = SubscriptionCreated | SubscriptionReady;
+export type AnySubscriptionEvent =
+  | SubscriptionCreated
+  | SubscriptionReady
+  | SubscriptionDeleted;
 
 export type SubscriptionCreated = {
   type: 'SubscriptionCreated';
@@ -12,5 +15,10 @@ export type SubscriptionCreated = {
 
 export type SubscriptionReady = {
   type: 'SubscriptionReady';
+  data: {};
+};
+
+export type SubscriptionDeleted = {
+  type: 'SubscriptionDeleted';
   data: {};
 };

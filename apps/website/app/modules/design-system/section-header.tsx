@@ -3,7 +3,7 @@ import { H2 } from '~/modules/design-system/h2';
 
 type Props = {
   title: string;
-  subtitle?: string;
+  subtitle?: string | React.ReactNode;
   right?: React.ReactNode;
 };
 

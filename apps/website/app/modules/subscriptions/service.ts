@@ -1,6 +1,9 @@
 import { EventToWrite, IEventStore } from 'event-store';
 import { v4 } from 'uuid';
-import { SubscriptionCreated } from '~/modules/subscriptions/domain/events';
+import {
+  SubscriptionCreated,
+  SubscriptionDeleted,
+} from '~/modules/subscriptions/domain/events';
 import { fossilEventStore } from '~/config.backend';
 
 // Commands
@@ -35,5 +38,13 @@ export class DurableSubscriptionService {
     );
 
     return identifier;
+  }
+
+  async delete(identifier: string): Promise<void> {
+    await this.client.appendEvents<SubscriptionDeleted>(
+      `Subscription-${identifier}`,
+      [{ id: v4(), type: 'SubscriptionDeleted', data: {} }],
+      null
+    );
   }
 }
