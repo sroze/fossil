@@ -17,9 +17,11 @@ export const ButtonAndPopup: React.FC<{
         {title}
       </Button>
       <Popup open={open} onClose={() => setOpen(false)}>
-        {typeof children === 'function'
-          ? children({ close: () => setOpen(false) })
-          : children}
+        <div className="p-5">
+          {typeof children === 'function'
+            ? children({ close: () => setOpen(false) })
+            : children}
+        </div>
       </Popup>
     </>
   );

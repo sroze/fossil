@@ -1,9 +1,14 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { IEventStore } from 'event-store';
-import { authorizeReadCategory, authorizeReadStream } from 'store-security';
+import {
+  authorizeReadCategory,
+  authorizeReadStream,
+  authorizeWrite,
+} from 'store-security';
 import { HttpAuthenticator } from './http-authenticator';
 import { StoreLocator } from 'store-locator';
+import { MonitoredStore } from '../monitoring/monitored-store';
 
 @Injectable()
 export class HttpStoreLocator {
@@ -28,7 +33,7 @@ export class HttpStoreLocator {
       );
     }
 
-    return this.storeLocator.locate(storeId);
+    return this.locate(storeId);
   }
 
   public async getStoreForReadStream(
@@ -47,6 +52,31 @@ export class HttpStoreLocator {
       );
     }
 
-    return this.storeLocator.locate(storeId);
+    return this.locate(storeId);
+  }
+
+  public async getStoreForWrite(
+    storeId: string,
+    request: Request,
+    stream: string,
+  ): Promise<IEventStore> {
+    const payload = await this.authenticator.authenticate(storeId, request);
+    if (!payload.write) {
+      throw new ForbiddenException(
+        'You are not authorized to write with this token.',
+      );
+    } else if (!authorizeWrite(payload.write, stream)) {
+      throw new ForbiddenException(
+        'You are not authorized to write in this stream with this token.',
+      );
+    }
+
+    return this.locate(storeId);
+  }
+
+  private async locate(id: string): Promise<IEventStore> {
+    const store = await this.storeLocator.locate(id);
+
+    return new MonitoredStore(store, { store_id: id });
   }
 }

@@ -20,6 +20,7 @@ import { Request } from 'express';
 import { authorizeWrite } from 'store-security';
 import { StoreLocator } from 'store-locator';
 import { HttpAuthenticator } from '../services/http-authenticator';
+import { HttpStoreLocator } from '../services/http-store-locator';
 
 class EventToWriteDto implements EventToWrite {
   @ApiPropertyOptional({
@@ -76,10 +77,7 @@ class WriteResultDto {
 @ApiTags('Write')
 @Controller()
 export class WriteController {
-  constructor(
-    private readonly authenticator: HttpAuthenticator,
-    private readonly storeLocator: StoreLocator,
-  ) {}
+  constructor(private readonly storeLocator: HttpStoreLocator) {}
 
   @Post('/stores/:id/events')
   @ApiOperation({
@@ -91,18 +89,11 @@ export class WriteController {
     @Body() command: WriteRequestDto,
     @Req() request: Request,
   ): Promise<WriteResultDto> {
-    const payload = await this.authenticator.authenticate(storeId, request);
-    if (!payload.write) {
-      throw new ForbiddenException(
-        'You are not authorized to write with this token.',
-      );
-    } else if (!authorizeWrite(payload.write, command.stream)) {
-      throw new ForbiddenException(
-        'You are not authorized to write in this stream with this token.',
-      );
-    }
-
-    const store = await this.storeLocator.locate(storeId);
+    const store = await this.storeLocator.getStoreForWrite(
+      storeId,
+      request,
+      command.stream,
+    );
     try {
       const result = await store.appendEvents(
         command.stream,

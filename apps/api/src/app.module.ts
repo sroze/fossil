@@ -1,4 +1,6 @@
 import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+
 import { WriteController } from './modules/store/controllers/write';
 import { KeyLocatorSymbol, SystemStore, SystemDatabasePool } from './symbols';
 import { Pool } from 'pg';
@@ -20,7 +22,7 @@ import { PublicKeysReadModel } from './modules/store/read-models/public-keys';
 import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/manager';
 
 @Module({
-  imports: [],
+  imports: [PrometheusModule.register()],
   controllers: [
     WriteController,
     ReadController,

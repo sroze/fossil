@@ -1,6 +1,7 @@
 import { LoaderFunction } from '@remix-run/node';
 import { Outlet, useLoaderData, useLocation } from '@remix-run/react';
 import {
+  ChartBarIcon,
   FireIcon,
   HomeIcon,
   InboxStackIcon,
@@ -35,6 +36,11 @@ export default function Store() {
       href: `/stores/${store_id}`,
       icon: HomeIcon,
       match: 'exact',
+    },
+    {
+      name: 'Metrics',
+      href: `/stores/${store_id}/metrics`,
+      icon: ChartBarIcon,
     },
     {
       name: 'Streams',
