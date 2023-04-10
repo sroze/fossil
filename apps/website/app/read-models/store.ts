@@ -40,6 +40,10 @@ export function factory(
                   org_id = EXCLUDED.org_id,
                   last_known_checkpoint = EXCLUDED.last_known_checkpoint`
         );
+      } else if (type === 'StoreDeleted') {
+        await pool.query(
+          sql`DELETE FROM stores WHERE store_id = ${identifier}`
+        );
       }
     },
   };

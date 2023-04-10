@@ -268,6 +268,7 @@ const Chart: React.FC<{
         <Tooltip />
         {series.map(({ id, color }) => (
           <Area
+            animationDuration={150}
             key={id}
             type="stepBefore"
             dataKey={id}

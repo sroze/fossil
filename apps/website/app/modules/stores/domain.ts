@@ -16,7 +16,8 @@ export type KeyDeleted = {
 export type AnyStoreEvent =
   | { type: 'StoreCreated'; data: StoreCreated }
   | { type: 'KeyGenerated'; data: KeyGenerated }
-  | { type: 'KeyDeleted'; data: KeyDeleted };
+  | { type: 'KeyDeleted'; data: KeyDeleted }
+  | { type: 'StoreDeleted'; data: {} };
 
 // Commands
 export type CreateStoreCommand = {
@@ -32,7 +33,8 @@ type StoreGeneratedKeyCommand = {
 export type AnyStoreCommand =
   | { type: 'CreateStoreCommand'; data: CreateStoreCommand }
   | { type: 'StoreGeneratedKey'; data: StoreGeneratedKeyCommand }
-  | { type: 'DeleteKey'; data: { key_id: string } };
+  | { type: 'DeleteKey'; data: { key_id: string } }
+  | { type: 'DeleteStore'; data: {} };
 
 // State
 type StoredKey = {
@@ -89,6 +91,8 @@ export const decider: Decider<State, AnyStoreEvent, AnyStoreCommand> = {
       return [{ type: 'KeyGenerated', data: { ...command.data.key } }];
     } else if (command.type === 'DeleteKey') {
       return [{ type: 'KeyDeleted', data: { ...command.data } }];
+    } else if (command.type === 'DeleteStore') {
+      return [{ type: 'StoreDeleted', data: {} }];
     }
 
     throw new Error(`Command is not supported.`);

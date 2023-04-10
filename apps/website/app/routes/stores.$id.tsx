@@ -2,6 +2,7 @@ import { LoaderFunction } from '@remix-run/node';
 import { Outlet, useLoaderData, useLocation } from '@remix-run/react';
 import {
   ChartBarIcon,
+  Cog6ToothIcon,
   FireIcon,
   HomeIcon,
   InboxStackIcon,
@@ -61,6 +62,11 @@ export default function Store() {
       name: 'Playground',
       href: `/stores/${store_id}/playground`,
       icon: FireIcon,
+    },
+    {
+      name: 'Admin',
+      href: `/stores/${store_id}/admin`,
+      icon: Cog6ToothIcon,
     },
   ].map((item) => ({
     ...item,

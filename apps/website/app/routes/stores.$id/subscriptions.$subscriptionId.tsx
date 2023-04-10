@@ -1,5 +1,4 @@
 import { useLoaderData } from '@remix-run/react';
-import { H2 } from '~/modules/design-system/h2';
 import React from 'react';
 import { json, LoaderFunction } from '@remix-run/node';
 import sql from 'sql-template-tag';
@@ -10,6 +9,7 @@ import { pool } from '~/config.backend';
 import { SectionHeader } from '~/modules/design-system/section-header';
 import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
 import { DangerButton } from '~/modules/design-system/buttons';
+import { Checkbox } from '~/modules/design-system/checkbox';
 
 type SubscriptionSummary = {
   subscription_id: string;
@@ -94,28 +94,12 @@ const client = new SQSClient({
               action={`/stores/${store_id}/subscriptions/${subscription.subscription_id}/delete`}
               method="post"
             >
-              <div className="relative flex items-start mb-5">
-                <div className="flex h-6 items-center">
-                  <input
-                    id="confirm"
-                    name="confirm"
-                    value="yes"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                  />
-                </div>
-                <div className="ml-3 text-sm leading-6">
-                  <label
-                    htmlFor="confirm"
-                    className="font-medium text-gray-900"
-                  >
-                    I confirm
-                  </label>{' '}
-                  <span id="comments-description" className="text-gray-500">
-                    that I want to delete this subscription.
-                  </span>
-                </div>
-              </div>
+              <Checkbox name="confirm" value="yes">
+                <span className="font-medium text-gray-900">I confirm</span>{' '}
+                <span className="text-gray-500">
+                  that I want to delete this subscription.
+                </span>
+              </Checkbox>
 
               <DangerButton type="submit">Delete</DangerButton>
             </form>
