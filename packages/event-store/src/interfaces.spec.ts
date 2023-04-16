@@ -25,6 +25,13 @@ class EmptyStore implements IEventStore {
   async *readCategory() {}
 
   async *readStream() {}
+
+  async statisticsAtPosition(category: string, position: bigint) {
+    return {
+      approximate_event_timestamp: new Date(),
+      approximate_event_count_after: 0,
+    };
+  }
 }
 
 describe('Types', () => {

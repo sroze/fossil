@@ -53,6 +53,10 @@ export class MessageDbStore implements IEventStore {
   ): Promise<EventType | undefined> {
     return this.client.getLastStreamMessage(stream, type);
   }
+
+  async statisticsAtPosition(category: string, position: bigint) {
+    return this.client.statisticsAtPosition(category, position);
+  }
 }
 
 // TODO: This can be optimised to pre-fetch next batch's while yielding the

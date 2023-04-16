@@ -5,7 +5,6 @@ import {
   Body,
   Controller,
   ForbiddenException,
-  Get,
   HttpException,
   Inject,
   NotFoundException,

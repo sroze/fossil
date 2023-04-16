@@ -1,6 +1,5 @@
 import { EventInStore, IEventStore, StreamName } from 'event-store';
 import { Subscription, WithEventsCheckpointStore } from 'subscription';
-import { AnySubscriptionEvent, SubscriptionReady } from '../domain/events';
 import {
   SQSClient,
   CreateQueueCommand,
@@ -9,6 +8,7 @@ import {
 } from '@aws-sdk/client-sqs';
 import { Inject, Injectable } from '@nestjs/common';
 import { SystemStore } from '../../../symbols';
+import { AnySQSSubscriptionEvent, SQSQueueCreated } from '../domain/events';
 
 @Injectable()
 export class PrepareSubscriptionProcess {
@@ -33,7 +33,7 @@ export class PrepareSubscriptionProcess {
       },
     );
 
-    await subscription.start<AnySubscriptionEvent>(
+    await subscription.start<AnySQSSubscriptionEvent>(
       { onMessage: (e) => this.handle(e), onEOF: () => onEOF && onEOF() },
       abortSignal,
     );
@@ -43,10 +43,10 @@ export class PrepareSubscriptionProcess {
     data,
     type,
     stream_name,
-  }: EventInStore<AnySubscriptionEvent>): Promise<void> {
+  }: EventInStore<AnySQSSubscriptionEvent>): Promise<void> {
     const { identifier } = StreamName.decompose(stream_name);
 
-    if (type === 'SubscriptionCreated') {
+    if (type === 'SQSQueueRequested') {
       const QueueName = `subscription-${identifier}.fifo`;
 
       try {
@@ -71,14 +71,12 @@ export class PrepareSubscriptionProcess {
             throw new Error(`Could not get a queue URL when creating it.`);
           }
 
-          await this.store.appendEvents<SubscriptionReady>(
+          await this.store.appendEvents<SQSQueueCreated>(
             stream_name,
             [
               {
-                type: 'SubscriptionReady',
+                type: 'SQSQueueCreated',
                 data: {
-                  store_id: data.store_id,
-                  category: data.category,
                   sqs_queue_url: QueueUrl,
                 },
               },

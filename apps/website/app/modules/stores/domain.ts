@@ -37,11 +37,20 @@ export type AnyStoreCommand =
   | { type: 'DeleteStore'; data: {} };
 
 // State
-type StoredKey = {
-  key_id: string;
-  name: string;
-  public_key: PublicKey;
-} & ({ type: 'private' } | { type: 'hosted'; private_key: PrivateKey });
+export type StoredKey =
+  | {
+      key_id: string;
+      name: string;
+      public_key: PublicKey;
+      type: 'private';
+    }
+  | {
+      key_id: string;
+      name: string;
+      type: 'hosted';
+      public_key: PublicKey;
+      private_key: PrivateKey;
+    };
 
 export type StoreState = {
   id: string;

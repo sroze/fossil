@@ -11,7 +11,6 @@ import { requestOptionsFromApp } from '../../../../test/request';
 import { IEventStore } from 'event-store';
 import { v4 } from 'uuid';
 import { StoreLocator } from 'store-locator';
-import { AnySubscriptionEvent } from '../domain/events';
 import { PrepareSubscriptionProcess } from '../processes/prepare-subscription';
 import {
   SQSSubscriptionRow,
@@ -22,6 +21,8 @@ import { SystemDatabasePool, SystemStore } from '../../../symbols';
 import { SubscriptionRunner } from '../runner/runner';
 import { Pool } from 'pg';
 import sql from 'sql-template-tag';
+import { createSubscription } from '../../durable-subscription/utils/testing';
+import { requestSqsQueue } from '../utils/testing';
 
 describe('Receives from a subscription', () => {
   const storeId = v4();
@@ -89,21 +90,16 @@ describe('Receives from a subscription', () => {
 
       beforeAll(async () => {
         // Create a subscription.
-        const systemStore: IEventStore = app.get(SystemStore);
-        await systemStore.appendEvents<AnySubscriptionEvent>(
-          `Subscription-${subscriptionIdentifier}`,
-          [
-            {
-              type: 'SubscriptionCreated',
-              data: {
-                store_id: storeId,
-                type: 'managed-queue',
-                category: 'Foo',
-                name: 'My subscription',
-              },
-            },
-          ],
-          -1n,
+        await createSubscription(
+          app.get<IEventStore>(SystemStore),
+          storeId,
+          subscriptionIdentifier,
+          'Foo',
+        );
+
+        await requestSqsQueue(
+          app.get<IEventStore>(SystemStore),
+          subscriptionIdentifier,
         );
 
         // Run the manager (to create the SQS queue) and read-models.

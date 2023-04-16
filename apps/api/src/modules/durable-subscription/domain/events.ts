@@ -1,7 +1,4 @@
-export type AnySubscriptionEvent =
-  | SubscriptionCreated
-  | SQSQueueCreated
-  | SubscriptionDeleted;
+export type AnySubscriptionEvent = SubscriptionCreated | SubscriptionDeleted;
 
 export type SubscriptionCreated = {
   type: 'SubscriptionCreated';
@@ -10,11 +7,6 @@ export type SubscriptionCreated = {
     category: string;
     name: string;
   };
-};
-
-export type SQSQueueCreated = {
-  type: 'SQSQueueCreated';
-  data: {};
 };
 
 export type SubscriptionDeleted = {

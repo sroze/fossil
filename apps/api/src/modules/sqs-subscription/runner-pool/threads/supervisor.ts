@@ -43,7 +43,6 @@ export class ThreadSupervisor {
   }
 
   private async startSubscription(id: string): Promise<void> {
-    // TODO: Name it moveable, one way or another.
     this.tasks[id] = await spawn<Task>(new Worker('./task'));
 
     await this.tasks[id].start(this.subscriptions[id]);

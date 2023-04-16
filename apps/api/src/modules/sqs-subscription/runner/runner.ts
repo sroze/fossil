@@ -1,14 +1,15 @@
-import { Subscription, WithEventsCheckpointStore } from 'subscription';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import { StoreLocator } from 'store-locator';
 import { Injectable } from '@nestjs/common';
 import { SQSSubscriptionRow } from '../read-models/sqs-subscriptions';
 import { serializeEventInStoreForWire } from 'event-serialization';
+import { DurableSubscriptionFactory } from '../../durable-subscription/factory';
+import { StoreLocator } from 'store-locator';
 
 @Injectable()
 export class SubscriptionRunner {
   constructor(
     private readonly storeLocator: StoreLocator,
+    private readonly subscriptionFactory: DurableSubscriptionFactory,
     private readonly sqsClient: SQSClient,
   ) {}
 
@@ -22,16 +23,10 @@ export class SubscriptionRunner {
     abortSignal: AbortSignal,
     onEOF?: () => Promise<void>,
   ) {
-    const store = await this.storeLocator.locate(store_id);
-    const subscription = new Subscription(
-      store,
-      { category: subscription_category },
-      {
-        checkpointStore: new WithEventsCheckpointStore(
-          store,
-          `SubscriptionOffsets-${subscription_id}`,
-        ),
-      },
+    const subscription = await this.subscriptionFactory.readWrite(
+      await this.storeLocator.locate(store_id),
+      subscription_id,
+      subscription_category,
     );
 
     // TODO: Explicit locking for each running subscription?

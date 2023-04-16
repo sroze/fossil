@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "build:task": "tsup src/modules/sqs-subscription/runner/threads/task.ts --format cjs",
+    "build:task": "tsup src/modules/sqs-subscription/runner-pool/threads/task.ts --format cjs",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev": "concurrently \"nest start --watch\" \"npm run dev:processes\"",
     "dev:processes": "nest start --entryFile entrypoints/processes --watch",

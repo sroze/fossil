@@ -19,7 +19,10 @@ import { PrepareSubscriptionProcess } from './modules/sqs-subscription/processes
 import { SqsSubscriptionsReadModel } from './modules/sqs-subscription/read-models/sqs-subscriptions';
 import { SubscriptionRunner } from './modules/sqs-subscription/runner/runner';
 import { PublicKeysReadModel } from './modules/store/read-models/public-keys';
-import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/manager';
+import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner-pool/manager';
+import { DurableSubscriptionsReadModel } from './modules/durable-subscription/read-models/durable-subscriptions';
+import { DurableSubscriptionFactory } from './modules/durable-subscription/factory';
+import { PollAndCommitSubscriptionController } from './modules/durable-subscription/controllers/poll-and-commit';
 
 @Module({
   imports: [PrometheusModule.register()],
@@ -29,6 +32,7 @@ import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/m
     SubscribeController,
     CookieHandshakeController,
     ReceiveSubscriptionController,
+    PollAndCommitSubscriptionController,
   ],
   providers: [
     HttpAuthenticator,
@@ -81,6 +85,8 @@ import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner/m
     RunningSubscriptionsManager,
     SubscriptionRunner,
     PublicKeysReadModel,
+    DurableSubscriptionsReadModel,
+    DurableSubscriptionFactory,
   ],
 })
 export class AppModule implements OnApplicationShutdown {

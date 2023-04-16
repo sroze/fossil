@@ -1,29 +1,13 @@
-export type AnySubscriptionEvent =
-  | SubscriptionCreated
-  | SubscriptionReady
-  | SubscriptionDeleted;
+export type AnySQSSubscriptionEvent = SQSQueueRequestedEvent | SQSQueueCreated;
 
-export type SubscriptionType = 'managed-queue' /** | 'provided-sqs' **/;
-export type SubscriptionCreated = {
-  type: 'SubscriptionCreated';
-  data: {
-    store_id: string;
-    category: string;
-    name: string;
-    type: SubscriptionType;
-  };
+export type SQSQueueRequestedEvent = {
+  type: 'SQSQueueRequested';
+  data: {};
 };
 
-export type SubscriptionReady = {
-  type: 'SubscriptionReady';
+export type SQSQueueCreated = {
+  type: 'SQSQueueCreated';
   data: {
-    store_id: string;
-    category: string;
     sqs_queue_url: string;
   };
-};
-
-export type SubscriptionDeleted = {
-  type: 'SubscriptionDeleted';
-  data: {};
 };

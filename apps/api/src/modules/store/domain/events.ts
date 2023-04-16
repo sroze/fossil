@@ -1,4 +1,3 @@
-import { SubscriptionReady } from '../../sqs-subscription/domain/events';
 import { PrivateKey, PublicKey } from 'store-security';
 export type AnyStoreEvent = KeyGenerated;
 

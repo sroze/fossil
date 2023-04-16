@@ -1,80 +1,11 @@
 import { TestApplication } from '../../../../test/test-application';
-import * as http from 'http';
-import { RequestOptions } from 'http';
 import request from 'supertest';
 import { v4 } from 'uuid';
 import {
   generateEvent,
   generateEvents,
 } from '../../../../test/event-generator';
-import { requestOptionsFromApp } from '../../../../test/request';
-
-type MessageEvent = { data: string; id: string; event: string };
-class SseClient {
-  public received: Partial<MessageEvent>[] = [];
-
-  private options: RequestOptions;
-  private request: http.ClientRequest;
-
-  constructor(app: TestApplication, request: RequestOptions) {
-    this.options = {
-      ...requestOptionsFromApp(app),
-      ...request,
-    };
-  }
-
-  receive(
-    responseCallback?: (res: http.IncomingMessage) => void,
-    errorCallback?: (error: Error) => void,
-  ) {
-    this.request = http.request(this.options, (res) => {
-      if (responseCallback) {
-        responseCallback(res);
-      }
-
-      res.setEncoding('utf8');
-      res.on('data', (chunk) => {
-        if (chunk.length === 0) {
-          return;
-        }
-
-        const parsed: Partial<MessageEvent> = {};
-        for (const line of chunk.split('\n')) {
-          if (line.length === 0) {
-            continue;
-          }
-
-          const separatorIndex = line.indexOf(': ');
-          parsed[line.substring(0, separatorIndex)] = line.substring(
-            separatorIndex + 2,
-          );
-        }
-
-        if ('data' in parsed) {
-          this.received.push(parsed);
-        }
-      });
-
-      res.on('end', function () {
-        console.log('Request is closed by the server.');
-      });
-    });
-
-    this.request.on('error', function (e) {
-      if (errorCallback) {
-        errorCallback(e);
-      }
-    });
-
-    // Send the HTTP request.
-    this.request.write('');
-    this.request.end();
-  }
-
-  close() {
-    this.request.destroy();
-  }
-}
+import { SseClient } from '../utils/testing';
 
 describe('Subscribe', () => {
   let app: TestApplication;

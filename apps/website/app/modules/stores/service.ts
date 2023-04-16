@@ -2,7 +2,7 @@ import { createAggregate } from '~/utils/ddd';
 import { GeneratedKey, generateKey } from 'store-security';
 import { v4 } from 'uuid';
 import { fossilEventStore } from '~/config.backend';
-import { AnyStoreCommand, decider } from './domain';
+import { AnyStoreCommand, decider, StoredKey } from './domain';
 
 export const store = (id: string) => {
   const aggregate = createAggregate(fossilEventStore, decider);
@@ -38,17 +38,26 @@ export class StoreService {
   ): Promise<GeneratedKey> {
     const key = await generateKey();
 
+    const storedKey: StoredKey =
+      data.type === 'private'
+        ? {
+            key_id: v4(),
+            name: data.name,
+            public_key: key.public,
+            type: 'private',
+          }
+        : {
+            key_id: v4(),
+            name: data.name,
+            public_key: key.public,
+            type: 'hosted',
+            private_key: key.private,
+          };
+
     await StoreService.resolve().execute(id, {
       type: 'StoreGeneratedKey',
       data: {
-        key: {
-          key_id: v4(),
-          name: data.name,
-          type: data.type,
-          public_key: key.public,
-          // @ts-expect-error we need to be better at typing this one.
-          private_key: data.type === 'hosted' ? key.private : undefined,
-        },
+        key: storedKey,
       },
     });
 

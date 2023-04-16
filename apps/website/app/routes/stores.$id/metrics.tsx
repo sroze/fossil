@@ -174,7 +174,9 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   const step = Duration.fromObject({
     [timeRange.step.unit]: timeRange.step.quantity,
   });
-  const end = DateTime.now().set({ millisecond: 0, second: 0 });
+  const end = DateTime.now()
+    .set({ millisecond: 0, second: 0 })
+    .plus({ minute: 1 });
   const start = end.minus(timeRange.duration);
 
   const fetchMetric = (

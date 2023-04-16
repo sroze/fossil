@@ -3,7 +3,7 @@ import type { SQSSubscriptionRow } from '../../read-models/sqs-subscriptions';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../../../app.module';
 import { INestApplication } from '@nestjs/common';
-import { SubscriptionRunner } from '../runner';
+import { SubscriptionRunner } from '../../runner/runner';
 
 let app: INestApplication;
 let abortController: AbortController;

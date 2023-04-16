@@ -5,7 +5,8 @@ import {
   IEventStore,
   MinimumEventType,
 } from 'event-store';
-import { Counter, LabelValues, Histogram } from 'prom-client';
+import { Counter, Histogram, LabelValues } from 'prom-client';
+import { measureEvents, offHotPath } from '../../../utils/monitoring';
 
 const latencyBuckets = [
   0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3,
@@ -64,32 +65,6 @@ const writeLatency = new Histogram({
   buckets: latencyBuckets,
 });
 
-function offHotPath(fn: () => void) {
-  setTimeout(fn, 0);
-}
-
-function eventBytesSize(event: EventToWrite | EventInStore): number {
-  return (
-    (event.id ? Buffer.byteLength(event.id) : 0) +
-    Buffer.byteLength(event.type) +
-    Buffer.byteLength(JSON.stringify(event.data)) +
-    (event.metadata ? Buffer.byteLength(JSON.stringify(event.metadata)) : 0)
-  );
-}
-
-function measureEvents<T extends string>(
-  bytesCounter: Counter<T>,
-  eventsCounter: Counter<T>,
-  labels: LabelValues<T>,
-  events: Array<EventToWrite | EventInStore>,
-) {
-  eventsCounter.inc(labels, events.length);
-  bytesCounter.inc(
-    labels,
-    events.reduce((acc, event) => acc + eventBytesSize(event), 0),
-  );
-}
-
 export class MonitoredStore implements IEventStore {
   constructor(
     private readonly implementation: IEventStore,
@@ -136,7 +111,10 @@ export class MonitoredStore implements IEventStore {
       const labels = { ...this.labels, type: 'last_event' };
 
       readRequests.inc(labels);
-      measureEvents(readBytes, readEvents, labels, [event]);
+
+      if (event) {
+        measureEvents(readBytes, readEvents, labels, [event]);
+      }
     });
 
     return event;
@@ -166,6 +144,10 @@ export class MonitoredStore implements IEventStore {
       this.implementation.readStream<EventType>(stream, fromPosition, signal),
       { ...this.labels, type: 'stream' },
     );
+  }
+
+  async statisticsAtPosition(category: string, position: bigint) {
+    return this.implementation.statisticsAtPosition(category, position);
   }
 }
 

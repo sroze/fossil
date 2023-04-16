@@ -12,6 +12,11 @@ type WrittenEventMetadata = {
   metadata?: any;
 };
 
+export type StatisticsAtPosition = {
+  approximate_event_timestamp?: Date;
+  approximate_event_count_after: number;
+};
+
 export type EventInStore<Event extends MinimumEventType = MinimumEventType> =
   Event & WrittenEventMetadata;
 export type EventToWrite<Event extends MinimumEventType = MinimumEventType> =
@@ -58,6 +63,11 @@ export interface IEventStore {
     stream: string,
     type?: string
   ): Promise<EventInStore<EventType> | undefined>;
+
+  statisticsAtPosition(
+    category: string,
+    position: bigint
+  ): Promise<StatisticsAtPosition>;
 }
 
 export class WrongExpectedVersionError extends Error {}

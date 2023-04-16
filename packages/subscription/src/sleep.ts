@@ -1,5 +1,3 @@
-import { AbortError } from './subscription';
-
 export function sleep(
   time: number,
   signal?: AbortSignal
@@ -13,7 +11,7 @@ function sleepWithSignal(
   dueTime: number,
   signal: AbortSignal
 ): Promise<void | 'aborted'> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (signal.aborted) {
       resolve('aborted');
     }

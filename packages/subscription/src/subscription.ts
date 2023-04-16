@@ -133,6 +133,10 @@ export class Subscription {
         if (this.checkpointStrategy.shouldCheckpoint()) {
           await this.checkpointStore.storeCheckpoint(position);
         }
+
+        if (signal.aborted) {
+          return;
+        }
       }
 
       // If we didn't receive any event, we'll wait a bit before bombarding the database with

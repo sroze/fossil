@@ -71,4 +71,10 @@ export class PrefixedStore implements IEventStore {
       yield this.encoder.decodeEvent(event) as EventInStore<EventType>;
     }
   }
+  async statisticsAtPosition(category: string, position: bigint) {
+    return this.implementation.statisticsAtPosition(
+      this.encoder.encodeStream(category),
+      position
+    );
+  }
 }

@@ -1,9 +1,10 @@
 import { InMemoryCheckpointStore, Subscription } from 'subscription';
 import { ThreadSupervisor } from './threads/supervisor';
-import { AnySubscriptionEvent } from '../domain/events';
+import { AnySubscriptionEvent } from '../../durable-subscription/domain/events';
 import { IEventStore, StreamName } from 'event-store';
 import { Inject, Injectable } from '@nestjs/common';
 import { SystemStore } from '../../../symbols';
+import { AnySQSSubscriptionEvent } from '../domain/events';
 
 @Injectable()
 export class RunningSubscriptionsManager {
@@ -21,17 +22,34 @@ export class RunningSubscriptionsManager {
       { checkpointStore: new InMemoryCheckpointStore() },
     );
 
+    const subscriptionMetadata = new Map<
+      string,
+      { store_id: string; category: string }
+    >();
+
     const supervisor = new ThreadSupervisor();
-    await subscription.start<AnySubscriptionEvent>(
+    await subscription.start<AnySubscriptionEvent | AnySQSSubscriptionEvent>(
       {
         onMessage: async ({ data, type, stream_name }) => {
           const { identifier } = StreamName.decompose(stream_name);
 
-          if (type === 'SubscriptionReady') {
-            await supervisor.addSubscription({
+          if (type === 'SubscriptionCreated') {
+            subscriptionMetadata.set(identifier, {
               store_id: data.store_id,
+              category: data.category,
+            });
+          } else if (type === 'SQSQueueCreated') {
+            const metadata = subscriptionMetadata.get(identifier);
+            if (!metadata) {
+              throw new Error(
+                `No metadata found for subscription ${identifier}`,
+              );
+            }
+
+            await supervisor.addSubscription({
               subscription_id: identifier,
-              subscription_category: data.category,
+              store_id: metadata.store_id,
+              subscription_category: metadata.category,
               sqs_queue_url: data.sqs_queue_url,
             });
           } else if (type === 'SubscriptionDeleted') {

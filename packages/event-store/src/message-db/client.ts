@@ -6,6 +6,7 @@ import {
   EventInStore,
   EventToWrite,
   MinimumEventType,
+  StatisticsAtPosition,
   WrongExpectedVersionError,
 } from '../interfaces';
 import { prefixFromCategory } from './prefix';
@@ -75,16 +76,11 @@ export class MessageDbClient {
     fromPosition: bigint,
     maxCount: number
   ): Promise<EventInStore<EventType>[]> {
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(
-        'select * from get_stream_messages($1, $2, $3)',
-        [streamName, String(fromPosition), maxCount]
-      );
-      return result.rows.map(fromDb<EventType>);
-    } finally {
-      client.release();
-    }
+    const result = await this.pool.query(
+      'select * from get_stream_messages($1, $2, $3)',
+      [streamName, String(fromPosition), maxCount]
+    );
+    return result.rows.map(fromDb<EventType>);
   }
 
   async getCategoryMessages<EventType extends MinimumEventType>(
@@ -102,56 +98,86 @@ export class MessageDbClient {
       }
     }
 
-    const client = await this.pool.connect();
-    try {
-      const parameters = [String(fromPosition), maxCount];
-      if (!wildcard) {
-        parameters.push(prefix || category);
-      }
-
-      const result = await client.query(
-        `SELECT
-      id::varchar,
-      stream_name::varchar,
-      type::varchar,
-      position::bigint,
-      global_position::bigint,
-      data::varchar,
-      metadata::varchar,
-      time::timestamp
-    FROM
-      messages
-    WHERE
-      ${
-        wildcard
-          ? ''
-          : `${prefix ? 'prefix' : 'category'}(stream_name) = $3 AND `
-      }
-      global_position >= $1
-    ORDER BY global_position ASC
-    LIMIT $2`,
-        parameters
-      );
-      return result.rows.map(fromDb<EventType>);
-    } finally {
-      client.release();
+    const parameters = [String(fromPosition), maxCount];
+    if (!wildcard) {
+      parameters.push(prefix || category);
     }
+
+    const result = await this.pool.query(
+      `SELECT
+    id::varchar,
+    stream_name::varchar,
+    type::varchar,
+    position::bigint,
+    global_position::bigint,
+    data::varchar,
+    metadata::varchar,
+    time::timestamp
+  FROM
+    messages
+  WHERE
+    ${
+      wildcard ? '' : `${prefix ? 'prefix' : 'category'}(stream_name) = $3 AND `
+    }
+    global_position >= $1
+  ORDER BY global_position ASC
+  LIMIT $2`,
+      parameters
+    );
+    return result.rows.map(fromDb<EventType>);
   }
 
   async getLastStreamMessage<EventType extends MinimumEventType>(
     streamName: string,
     type?: string
   ): Promise<EventInStore<EventType> | undefined> {
-    const client = await this.pool.connect();
-    try {
-      const result = await client.query(
-        'select * from get_last_stream_message($1, $2)',
-        [streamName, type || null]
-      );
-      return result.rows.map(fromDb<EventType>)[0];
-    } finally {
-      client.release();
+    const result = await this.pool.query(
+      'select * from get_last_stream_message($1, $2)',
+      [streamName, type || null]
+    );
+    return result.rows.map(fromDb<EventType>)[0];
+  }
+
+  async statisticsAtPosition(
+    category: string,
+    position: bigint
+  ): Promise<StatisticsAtPosition> {
+    const prefix = prefixFromCategory(category);
+    if (prefix === undefined && category.indexOf('-') !== -1) {
+      throw new Error(`"${category}" is not a valid category.`);
     }
+
+    const [
+      {
+        rows: [{ count }],
+      },
+      {
+        rows: [timeRow],
+      },
+    ] = await Promise.all([
+      this.pool.query(
+        `SELECT count(*)::int FROM messages
+          WHERE ${prefix ? 'prefix' : 'category'}(stream_name) = $1
+            AND global_position > $2
+            LIMIT 10000`,
+        [prefix || category, position]
+      ),
+      this.pool.query(
+        `SELECT time::timestamp FROM messages
+          WHERE ${prefix ? 'prefix' : 'category'}(stream_name) = $1
+            AND global_position = $2`,
+        [prefix || category, position]
+      ),
+    ]);
+
+    if (count >= 10000) {
+      console.error('StatisticsAtPosition: 10000 messages limit reached');
+    }
+
+    return {
+      approximate_event_timestamp: timeRow ? new Date(timeRow.time) : undefined,
+      approximate_event_count_after: count,
+    };
   }
 }
 

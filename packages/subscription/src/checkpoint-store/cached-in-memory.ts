@@ -13,9 +13,9 @@ export class CachedInMemory implements ICheckpointStore {
     return this.cached;
   }
 
-  async storeCheckpoint(position: bigint): Promise<void> {
+  async storeCheckpoint(position: bigint | null): Promise<void> {
     await this.store.storeCheckpoint(position);
 
-    this.cached = position;
+    this.cached = position || undefined;
   }
 }

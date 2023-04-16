@@ -30,7 +30,7 @@ export async function main(
             VALUES (${identifier}, ${data.store_id}, ${data.name}, ${data.category}, 'creating')
             ON CONFLICT DO NOTHING`
         );
-      } else if (type === 'SubscriptionReady') {
+      } else if (type === 'SQSQueueCreated') {
         await pool.query(
           sql`UPDATE subscriptions SET status = 'ready' WHERE subscription_id = ${identifier}`
         );
