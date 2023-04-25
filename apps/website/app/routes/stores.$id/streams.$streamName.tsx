@@ -29,7 +29,7 @@ export default function Stream() {
         token={token}
         uri={`/stores/${store_id}/streams/${encodeURIComponent(
           stream_name
-        )}/subscribe`}
+        )}/sse-stream`}
       />
     </div>
   );

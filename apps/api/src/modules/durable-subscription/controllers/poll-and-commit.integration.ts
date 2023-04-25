@@ -53,14 +53,17 @@ describe('Poll & Commit', () => {
 
       // Generate the right token
       token = await app.generateToken(storeId, {
-        read: { streams: [`${category}-*`] },
+        read: { subscriptions: [subscriptionIdentifier] },
+        write: { subscriptions: [subscriptionIdentifier] },
       });
     });
 
     afterEach(async () => {
       // Reset the commit to the beginning.
       await request(app.getHttpServer())
-        .put(`/subscriptions/${subscriptionIdentifier}/commit`)
+        .put(
+          `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/commit`,
+        )
         .set('authorization', `Bearer ${token}`)
         .send({
           position: '0',
@@ -71,7 +74,7 @@ describe('Poll & Commit', () => {
     it('returns the same messages if no commits are made', async () => {
       const client = new NdjsonClient(app, {
         method: 'GET',
-        path: `/subscriptions/${subscriptionIdentifier}/poll?maxEvents=10`,
+        path: `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/poll?maxEvents=10`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -95,7 +98,7 @@ describe('Poll & Commit', () => {
     it('returns a batch of messages, commits and continue through the stream', async () => {
       const client = new NdjsonClient<EventOverTheWire>(app, {
         method: 'GET',
-        path: `/subscriptions/${subscriptionIdentifier}/poll?maxEvents=10`,
+        path: `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/poll?maxEvents=10`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -109,7 +112,9 @@ describe('Poll & Commit', () => {
 
       // commit
       await request(app.getHttpServer())
-        .put(`/subscriptions/${subscriptionIdentifier}/commit`)
+        .put(
+          `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/commit`,
+        )
         .set('authorization', `Bearer ${token}`)
         .send({
           position: firstReceived[firstReceived.length - 1].global_position,
@@ -127,7 +132,7 @@ describe('Poll & Commit', () => {
       it('times out if no message is published to the durable subscription', async () => {
         const client = new NdjsonClient<EventOverTheWire>(app, {
           method: 'GET',
-          path: `/subscriptions/${subscriptionIdentifier}/poll?maxEvents=21&idleTimeout=1`,
+          path: `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/poll?maxEvents=21&idleTimeout=1`,
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -142,7 +147,7 @@ describe('Poll & Commit', () => {
       it('waits for a message to be published to the durable subscription if not enough are in store', async () => {
         const client = new NdjsonClient<EventOverTheWire>(app, {
           method: 'GET',
-          path: `/subscriptions/${subscriptionIdentifier}/poll?maxEvents=21&idleTimeout=1`,
+          path: `/stores/${storeId}/subscriptions/${subscriptionIdentifier}/poll?maxEvents=21&idleTimeout=1`,
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -165,6 +170,12 @@ describe('Poll & Commit', () => {
       });
     });
   });
+
+  // FIXME!
+  it.todo('cannot commit if token cannot write to the offset stream');
+
+  it.todo('can commit if the token explicitly has access to this subscription');
+  // i.e. `subscriptions` claim.
 
   it.todo('refuse if the token cannot read the category');
 

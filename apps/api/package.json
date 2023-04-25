@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "nest build",
-    "build:task": "tsup src/modules/sqs-subscription/runner-pool/threads/task.ts --format cjs",
+    "build": "nest build && npm run build:openapi",
+    "build:openapi": "ts-node src/entrypoints/build/openapi.ts dist/openapi.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "dev": "concurrently \"nest start --watch\" \"npm run dev:processes\"",
     "dev:processes": "nest start --entryFile entrypoints/processes --watch",
@@ -39,6 +39,7 @@
     "store-locator": "workspace:*",
     "store-security": "workspace:*",
     "subscription": "workspace:*",
+    "eskit-ish": "workspace:*",
     "threads": "^1.7.0",
     "uuid": "^9.0.0"
   },

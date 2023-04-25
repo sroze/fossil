@@ -39,10 +39,6 @@ testem.log
 .DS_Store
 Thumbs.db
 
-# Remix files
-apps/**/build
-apps/**/.cache
-
 # Environment files
 .env
 .env.local

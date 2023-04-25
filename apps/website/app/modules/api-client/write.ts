@@ -3,6 +3,14 @@ import { zValidJsonAsString } from '~/modules/zod-forms/validators/json';
 import { storeApiBaseUrl } from '~/modules/api-client/config';
 import { request } from '~/modules/http/request';
 
+export const categorySchema = z
+  .string()
+  .regex(
+    /^([a-z0-9_]+)/i,
+    `Category must be a set of letters and numbers. Example: 'Foo'`
+  )
+  .min(1);
+
 export const streamNameSchema = z
   .string()
   .regex(
@@ -35,32 +43,35 @@ export type SuccessfulWriteResponse = {
 const storeIdFromToken = (token: string) =>
   JSON.parse(atob(token.split('.')[1])).fossil.store_id;
 
-export function cookieHandshake(token: string): Promise<void> {
-  return request(
-    `${storeApiBaseUrl}/stores/${storeIdFromToken(token)}/cookie-handshake`,
-    {
-      method: 'post',
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-      credentials: 'include',
-    }
-  );
-}
+class ApiClient {
+  constructor(private readonly baseUrl: string) {}
 
-export function appendEvent(
-  token: string,
-  body: z.infer<typeof appendEventSchema>
-): Promise<SuccessfulWriteResponse> {
-  return request(
-    `${storeApiBaseUrl}/stores/${storeIdFromToken(token)}/events`,
-    {
+  cookieHandshake(token: string): Promise<void> {
+    return request(
+      `${this.baseUrl}/stores/${storeIdFromToken(token)}/cookie-handshake`,
+      {
+        method: 'post',
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      }
+    );
+  }
+
+  appendEvent(
+    token: string,
+    body: z.infer<typeof appendEventSchema>
+  ): Promise<SuccessfulWriteResponse> {
+    return request(`${this.baseUrl}/stores/${storeIdFromToken(token)}/events`, {
       method: 'post',
       headers: {
         authorization: `Bearer ${token}`,
         'content-type': 'application/json',
       },
       body: JSON.stringify(body),
-    }
-  );
+    });
+  }
 }
+
+export const client = new ApiClient(storeApiBaseUrl);

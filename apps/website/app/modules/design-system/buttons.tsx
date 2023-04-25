@@ -1,4 +1,4 @@
-import { classNames } from '../remix-utils/front-end';
+import { classNames } from '../../utils/remix-front-end';
 import React from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';

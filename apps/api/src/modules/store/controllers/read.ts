@@ -56,15 +56,18 @@ class ReadQueryParams {
   from?: string;
 }
 
-@ApiTags('Read')
+@ApiTags('Store')
 @Controller()
 export class ReadController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
 
   @Get('stores/:id/streams/:stream/events')
-  @ApiOperation({ summary: 'List events from a stream' })
+  @ApiOperation({
+    summary: 'List events from a stream',
+    operationId: 'readStream',
+  })
   @ApiOkResponse({ type: PaginatedEventList })
-  async stream(
+  async readStream(
     @Param('id') storeId: string,
     @Param('stream') stream: string,
     @Query() { size, from }: ReadQueryParams,
@@ -100,7 +103,10 @@ export class ReadController {
   }
 
   @Get('stores/:id/streams/:stream/head')
-  @ApiOperation({ summary: 'Read the last event of a stream' })
+  @ApiOperation({
+    summary: 'Read the last event of a stream',
+    operationId: 'streamHead',
+  })
   @ApiOkResponse({ type: EventInStoreDto })
   async streamHead(
     @Param('id') storeId: string,
@@ -119,7 +125,10 @@ export class ReadController {
   }
 
   @Get('stores/:id/categories/:category/events')
-  @ApiOperation({ summary: 'List events from a category' })
+  @ApiOperation({
+    summary: 'List events from a category',
+    operationId: 'readCategory',
+  })
   @ApiOkResponse({ type: PaginatedEventList })
   async category(
     @Param('id') storeId: string,

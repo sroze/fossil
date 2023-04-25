@@ -13,8 +13,7 @@ services:
   localstack:
     image: localstack/localstack
     ports:
-      - "127.0.0.1:4566:4566"            # LocalStack Gateway
-      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+      - "4566:4566"
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     volumes:
@@ -25,3 +24,7 @@ services:
       - '9090:9090'
     volumes:
       - ./devops/local/prometheus.yml:/etc/prometheus/prometheus.yml
+  prom-pushgateway:
+    image: prom/pushgateway
+    ports:
+      - "9091:9091"

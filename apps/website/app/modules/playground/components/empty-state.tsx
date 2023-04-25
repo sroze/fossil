@@ -1,5 +1,5 @@
 import { InboxIcon, LockClosedIcon } from '@heroicons/react/24/solid';
-import { classNames } from '../../remix-utils/front-end';
+import { classNames } from '../../../utils/remix-front-end';
 import {
   buttonClassNames,
   colorSchemeClassNames,

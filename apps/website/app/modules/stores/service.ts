@@ -1,4 +1,4 @@
-import { createAggregate } from '~/utils/ddd';
+import { createAggregate } from 'eskit-ish';
 import { GeneratedKey, generateKey } from 'store-security';
 import { v4 } from 'uuid';
 import { fossilEventStore } from '~/config.backend';

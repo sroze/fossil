@@ -1,14 +1,18 @@
 import { ReadClaims, WriteClaims } from './interfaces';
-import { categoryFromStream } from 'event-store';
+import { Category } from 'event-store';
 
 function authorizeStream(
   { streams }: WriteClaims | ReadClaims,
   stream: string
 ): boolean {
+  if (!streams) {
+    return false;
+  }
+
   return (
     streams.includes('*') ||
     streams.includes(stream) ||
-    streams.includes(`${categoryFromStream(stream)}-*`)
+    streams.includes(`${Category.fromStream(stream).toString()}-*`)
   );
 }
 
@@ -39,5 +43,23 @@ export function authorizeReadCategory(
   { streams }: ReadClaims,
   category: string
 ): boolean {
+  if (!streams) {
+    return false;
+  }
+
   return streams.includes('*') || streams.includes(`${category}-*`);
+}
+
+export function authorizeReadSubscription(
+  { subscriptions }: ReadClaims,
+  subscriptionId: string
+): boolean {
+  return subscriptions ? subscriptions.includes(subscriptionId) : false;
+}
+
+export function authorizeWriteSubscription(
+  { subscriptions }: WriteClaims,
+  subscriptionId: string
+): boolean {
+  return subscriptions ? subscriptions.includes(subscriptionId) : false;
 }

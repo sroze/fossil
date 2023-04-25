@@ -2,15 +2,15 @@ import { MinimumEventType } from 'event-store';
 import {
   asAdvancedHandler,
   Handler,
-  Subscription,
   composeHandlers,
+  SubscriptionInterface,
 } from 'subscription';
 
 export type RunnableSubscription<
   T extends MinimumEventType,
   ReturnType = void
 > = {
-  subscription: Subscription;
+  subscription: SubscriptionInterface;
   handler: Handler<T, ReturnType>;
 };
 
@@ -38,7 +38,7 @@ export async function subscribeUntil<
   EventType extends MinimumEventType,
   ReturnType
 >(
-  subscription: Subscription,
+  subscription: SubscriptionInterface,
   handler: Handler<EventType, ReturnType>,
   timeoutInMs: number
 ): Promise<NonNullable<ReturnType>> {

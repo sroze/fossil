@@ -3,6 +3,7 @@ import { RequestOptions } from 'http';
 import { AnySubscriptionEvent } from '../domain/events';
 import { TestApplication } from '../../../../test/test-application';
 import { StreamClient } from '../../ephemeral-subscription/utils/testing';
+import { Subscription } from '../domain/category';
 
 export const createSubscription = async (
   store: IEventStore,
@@ -12,7 +13,7 @@ export const createSubscription = async (
   name = 'My subscription',
 ): Promise<void> => {
   await store.appendEvents<AnySubscriptionEvent>(
-    `Subscription-${subscriptionId}`,
+    Subscription.stream(subscriptionId),
     [
       {
         type: 'SubscriptionCreated',

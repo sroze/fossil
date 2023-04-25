@@ -1,6 +1,6 @@
 import React from 'react';
 import { useIsSubmitting } from 'remix-validated-form';
-import { classNames } from '../../remix-utils/front-end';
+import { classNames } from '../../../utils/remix-front-end';
 
 export const SubmitButton: React.FC<{
   loadingLabel?: string;

@@ -1,5 +1,5 @@
 // Commands
-import { createAggregate, Decider } from '~/utils/ddd';
+import { createAggregate, Decider } from 'eskit-ish';
 import { fossilEventStore } from '~/config.backend';
 
 export type AnyInviteCommand =

@@ -10,9 +10,9 @@ import { MessageDbClient } from './client';
 export class MessageDbStore implements IEventStore {
   constructor(private readonly client: MessageDbClient) {}
 
-  appendEvents(
+  appendEvents<EventType extends MinimumEventType = MinimumEventType>(
     streamName: string,
-    events: EventToWrite[],
+    events: EventToWrite<EventType>[],
     expectedVersion: bigint | null
   ): Promise<AppendResult> {
     return this.client.writeMessages(streamName, events, expectedVersion);

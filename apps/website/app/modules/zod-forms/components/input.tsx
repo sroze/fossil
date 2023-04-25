@@ -1,7 +1,7 @@
 import React, { ComponentProps, FC } from 'react';
 import { useField } from 'remix-validated-form';
 import { ExclamationCircleIcon } from '@heroicons/react/20/solid';
-import { classNames } from '../../remix-utils/front-end';
+import { classNames } from '../../../utils/remix-front-end';
 import CreatableSelect from 'react-select/creatable';
 import Select from 'react-select';
 

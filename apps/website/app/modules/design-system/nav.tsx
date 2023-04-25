@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { classNames } from '~/modules/remix-utils/front-end';
+import { classNames } from '~/utils/remix-front-end';
 
 export const Nav: React.FC & {
   Item: React.FC<{ label: string; href: string; active: boolean; icon: any }>;

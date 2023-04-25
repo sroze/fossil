@@ -4,7 +4,7 @@ import { ValidatedForm } from 'remix-validated-form';
 import { FormInput, TextAreaInput } from '../../zod-forms/components/input';
 import { SubmitButton } from '../../zod-forms/components/submit-button';
 import {
-  appendEvent,
+  client,
   expectedVersionSchema,
   streamNameSchema,
 } from '~/modules/api-client/write';
@@ -31,7 +31,7 @@ export const AppendEventForm: React.FC<{
       throw error;
     }
 
-    return appendEvent(token, {
+    return client.appendEvent(token, {
       stream: data.stream,
       expected_version: data.expected_version,
       events: [

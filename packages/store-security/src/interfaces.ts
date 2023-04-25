@@ -16,16 +16,21 @@ export interface KeyLocator {
 }
 
 export type ReadClaims = {
-  streams: string[];
+  streams?: string[];
+  subscriptions?: string[];
 };
 
 export type WriteClaims = {
-  streams: string[];
+  streams?: string[];
   types?: string[];
+  subscriptions?: string[];
 };
+
+export type ManagementClaim = 'subscriptions';
 
 export interface FossilClaims {
   store_id: string;
   read?: ReadClaims;
   write?: WriteClaims;
+  management?: ManagementClaim[];
 }

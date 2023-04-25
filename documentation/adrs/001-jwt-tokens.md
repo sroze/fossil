@@ -30,4 +30,4 @@
 - A stream matcher can be:
   - `*` to indicate any stream.
   - The literal value (i.e. name of the stream)
-  - A URI template (https://www.rfc-editor.org/rfc/rfc6570)
+  - A prefix (e.g. `Foo-*` to match `Foo-bar` and `Foo-baz`)

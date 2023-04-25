@@ -3,7 +3,7 @@ import { EmptyEventStream } from './empty-state';
 import { EventsTable } from './events-table';
 import { useSubscription } from '../hooks/useSubscription';
 import type { EventOverTheWire } from 'event-serialization';
-import { cookieHandshake } from '~/modules/api-client/write';
+import { client } from '~/modules/api-client/write';
 
 // TODO: Add loading and error handling
 const Stream: React.FC<{ uri: string }> = ({ uri }) => {
@@ -29,7 +29,7 @@ export const EventsStream: React.FC<{ uri: string; token: string }> = ({
   useEffect(() => {
     (async () => {
       try {
-        await cookieHandshake(token);
+        await client.cookieHandshake(token);
         setLoading(false);
       } catch (e) {
         setError(e as Error);

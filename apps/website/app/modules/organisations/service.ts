@@ -1,4 +1,4 @@
-import { createAggregate } from '~/utils/ddd';
+import { createAggregate } from 'eskit-ish';
 import { fossilEventStore } from '~/config.backend';
 import { decider } from './domain';
 import { AnyOrganisationCommand } from '~/modules/organisations/commands';

@@ -63,7 +63,17 @@ const defaultOptions = {
   checkpointStrategy: new CheckpointAfterNMessages(1),
 };
 
-export class Subscription {
+export interface SubscriptionInterface {
+  start<
+    EventType extends MinimumEventType = MinimumEventType,
+    ReturnType = void
+  >(
+    handler: Handler<EventType, ReturnType>,
+    signal: AbortSignal
+  ): Promise<void>;
+}
+
+export class Subscription implements SubscriptionInterface {
   private readonly pollingFrequencyInMs: number;
   private readonly checkpointStore: ICheckpointStore;
   private readonly checkpointStrategy: CheckpointStrategy;

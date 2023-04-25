@@ -1,4 +1,5 @@
 export * from './subscription';
+export * from './multi-subscriptions';
 export * from './checkpoint-store/interfaces';
 export * from './checkpoint-store/in-memory';
 export * from './checkpoint-store/with-events-checkpoint-store';

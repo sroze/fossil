@@ -13,10 +13,6 @@ const lagOldestEventAge = new Gauge({
   labelNames: ['subscription_id'],
 });
 
-// Note: when this "lag observer" is used by client-driven offset tracking, it will
-//       have to do through something like Prometheus Pushgateway, as the client
-//       will not be able to reach the Prometheus server and the metric has to be
-//       centralised, somewhere.
 export class LagObserver {
   // This ensures we only have a single 'observe' call at a time.
   private singleton: Promise<void> = Promise.resolve();
@@ -40,6 +36,10 @@ export class LagObserver {
   }
 
   private async doObserve(position: bigint): Promise<void> {
+    // TODO: when this "lag observer" is used by client-driven offset tracking, it will
+    //       have to do through something like Prometheus Pushgateway, as the client
+    //       will not be able to reach the Prometheus server and the metric has to be
+    //       centralised, somewhere!
     const stats = await this.store.statisticsAtPosition(
       this.category,
       position,

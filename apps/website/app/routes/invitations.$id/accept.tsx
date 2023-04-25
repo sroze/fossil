@@ -18,7 +18,7 @@ import { organisation } from '~/modules/organisations/service';
 import { Profile } from '~/modules/identity-and-authorization/profile';
 import { profileFromUserIdentifier } from '~/modules/identity-and-authorization/identity-resolver.server';
 import React, { useEffect } from 'react';
-import { classNames } from '~/modules/remix-utils/front-end';
+import { classNames } from '~/utils/remix-front-end';
 import { fossilEventStore } from '~/config.backend';
 import { ConditionNotReachedError, subscribeUntil } from '~/utils/subscription';
 import { setCookieForCheckpoint } from '~/utils/eventual-consistency';

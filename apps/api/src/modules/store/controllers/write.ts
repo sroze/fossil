@@ -4,7 +4,6 @@ import {
   Body,
   Req,
   Param,
-  ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
 import {
@@ -17,9 +16,6 @@ import {
 import { EventToWrite, WrongExpectedVersionError } from 'event-store';
 import { IsUUID, IsNotEmpty, IsJSON } from 'class-validator';
 import { Request } from 'express';
-import { authorizeWrite } from 'store-security';
-import { StoreLocator } from 'store-locator';
-import { HttpAuthenticator } from '../services/http-authenticator';
 import { HttpStoreLocator } from '../services/http-store-locator';
 
 class EventToWriteDto implements EventToWrite {
@@ -74,7 +70,7 @@ class WriteResultDto {
   global_position: string;
 }
 
-@ApiTags('Write')
+@ApiTags('Store')
 @Controller()
 export class WriteController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
@@ -82,9 +78,10 @@ export class WriteController {
   @Post('/stores/:id/events')
   @ApiOperation({
     summary: 'Write an event',
+    operationId: 'appendEvents',
   })
   @ApiOkResponse({ type: WriteResultDto })
-  async write(
+  async appendEvents(
     @Param('id') storeId: string,
     @Body() command: WriteRequestDto,
     @Req() request: Request,

@@ -7,7 +7,7 @@ import {
 } from '../../../utils/express';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-@ApiTags('Subscriptions')
+@ApiTags('ServerSentEvents')
 @Controller()
 export class CookieHandshakeController {
   constructor(private readonly authenticator: HttpAuthenticator) {}
@@ -15,6 +15,7 @@ export class CookieHandshakeController {
   @ApiOperation({
     summary: "Sets Fossil token in the browser's cookie for SSE streams",
     description: `You can use browsers' built-in \`EventSource\` class to subscribe to Fossil events directly from your users' browser. However, most do not support setting HTTP headers for authorization. As such, you need to first use this endpoint to set your Fossil token as a Cookie, which will be later sent by the browser when subscribing.`,
+    operationId: 'cookieHandshake',
   })
   @Post('stores/:id/cookie-handshake')
   async handshake(

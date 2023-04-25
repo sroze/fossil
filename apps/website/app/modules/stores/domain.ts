@@ -1,5 +1,5 @@
 import type { PrivateKey, PublicKey } from 'store-security';
-import { Decider } from '~/utils/ddd';
+import { Decider } from 'eskit-ish';
 
 // Events
 export type StoreCreated = {

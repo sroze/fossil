@@ -1,4 +1,5 @@
 import { IEventStore } from './interfaces';
+import { InMemoryStore } from './in-memory';
 
 type FirstEvent = {
   type: 'Foo';
@@ -10,32 +11,8 @@ type SecondEvent = {
   data: { bar: string };
 };
 
-class EmptyStore implements IEventStore {
-  appendEvents() {
-    return Promise.resolve({
-      position: 0n,
-      global_position: 0n,
-    });
-  }
-
-  lastEventFromStream() {
-    return Promise.resolve(undefined);
-  }
-
-  async *readCategory() {}
-
-  async *readStream() {}
-
-  async statisticsAtPosition(category: string, position: bigint) {
-    return {
-      approximate_event_timestamp: new Date(),
-      approximate_event_count_after: 0,
-    };
-  }
-}
-
 describe('Types', () => {
-  const store: IEventStore = new EmptyStore();
+  const store: IEventStore = new InMemoryStore();
 
   it('enables strict types for appending to the store', async () => {
     await store.appendEvents<FirstEvent>(

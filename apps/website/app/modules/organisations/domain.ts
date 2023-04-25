@@ -1,4 +1,4 @@
-import { Decider } from '~/utils/ddd';
+import { Decider } from 'eskit-ish';
 import { AnyOrganisationEvent } from '~/modules/organisations/events';
 import { AnyOrganisationCommand } from '~/modules/organisations/commands';
 

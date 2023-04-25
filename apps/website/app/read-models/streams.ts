@@ -3,7 +3,7 @@ import {
   Subscription,
   WithEventsCheckpointStore,
 } from 'subscription';
-import { categoryFromStream, IEventStore } from 'event-store';
+import { Category, IEventStore } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 import {
@@ -53,7 +53,7 @@ export async function main(
     );
 
     const streamName = streamNameDecoder.decodeStream(event.stream_name);
-    const category = categoryFromStream(streamName);
+    const category = Category.fromStream(streamName).toString();
 
     await pool.query(
       sql`INSERT INTO store_streams (store_id, stream_name, category, position, first_written_in_at, last_written_in_at)

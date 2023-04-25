@@ -1,4 +1,4 @@
-import type { Decider } from '~/utils/ddd';
+import type { Decider } from 'eskit-ish';
 import { Auth0Profile } from 'remix-auth-auth0';
 import {
   authenticator,

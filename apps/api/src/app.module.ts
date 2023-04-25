@@ -2,7 +2,7 @@ import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 import { WriteController } from './modules/store/controllers/write';
-import { KeyLocatorSymbol, SystemStore, SystemDatabasePool } from './symbols';
+import { KeyLocatorSymbol, SystemDatabasePool, SystemStore } from './symbols';
 import { Pool } from 'pg';
 import { IEventStore, MessageDbClient, MessageDbStore } from 'event-store';
 import { KeyLocator, TokenAuthenticator } from 'store-security';
@@ -10,19 +10,23 @@ import { StoreLocator } from 'store-locator';
 import { ReadController } from './modules/store/controllers/read';
 import { HttpAuthenticator } from './modules/store/services/http-authenticator';
 import { HttpStoreLocator } from './modules/store/services/http-store-locator';
-import { SubscribeController } from './modules/ephemeral-subscription/controllers/subscribe';
+import { SubscribeController } from './modules/ephemeral-subscription/controllers/sse-stream';
 import { DatabaseKeyLocator } from './modules/store/services/database-key-locator';
 import { CookieHandshakeController } from './modules/ephemeral-subscription/controllers/cookie-handshake';
-import { ReceiveSubscriptionController } from './modules/sqs-subscription/controllers/receive-subscription';
+import { SqsProxyController } from './modules/sqs-relay/controllers/sqs-proxy';
 import { SQSClient } from '@aws-sdk/client-sqs';
-import { PrepareSubscriptionProcess } from './modules/sqs-subscription/processes/prepare-subscription';
-import { SqsSubscriptionsReadModel } from './modules/sqs-subscription/read-models/sqs-subscriptions';
-import { SubscriptionRunner } from './modules/sqs-subscription/runner/runner';
+import { PrepareQueueProcess } from './modules/sqs-relay/processes/prepare-queue';
+import { SqsRelayRunner } from './modules/sqs-relay/runner/runner';
 import { PublicKeysReadModel } from './modules/store/read-models/public-keys';
-import { RunningSubscriptionsManager } from './modules/sqs-subscription/runner-pool/manager';
+import { RunningSubscriptionsManager } from './modules/sqs-relay/runner-pool/manager';
 import { DurableSubscriptionsReadModel } from './modules/durable-subscription/read-models/durable-subscriptions';
 import { DurableSubscriptionFactory } from './modules/durable-subscription/factory';
 import { PollAndCommitSubscriptionController } from './modules/durable-subscription/controllers/poll-and-commit';
+import { DurableSubscriptionManagementController } from './modules/durable-subscription/controllers/management';
+import { SqsRelayManagement } from './modules/sqs-relay/controllers/management';
+import { EskitService } from './utils/eskit-nest';
+import { aggregate as durableSubscription } from './modules/durable-subscription/domain/aggregate';
+import { aggregate as sqsRelay } from './modules/sqs-relay/domain/decider';
 
 @Module({
   imports: [PrometheusModule.register()],
@@ -31,8 +35,10 @@ import { PollAndCommitSubscriptionController } from './modules/durable-subscript
     ReadController,
     SubscribeController,
     CookieHandshakeController,
-    ReceiveSubscriptionController,
+    SqsProxyController,
     PollAndCommitSubscriptionController,
+    DurableSubscriptionManagementController,
+    SqsRelayManagement,
   ],
   providers: [
     HttpAuthenticator,
@@ -80,13 +86,28 @@ import { PollAndCommitSubscriptionController } from './modules/durable-subscript
           endpoint: 'http://127.0.0.1:4566',
         }),
     },
-    PrepareSubscriptionProcess,
-    SqsSubscriptionsReadModel,
+    PrepareQueueProcess,
     RunningSubscriptionsManager,
-    SubscriptionRunner,
+    SqsRelayRunner,
     PublicKeysReadModel,
     DurableSubscriptionsReadModel,
     DurableSubscriptionFactory,
+    {
+      provide: durableSubscription.symbol,
+      useFactory: (store: IEventStore) =>
+        new EskitService(
+          store,
+          durableSubscription.decider,
+          durableSubscription.category,
+        ),
+      inject: [SystemStore],
+    },
+    {
+      provide: sqsRelay.symbol,
+      useFactory: (store: IEventStore) =>
+        new EskitService(store, sqsRelay.decider, sqsRelay.category),
+      inject: [SystemStore],
+    },
   ],
 })
 export class AppModule implements OnApplicationShutdown {

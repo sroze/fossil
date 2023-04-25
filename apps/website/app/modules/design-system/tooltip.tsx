@@ -1,5 +1,5 @@
 import React from 'react';
-import { classNames } from '~/modules/remix-utils/front-end';
+import { classNames } from '~/utils/remix-front-end';
 
 export const Tooltip: React.FC<{ message: string; className?: string }> = ({
   message,

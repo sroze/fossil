@@ -8,8 +8,10 @@ import { generatePlaygroundToken } from '~/modules/playground/backend/token-gene
 import { pool } from '~/config.backend';
 import { SectionHeader } from '~/modules/design-system/section-header';
 import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
-import { DangerButton } from '~/modules/design-system/buttons';
+import { DangerButton, PrimaryButton } from '~/modules/design-system/buttons';
 import { Checkbox } from '~/modules/design-system/checkbox';
+import { H2 } from '~/modules/design-system/h2';
+import { Card } from '~/modules/design-system/card';
 
 type SubscriptionSummary = {
   subscription_id: string;
@@ -107,11 +109,25 @@ const client = new SQSClient({
         }
       />
 
-      <p className="py-2">
-        <strong>Category:</strong> {subscription.category}
-      </p>
-      <p className="py-2">Try the following code:</p>
-      <pre>{code}</pre>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 my-3">
+        <Card title="Source" subtitle="Where events come from">
+          <div className="font-bold">Category</div>
+          <div>{subscription.category}</div>
+        </Card>
+
+        <Card title="Position" subtitle="Last known position">
+          TODO: display last known position.
+        </Card>
+
+        <Card title="Target" subtitle="How events get consumed">
+          TODO: display type of target.
+        </Card>
+      </div>
+
+      <hr />
+
+      {/*<H2>Try this code to pull from SQS queue using Fossil's proxy</H2>*/}
+      {/*<pre>{code}</pre>*/}
     </div>
   );
 }

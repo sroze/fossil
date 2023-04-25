@@ -1,0 +1,27 @@
+{
+  "name": "eskit-ish",
+  "main": "./dist/index.js",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-presets/jest/node"
+  },
+  "dependencies": {
+    "event-store": "workspace:*",
+    "typescript": "latest"
+  },
+  "devDependencies": {
+    "@types/jest": "latest",
+    "jest": "latest",
+    "jest-presets": "workspace:*",
+    "tsconfig": "workspace:*"
+  }
+}

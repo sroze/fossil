@@ -1,7 +1,7 @@
 import { Menu, Transition } from '@headlessui/react';
-import { ProfilePicture } from '../components/profile-picture';
+import { ProfilePicture } from '../../design-system/profile-picture';
 import { Fragment, PropsWithChildren } from 'react';
-import { classNames } from '../../remix-utils/front-end';
+import { classNames } from '../../../utils/remix-front-end';
 import { useLoaderData } from '@remix-run/react';
 import { LoaderParamsWithAuthentication } from '../../identity-and-authorization/remix-utils.server';
 import { profilePictureUrl } from '~/modules/identity-and-authorization/profile';

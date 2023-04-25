@@ -1,7 +1,7 @@
 import React, { Fragment, Children, ReactChild, ReactElement } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
-import { classNames } from '~/modules/remix-utils/front-end';
+import { classNames } from '~/utils/remix-front-end';
 
 export const DropDown: React.FC<{ label: string }> & { Item: typeof Item } = ({
   label,

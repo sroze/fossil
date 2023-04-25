@@ -1,4 +1,4 @@
-import { main as subscription } from './read-models/subscription';
+import { factory as subscriptions } from './read-models/subscriptions';
 import { main as streams } from './read-models/streams';
 import { factory as stores } from './read-models/store';
 import { factory as orgs } from './read-models/orgs';
@@ -16,10 +16,13 @@ process.on('SIGTERM', () => abortController.abort());
 (async () => {
   await Promise.race([
     // read-models
-    subscription(pool, fossilEventStore, abortController.signal),
-    streams(pool, fossilEventStore, abortController.signal),
+    runSubscription(
+      subscriptions(fossilEventStore, pool),
+      abortController.signal
+    ),
     runSubscription(stores(fossilEventStore, pool), abortController.signal),
     runSubscription(orgs(fossilEventStore, pool), abortController.signal),
+    streams(pool, fossilEventStore, abortController.signal),
 
     // async
     invitationAccepted(fossilEventStore, abortController.signal),

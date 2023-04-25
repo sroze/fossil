@@ -1,19 +1,20 @@
-import { ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
-  Inject,
-  NotFoundException,
   Param,
   Put,
   Query,
   Req,
   Res,
 } from '@nestjs/common';
-import { Pool } from 'pg';
-import { SystemDatabasePool } from '../../../symbols';
-import sql from 'sql-template-tag';
 import { HttpStoreLocator } from '../../store/services/http-store-locator';
 import { Request } from 'express';
 import { DurableSubscriptionFactory } from '../factory';
@@ -30,6 +31,11 @@ import { Type } from 'class-transformer';
 import type { WritableHeaderStream } from '@nestjs/core/router/sse-stream';
 import { NdjsonStream } from '../utils/ndjson-stream';
 import { serializeEventInStoreForWire } from 'event-serialization';
+import {
+  authorizeReadSubscription,
+  authorizeWriteSubscription,
+} from 'store-security';
+import { HttpAuthenticator } from '../../store/services/http-authenticator';
 
 class PollQueryParams {
   @ApiPropertyOptional({
@@ -76,27 +82,36 @@ class CommitBody {
 @Controller()
 export class PollAndCommitSubscriptionController {
   constructor(
-    @Inject(SystemDatabasePool)
-    private readonly pool: Pool,
+    private readonly authenticator: HttpAuthenticator,
     private readonly storeLocator: HttpStoreLocator,
     private readonly durableSubscriptionFactory: DurableSubscriptionFactory,
   ) {}
 
-  @Get('subscriptions/:subscriptionId/poll')
+  @Get('stores/:storeId/subscriptions/:subscriptionId/poll')
+  @ApiOperation({
+    summary: 'Poll for events in a subscription.',
+    operationId: 'poll',
+  })
   async poll(
+    @Param('storeId') storeId: string,
     @Param('subscriptionId') subscriptionId: string,
     @Query() { maxEvents, idleTimeout }: PollQueryParams,
     @Req() request: Request,
     @Res() res: WritableHeaderStream,
   ) {
-    const { store, category } = await this.getStoreAndMetadataForSubscription(
-      request,
+    const payload = await this.authenticator.authenticate(storeId, request);
+    if (!payload.read) {
+      throw new ForbiddenException(
+        'You are not authorized to read with this token.',
+      );
+    } else if (!authorizeReadSubscription(payload.read, subscriptionId)) {
+      throw new ForbiddenException(
+        'You are not authorized to read from this category with this token.',
+      );
+    }
+
+    const subscription = await this.durableSubscriptionFactory.readOnly(
       subscriptionId,
-    );
-    const subscription = this.durableSubscriptionFactory.readOnly(
-      store,
-      subscriptionId,
-      category,
     );
 
     const controller = new AbortController();
@@ -126,49 +141,32 @@ export class PollAndCommitSubscriptionController {
     res.end();
   }
 
-  @Put('subscriptions/:subscriptionId/commit')
+  @ApiOperation({
+    summary: 'Commit a position in a subscription.',
+    operationId: 'commit',
+  })
+  @Put('stores/:storeId/subscriptions/:subscriptionId/commit')
   async commit(
+    @Param('storeId') storeId: string,
     @Param('subscriptionId') subscriptionId: string,
     @Body() { position }: CommitBody,
     @Req() request: Request,
   ) {
-    const { store, category } = await this.getStoreAndMetadataForSubscription(
-      request,
-      subscriptionId,
-    );
+    const payload = await this.authenticator.authenticate(storeId, request);
+    if (!payload.write) {
+      throw new ForbiddenException(
+        'You are not authorized to write with this token.',
+      );
+    } else if (!authorizeWriteSubscription(payload.read, subscriptionId)) {
+      throw new ForbiddenException(
+        'You are not authorized to write to this subscription.',
+      );
+    }
 
-    const subscription = this.durableSubscriptionFactory.readWrite(
-      store,
+    const subscription = await this.durableSubscriptionFactory.readWrite(
       subscriptionId,
-      category,
     );
 
     await subscription.commit(BigInt(position));
-  }
-
-  private async getStoreAndMetadataForSubscription(
-    request: Request,
-    subscriptionId: string,
-  ) {
-    // TODO: This can be cached in memory for future requests as it won't be able to change.
-    const {
-      rows: [row],
-    } = await this.pool.query<{ store_id: string; category: string }>(
-      sql`SELECT store_id, subscription_category as category
-          FROM durable_subscriptions
-           WHERE subscription_id = ${subscriptionId}`,
-    );
-
-    if (!row) {
-      throw new NotFoundException('Subscription does not exist.');
-    }
-
-    const store = await this.storeLocator.getStoreForReadCategory(
-      row.store_id,
-      request,
-      row.category,
-    );
-
-    return { store, category: row.category };
   }
 }

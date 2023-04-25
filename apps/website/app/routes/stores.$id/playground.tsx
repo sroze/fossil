@@ -54,7 +54,7 @@ export default function Playground() {
         token={token}
         uri={`/stores/${store_id}/categories/${encodeURIComponent(
           '*'
-        )}/subscribe`}
+        )}/sse-stream`}
       />
 
       <H2>Generate a token</H2>
