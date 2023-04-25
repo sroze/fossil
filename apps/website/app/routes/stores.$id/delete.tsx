@@ -14,7 +14,7 @@ export const action: ActionFunction = (args) =>
       throw new Error('The deletion was not confirmed.');
     }
 
-    // Can't delete is there are subscriptions
+    // Can't delete if there are subscriptions
     const {
       rows: [{ count }],
     } = await pool.query<{ count: string }>(

@@ -1,19 +1,15 @@
 import { Table } from '../../modules/design-system/table';
 import { json, LoaderFunction } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
-import sql from 'sql-template-tag';
 import React from 'react';
 import { SubscriptionStatusBadge } from '~/modules/subscriptions/components/status-badge';
 import { pool } from '~/config.backend';
 import { SectionHeader } from '~/modules/design-system/section-header';
 import { PrimaryLink } from '~/modules/design-system/buttons';
-
-type SubscriptionSummary = {
-  subscription_id: string;
-  name: string;
-  category: string;
-  status: string;
-};
+import {
+  listSubscriptions,
+  SubscriptionSummary,
+} from '~/read-models/subscriptions';
 
 type LoaderData = {
   store_id: string;
@@ -21,9 +17,7 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params, request }) => {
-  const { rows: subscriptions } = await pool.query<SubscriptionSummary>(
-    sql`SELECT subscription_id, name, category, status FROM subscriptions WHERE store_id = ${params.id!}`
-  );
+  const subscriptions = await listSubscriptions(pool, params.id!);
 
   return json<LoaderData>({
     store_id: params.id!,
@@ -51,7 +45,7 @@ export default function Subscriptions() {
           <tr>
             <Table.Header.Column>Name</Table.Header.Column>
             <Table.Header.Column>Category</Table.Header.Column>
-            <Table.Header.Column>Status</Table.Header.Column>
+            <Table.Header.Column>Target</Table.Header.Column>
             <Table.Header.Column></Table.Header.Column>
           </tr>
         </Table.Header>
@@ -62,9 +56,7 @@ export default function Subscriptions() {
                 <code>{subscription.name}</code>
               </Table.Column>
               <Table.Column>{subscription.category}</Table.Column>
-              <Table.Column>
-                <SubscriptionStatusBadge status={subscription.status} />
-              </Table.Column>
+              <Table.Column>{subscription.target}</Table.Column>
               <Table.Column>
                 <a
                   href={`/stores/${store_id}/subscriptions/${subscription.subscription_id}`}

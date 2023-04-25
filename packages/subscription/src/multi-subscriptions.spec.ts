@@ -85,4 +85,34 @@ describe('Multi subscription', () => {
     expect(handler).toHaveBeenNthCalledWith(3, 'third');
     expect(handler).toHaveBeenNthCalledWith(4, 'fourth');
   });
+
+  it('calls onEOF handler with the last position', async () => {
+    const firstSubscription = new TestingSubscription();
+    const secondSubscription = new TestingSubscription();
+
+    const combined = new MultiSubscriptions([
+      firstSubscription,
+      secondSubscription,
+    ]);
+
+    const abortController = new AbortController();
+    const onMessage = jest.fn();
+    const onEOF = jest.fn();
+
+    const promise = combined.start(
+      { onMessage, onEOF },
+      abortController.signal
+    );
+
+    await firstSubscription.produceMessage('first');
+    await firstSubscription.produceEOF();
+    await secondSubscription.produceMessage('second');
+    await secondSubscription.produceEOF();
+
+    abortController.abort();
+    await promise;
+
+    expect(onMessage).toHaveBeenCalledTimes(2);
+    expect(onEOF).toHaveBeenCalledTimes(1);
+  });
 });

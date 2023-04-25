@@ -4,7 +4,7 @@ import {
   SQSQueueRequestedEvent,
   SubscriptionCreated,
 } from '~/read-models/subscriptions';
-import { fossilEventStore, pool } from '~/config.backend';
+import { fossilEventStore, pool, close } from '~/config.backend';
 import { v4 } from 'uuid';
 import sql from 'sql-template-tag';
 
@@ -13,7 +13,7 @@ describe('Subscriptions read model', () => {
     await pool.query('TRUNCATE TABLE subscriptions CASCADE');
   });
 
-  afterAll(() => pool.end());
+  afterAll(() => close());
 
   it('sets target as poll by default', async () => {
     const subscriptionId = v4();

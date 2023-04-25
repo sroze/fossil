@@ -1,4 +1,8 @@
-import { Handler, SubscriptionInterface } from './subscription';
+import {
+  asAdvancedHandler,
+  Handler,
+  SubscriptionInterface,
+} from './subscription';
 import { MinimumEventType } from 'event-store';
 import { composeHandlers } from './utils';
 
@@ -12,9 +16,24 @@ export class MultiSubscriptions {
     handler: Handler<EventType, ReturnType>,
     signal: AbortSignal
   ): Promise<void> {
+    const advanced = asAdvancedHandler(handler);
+    let eofCount = 0;
+
     await Promise.all(
       this.subscriptions.map((subscription) =>
-        subscription.start(handler, signal)
+        subscription.start(
+          {
+            onMessage: advanced.onMessage,
+            onEOF: async (position) => {
+              eofCount++;
+
+              if (eofCount === this.subscriptions.length) {
+                return advanced.onEOF(position);
+              }
+            },
+          },
+          signal
+        )
       )
     );
   }

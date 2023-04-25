@@ -5,6 +5,13 @@ import { createPool } from '~/utils/pg.backend';
 require('dotenv').config();
 
 export const pool = createPool(process.env.WEBSITE_DATABASE_URL!);
+
+const fossilPool = createPool(process.env.API_DATABASE_URL!);
 export const fossilEventStore = new MessageDbStore(
-  new MessageDbClient(createPool(process.env.API_DATABASE_URL!))
+  new MessageDbClient(fossilPool)
 );
+
+export const close = async () => {
+  await pool.end();
+  await fossilPool.end();
+};

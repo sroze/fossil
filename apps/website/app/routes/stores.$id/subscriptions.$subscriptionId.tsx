@@ -10,15 +10,11 @@ import { SectionHeader } from '~/modules/design-system/section-header';
 import { ButtonAndPopup } from '~/modules/design-system/button-and-popup';
 import { DangerButton, PrimaryButton } from '~/modules/design-system/buttons';
 import { Checkbox } from '~/modules/design-system/checkbox';
-import { H2 } from '~/modules/design-system/h2';
 import { Card } from '~/modules/design-system/card';
-
-type SubscriptionSummary = {
-  subscription_id: string;
-  name: string;
-  category: string;
-  status: string;
-};
+import {
+  fetchSubscription,
+  SubscriptionSummary,
+} from '~/read-models/subscriptions';
 
 type LoaderData = {
   store_id: string;
@@ -27,12 +23,11 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
-  const {
-    rows: [subscription],
-  } = await pool.query<SubscriptionSummary>(
-    sql`SELECT subscription_id, name, category, status FROM subscriptions WHERE store_id = ${params.id!}`
+  const subscription = await fetchSubscription(
+    pool,
+    params.id!,
+    params.subscriptionId!
   );
-
   if (!subscription) {
     throw new Error(`Subscription was not found.`);
   }
@@ -89,7 +84,6 @@ const client = new SQSClient({
     <div className="p-5">
       <SectionHeader
         title={`Subscription "${subscription.name}"`}
-        subtitle={<SubscriptionStatusBadge status={subscription.status} />}
         right={
           <ButtonAndPopup title="Delete subscription" variant="danger">
             <form
@@ -120,7 +114,7 @@ const client = new SQSClient({
         </Card>
 
         <Card title="Target" subtitle="How events get consumed">
-          TODO: display type of target.
+          {subscription.target}
         </Card>
       </div>
 

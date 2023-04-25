@@ -7,7 +7,6 @@ import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
 import { RunnableSubscription } from '~/utils/subscription';
-import { AnyOrganisationEvent } from '~/modules/organisations/events';
 
 // FIXME: Generate these events from a schema exposed by the API.
 //        In particular, the API should be able to generate an AsyncAPI document, which will
@@ -43,6 +42,39 @@ export type SQSQueueCreated = {
   data: {
     sqs_queue_url: string;
   };
+};
+
+// Type exposed by the summary
+export type SubscriptionSummary = {
+  subscription_id: string;
+  name: string;
+  category: string;
+  target: 'sqs' | 'poll';
+};
+
+export const listSubscriptions = async (
+  pool: Pool,
+  storeId: string
+): Promise<SubscriptionSummary[]> => {
+  const { rows } = await pool.query(
+    sql`SELECT subscription_id, name, category, target FROM subscriptions WHERE store_id = ${storeId}`
+  );
+
+  return rows;
+};
+
+export const fetchSubscription = async (
+  pool: Pool,
+  storeId: string,
+  subscriptionId: string
+): Promise<SubscriptionSummary | undefined> => {
+  const {
+    rows: [row],
+  } = await pool.query(
+    sql`SELECT subscription_id, name, category, target FROM subscriptions WHERE store_id = ${storeId} AND subscription_id = ${subscriptionId}`
+  );
+
+  return row;
 };
 
 export function factory(
