@@ -3,10 +3,10 @@
   "extends": ["//"],
   "pipeline": {
     "dev": {
-      "dependsOn": ["api-client#build"]
+      "dependsOn": ["fossil-api-client#build"]
     },
     "build": {
-      "dependsOn": ["api-client#build"]
+      "dependsOn": ["fossil-api-client#build"]
     }
   }
 }
