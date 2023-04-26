@@ -78,7 +78,7 @@ describe('Receives from a subscription', () => {
       'does not have the necessary claims to read from this subscription',
     );
 
-    describe('with a working subscription', () => {
+    describe('with a working relay', () => {
       let token: string;
       let receiptHandles: string[];
 
@@ -92,7 +92,7 @@ describe('Receives from a subscription', () => {
         );
 
         // Create the relay and request a queue.
-        await request(app.getHttpServer())
+        const { body: { id } } = await request(app.getHttpServer())
           .post(`/stores/${storeId}/sqs-relays`)
           .use(
             app.withToken(storeId, {
@@ -123,7 +123,7 @@ describe('Receives from a subscription', () => {
         // Run the subscription
         await runWithAttributesUntilEof(
           app.get(SqsRelayRunner),
-          subscriptionIdentifier,
+          id,
         );
 
         // Generate a token able to operate on this subscription.
