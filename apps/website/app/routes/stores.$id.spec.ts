@@ -8,6 +8,8 @@ import { factory as storeFactory } from '~/read-models/store';
 import { fossilEventStore, pool } from '~/config.backend';
 import { runUntilEof } from '~/utils/subscription';
 import * as identityResolver from '~/modules/identity-and-authorization/identity-resolver.server';
+import { cookieContentForCheckpoint } from '~/utils/eventual-consistency';
+import { sleep } from 'subscription';
 
 // We have a user, yay.
 jest
@@ -112,5 +114,46 @@ describe('stores.$id', () => {
     const body = await response.json();
     expect(body.org_id).toEqual(orgId);
     expect(body.store_id).toEqual(storeId);
+  });
+
+  it('waits for the projection to have caught up if checkpoint cookie is provided', async () => {
+    // Create a new organisation.
+    const newStoreId = v4();
+    const { global_position } = await store(newStoreId).write({
+      type: 'CreateStoreCommand',
+      data: {
+        id: newStoreId,
+        name: 'Foo',
+        owning_org_id: orgId,
+      },
+    });
+
+    const request = await authenticatedAsUser(
+      new Request(`http://localhost:8080/stores/${newStoreId}`, {
+        headers: {
+          cookie: await cookieContentForCheckpoint({
+            global_position,
+          }),
+        },
+      }),
+      {
+        id: userInOrganisation,
+        emails: [{ value: 'me@example.com' }],
+        name: { familyName: 'Sam', givenName: 'Roze' },
+        provider: 'auth0',
+      }
+    );
+
+    const responsePromise: Promise<Response> = loader({
+      request,
+      params: { id: newStoreId },
+      context: {},
+    });
+
+    await sleep(50);
+    await runUntilEof(storeFactory(fossilEventStore, pool), 1000);
+
+    const response = await responsePromise;
+    expect(response.status).toEqual(200);
   });
 });

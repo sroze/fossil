@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { v4 } from 'uuid';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
 import { store } from '~/modules/stores/service';
+import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
 
 export const generateStoreValidator = withZod(
   z.object({
@@ -25,7 +26,7 @@ export const action: ActionFunction = (args) =>
     }
 
     const identifier = v4();
-    await store(identifier).write({
+    const { global_position } = await store(identifier).write({
       type: 'CreateStoreCommand',
       data: {
         ...data,
@@ -34,5 +35,7 @@ export const action: ActionFunction = (args) =>
       },
     });
 
-    return redirect(`/stores/${identifier}`);
+    return redirect(`/stores/${identifier}`, {
+      headers: await setCookieForCheckpoint({ global_position }),
+    });
   });

@@ -11,10 +11,7 @@ import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { v4 } from 'uuid';
 import { organisation } from '~/modules/organisations/service';
-import {
-  lastKnownCheckpoint,
-  setCookieForCheckpoint,
-} from '~/utils/eventual-consistency';
+import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
 
 export const generateOrganisationValidator = withZod(
   z.object({

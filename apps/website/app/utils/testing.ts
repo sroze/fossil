@@ -29,7 +29,12 @@ export async function authenticatedAsUser(
   let session = await sessionStorage.getSession();
   session.set(authenticator.sessionKey, profile);
 
-  request.headers.set('Cookie', await sessionStorage.commitSession(session));
+  const cookieParts = request.headers.has('cookie')
+    ? [request.headers.get('cookie')]
+    : [];
+  cookieParts.push(await sessionStorage.commitSession(session));
+
+  request.headers.set('cookie', cookieParts.join('; '));
 
   return request;
 }

@@ -8,8 +8,6 @@ import {
 import { loaderWithAuthorization } from '../modules/identity-and-authorization/remix-utils.server';
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
-import { pool } from '~/config.backend';
-import sql from 'sql-template-tag';
 import { assertPermissionOnOrg } from '~/utils/security';
 
 type LoaderData = {

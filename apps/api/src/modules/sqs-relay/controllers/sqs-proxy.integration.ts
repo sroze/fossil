@@ -92,7 +92,9 @@ describe('Receives from a subscription', () => {
         );
 
         // Create the relay and request a queue.
-        const { body: { id } } = await request(app.getHttpServer())
+        const {
+          body: { id },
+        } = await request(app.getHttpServer())
           .post(`/stores/${storeId}/sqs-relays`)
           .use(
             app.withToken(storeId, {
@@ -121,10 +123,7 @@ describe('Receives from a subscription', () => {
         );
 
         // Run the subscription
-        await runWithAttributesUntilEof(
-          app.get(SqsRelayRunner),
-          id,
-        );
+        await runWithAttributesUntilEof(app.get(SqsRelayRunner), id);
 
         // Generate a token able to operate on this subscription.
         token = await app.generateToken(storeId, {

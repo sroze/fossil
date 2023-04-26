@@ -17,7 +17,7 @@ export function factory(
       {
         checkpointStore: new WithEventsCheckpointStore(
           store,
-          'OrgsReadModel-v3'
+          'OrgsReadModel-v4'
         ),
       }
     ),
