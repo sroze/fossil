@@ -9,6 +9,9 @@ import { loaderWithAuthorization } from '../modules/identity-and-authorization/r
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
 import { assertPermissionOnOrg } from '~/utils/security';
+import { deserializeCheckpoint, waitFor } from '~/utils/eventual-consistency';
+import { factory } from '~/read-models/orgs';
+import { fossilEventStore, pool } from '~/config.backend';
 
 type LoaderData = {
   org_id: string;
@@ -16,9 +19,25 @@ type LoaderData = {
 };
 
 export const loader: LoaderFunction = (args) =>
-  loaderWithAuthorization<LoaderData>(args, async ({ params, profile }) => {
-    return assertPermissionOnOrg(params.id!, profile.id);
-  });
+  loaderWithAuthorization<LoaderData>(
+    args,
+    async ({ params, profile, request }) => {
+      const url = new URL(request.url);
+      if (url.searchParams.has('c')) {
+        const checkpoint = deserializeCheckpoint(url.searchParams.get('c')!);
+
+        if ('global_position' in checkpoint) {
+          await waitFor(
+            factory(fossilEventStore, pool).checkpointStore,
+            checkpoint.global_position,
+            5000
+          );
+        }
+      }
+
+      return assertPermissionOnOrg(params.id!, profile.id);
+    }
+  );
 
 export default function Store() {
   const { org_name, org_id } = useLoaderData<LoaderData>();

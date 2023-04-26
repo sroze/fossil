@@ -1,4 +1,8 @@
-import { Subscription, WithEventsCheckpointStore } from 'subscription';
+import {
+  ICheckpointStore,
+  Subscription,
+  WithEventsCheckpointStore,
+} from 'subscription';
 import { IEventStore, StreamName } from 'event-store';
 import sql from 'sql-template-tag';
 import { Pool } from 'pg';
@@ -9,16 +13,21 @@ import { RunnableSubscription } from '~/utils/subscription';
 export function factory(
   store: IEventStore,
   pool: Pool
-): RunnableSubscription<AnyOrganisationEvent> {
+): RunnableSubscription<AnyOrganisationEvent> & {
+  checkpointStore: ICheckpointStore;
+} {
+  const checkpointStore = new WithEventsCheckpointStore(
+    store,
+    'OrgsReadModel-v4'
+  );
+
   return {
+    checkpointStore,
     subscription: new Subscription(
       store,
       { category: 'Organisation' },
       {
-        checkpointStore: new WithEventsCheckpointStore(
-          store,
-          'OrgsReadModel-v4'
-        ),
+        checkpointStore,
       }
     ),
     handler: async ({ data, type, stream_name }) => {

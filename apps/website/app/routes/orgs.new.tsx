@@ -11,7 +11,7 @@ import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { v4 } from 'uuid';
 import { organisation } from '~/modules/organisations/service';
-import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
+import { serializeCheckpoint } from '~/utils/eventual-consistency';
 
 export const generateOrganisationValidator = withZod(
   z.object({
@@ -40,9 +40,9 @@ export const action: ActionFunction = (args) =>
       },
     });
 
-    return redirect(`/orgs/${identifier}`, {
-      headers: await setCookieForCheckpoint({ global_position }),
-    });
+    return redirect(
+      `/orgs/${identifier}?c=${serializeCheckpoint({ global_position })}`
+    );
   });
 
 export const loader: LoaderFunction = (args) => loaderWithAuthorization(args);

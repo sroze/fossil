@@ -12,30 +12,6 @@ type Checkpoint =
       global_position: bigint;
     };
 
-export async function getCheckpointFromRequest(
-  request: Request
-): Promise<Checkpoint | undefined> {
-  const lastKnown = await lastKnownCheckpoint.parse(
-    request.headers.get('cookie')
-  );
-  if (lastKnown.value) {
-    return deserializeCheckpoint(lastKnown.value);
-  }
-
-  return undefined;
-}
-
-export async function setCookieForCheckpoint(
-  checkpoint: Checkpoint
-): Promise<HeadersInit> {
-  return {
-    'set-cookie': await lastKnownCheckpoint.serialize({
-      value: serializeCheckpoint(checkpoint),
-      expires: null,
-    }),
-  };
-}
-
 export async function cookieContentForCheckpoint(
   checkpoint: Checkpoint
 ): Promise<string> {
@@ -48,15 +24,17 @@ export async function cookieContentForCheckpoint(
 }
 
 export function serializeCheckpoint(checkpoint: Checkpoint): string {
-  if ('stream_name' in checkpoint) {
-    return `${checkpoint.stream_name}:${checkpoint.position}`;
-  }
+  const str =
+    'stream_name' in checkpoint
+      ? `${checkpoint.stream_name}:${checkpoint.position}`
+      : `global:${checkpoint.global_position}`;
 
-  return `global:${checkpoint.global_position}`;
+  return Buffer.from(str).toString('base64');
 }
 
 export function deserializeCheckpoint(checkpoint: string): Checkpoint {
-  const [streamName, position] = checkpoint.split(':');
+  const asString = Buffer.from(checkpoint, 'base64').toString();
+  const [streamName, position] = asString.split(':');
 
   if (streamName === 'global') {
     return {

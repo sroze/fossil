@@ -21,7 +21,7 @@ import React, { useEffect } from 'react';
 import { classNames } from '~/utils/remix-front-end';
 import { fossilEventStore } from '~/config.backend';
 import { ConditionNotReachedError, subscribeUntil } from '~/utils/subscription';
-import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
+import { serializeCheckpoint } from '~/utils/eventual-consistency';
 import { InMemoryCheckpointStore, Subscription } from 'subscription';
 
 type LoaderData = {
@@ -64,12 +64,12 @@ export const action: ActionFunction = (args) =>
         2_000 // 2 seconds
       );
 
-      return redirect(`/orgs/${invite.org_id}`, {
-        headers: await setCookieForCheckpoint({
+      return redirect(
+        `/orgs/${invite.org_id}?c=${serializeCheckpoint({
           stream_name: `Organisation-${invite.org_id}`,
           position: BigInt(added.data.org_version),
-        }),
-      });
+        })}`
+      );
     } catch (e) {
       if (e instanceof ConditionNotReachedError) {
         throw new Error(

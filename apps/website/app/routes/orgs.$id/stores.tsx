@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { v4 } from 'uuid';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
 import { store } from '~/modules/stores/service';
-import { setCookieForCheckpoint } from '~/utils/eventual-consistency';
+import { serializeCheckpoint } from '~/utils/eventual-consistency';
 
 export const generateStoreValidator = withZod(
   z.object({
@@ -35,7 +35,7 @@ export const action: ActionFunction = (args) =>
       },
     });
 
-    return redirect(`/stores/${identifier}`, {
-      headers: await setCookieForCheckpoint({ global_position }),
-    });
+    return redirect(
+      `/stores/${identifier}?c=${serializeCheckpoint({ global_position })}`
+    );
   });

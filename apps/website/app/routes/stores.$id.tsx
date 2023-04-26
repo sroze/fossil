@@ -13,11 +13,7 @@ import { loaderWithAuthorization } from '../modules/identity-and-authorization/r
 import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
 import { assertPermissionOnStore } from '~/utils/security';
-import {
-  getCheckpointFromRequest,
-  lastKnownCheckpoint,
-  waitFor,
-} from '~/utils/eventual-consistency';
+import { deserializeCheckpoint, waitFor } from '~/utils/eventual-consistency';
 import { factory } from '~/read-models/store';
 import { fossilEventStore, pool } from '~/config.backend';
 
@@ -32,13 +28,17 @@ export const loader: LoaderFunction = (args) =>
   loaderWithAuthorization<LoaderData>(
     args,
     async ({ params, profile, request }) => {
-      const checkpoint = await getCheckpointFromRequest(request);
-      if (checkpoint && 'global_position' in checkpoint) {
-        await waitFor(
-          factory(fossilEventStore, pool).checkpointStore,
-          checkpoint.global_position,
-          5000
-        );
+      const url = new URL(request.url);
+      if (url.searchParams.has('c')) {
+        const checkpoint = deserializeCheckpoint(url.searchParams.get('c')!);
+
+        if ('global_position' in checkpoint) {
+          await waitFor(
+            factory(fossilEventStore, pool).checkpointStore,
+            checkpoint.global_position,
+            5000
+          );
+        }
       }
 
       return assertPermissionOnStore(params.id!, profile.id);
