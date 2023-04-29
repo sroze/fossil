@@ -9,7 +9,7 @@ import {
 import { ValidatedForm } from 'remix-validated-form';
 import { RadioFieldset } from '~/modules/zod-forms/components/radio-fieldset';
 import { SuccessModal } from '~/modules/design-system/success-modal';
-import { CopyableLink } from '~/modules/design-system/copyable-link';
+import { CopyableText } from '~/modules/design-system/copyable-text';
 
 export const InviteUserForm: React.FC<{
   org_id: string;
@@ -24,7 +24,7 @@ export const InviteUserForm: React.FC<{
           User "{writer.data.invited_email}" has been invited. Send them the
           following link for them to accept the invitation:
         </p>
-        <CopyableLink href={writer.data.invitation_accept_url} />
+        <CopyableText text={writer.data.invitation_accept_url} />
       </SuccessModal>
     );
   }

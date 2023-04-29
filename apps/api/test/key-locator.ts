@@ -7,14 +7,23 @@ export class InMemoryKeyLocator implements KeyLocator {
       keyId: string;
       key: PublicKey;
     }>,
+    private readonly fallback?: KeyLocator,
   ) {}
 
   findPublicKey(
     storeId: string,
     keyId: string,
   ): Promise<PublicKey | undefined> {
-    return Promise.resolve(
-      this.keys.find((k) => k.storeId === storeId && k.keyId === keyId)?.key,
-    );
+    const key = this.keys.find(
+      (k) => k.storeId === storeId && k.keyId === keyId,
+    )?.key;
+
+    if (key) {
+      return Promise.resolve(key);
+    }
+
+    if (this.fallback) {
+      return this.fallback.findPublicKey(storeId, keyId);
+    }
   }
 }

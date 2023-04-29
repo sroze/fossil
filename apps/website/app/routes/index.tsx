@@ -44,28 +44,30 @@ export default function Orgs() {
           <H2>Your organisations</H2>
         </div>
 
-        {orgs.map((org) => (
-          <a
-            key={org.org_id}
-            href={`/orgs/${org.org_id}`}
-            className="block bg-white shadow sm:rounded-md hover:bg-gray-50"
-          >
-            <div className="flex items-center px-4 py-4 sm:px-6">
-              <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                {org.name}
+        <div className="bg-white shadow sm:rounded-md overflow-hidden">
+          {orgs.map((org) => (
+            <a
+              key={org.org_id}
+              href={`/orgs/${org.org_id}`}
+              className="block hover:bg-gray-50"
+            >
+              <div className="flex items-center px-4 py-4 sm:px-6">
+                <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                  {org.name}
+                </div>
+                <div className="mt-4 flex-shrink-0 sm:ml-5 sm:mt-0">
+                  {org.role}
+                </div>
+                <div className="ml-5 flex-shrink-0">
+                  <ChevronRightIcon
+                    className="h-5 w-5 text-gray-400"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
-              <div className="mt-4 flex-shrink-0 sm:ml-5 sm:mt-0">
-                {org.role}
-              </div>
-              <div className="ml-5 flex-shrink-0">
-                <ChevronRightIcon
-                  className="h-5 w-5 text-gray-400"
-                  aria-hidden="true"
-                />
-              </div>
-            </div>
-          </a>
-        ))}
+            </a>
+          ))}
+        </div>
 
         <div className="text-center p-4 mt-10">
           <PrimaryLink href="/orgs/new">New organisation</PrimaryLink>

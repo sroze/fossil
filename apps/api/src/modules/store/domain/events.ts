@@ -1,11 +1,36 @@
-import { PrivateKey, PublicKey } from 'store-security';
-export type AnyStoreEvent = KeyGenerated;
+import type { PrivateKey, PublicKey } from 'store-security';
 
-export type KeyGenerated = {
-  type: 'KeyGenerated';
+export type AnyStoreEvent =
+  | StoreCreatedEvent
+  | StoreDeletedEvent
+  | KeyCreatedEvent
+  | KeyDeletedEvent;
+
+type StoreCreatedEvent = {
+  type: 'StoreCreated';
+  data: {
+    name: string;
+  };
+};
+
+type StoreDeletedEvent = {
+  type: 'StoreDeleted';
+  data: {};
+};
+
+type KeyDeletedEvent = {
+  type: 'KeyDeleted';
+  data: {
+    key_id: string;
+  };
+};
+
+type KeyCreatedEvent = {
+  type: 'KeyCreated';
   data: {
     key_id: string;
     name: string;
     public_key: PublicKey;
-  } & ({ type: 'private' } | { type: 'hosted'; private_key: PrivateKey });
+    private_key?: PrivateKey;
+  };
 };

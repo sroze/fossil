@@ -3,36 +3,38 @@ import { ValidatedForm } from 'remix-validated-form';
 import React from 'react';
 import { FormInput } from '../../zod-forms/components/input';
 import { SubmitButton } from '../../zod-forms/components/submit-button';
-import {
-  generateKeyValidator,
-  SuccessfulGenerateKeyResponse,
-} from '../../../routes/api/stores.$id/keys.generate';
 import { PrimaryButton } from '../../design-system/buttons';
 import { LockClosedIcon, ShieldCheckIcon } from '@heroicons/react/24/solid';
 import { RadioFieldset } from '../../zod-forms/components/radio-fieldset';
 import { downloadFile } from '../utils/react';
+import { CreateKeyResponse } from 'fossil-api-client';
+import { generateKeyValidator } from '~/routes/api/stores.$id/keys.generate';
 
 export const GenerateKeyForm: React.FC<{
   store_id: string;
 }> = ({ store_id }) => {
-  const writer = useFetcher<SuccessfulGenerateKeyResponse>();
+  const writer = useFetcher<CreateKeyResponse>();
 
   if (writer.data) {
-    return (
-      <div>
-        The key has been successfully generated. The public key has been stored
-        on Fossil, while the private key should remain yours.
-        <PrimaryButton
-          onClick={() => {
-            downloadFile(
-              new File([JSON.stringify(writer.data!.private)], 'key.json')
-            );
-          }}
-        >
-          Download key
-        </PrimaryButton>
-      </div>
-    );
+    if (writer.data.private_key) {
+      return (
+        <div>
+          The key has been successfully generated. The public key has been
+          stored on Fossil, while the private key should remain yours.
+          <PrimaryButton
+            onClick={() => {
+              downloadFile(
+                new File([JSON.stringify(writer.data!.private_key)], 'key.json')
+              );
+            }}
+          >
+            Download key
+          </PrimaryButton>
+        </div>
+      );
+    } else {
+      return <div>The key has been successfully generated</div>;
+    }
   }
 
   return (
@@ -50,22 +52,22 @@ export const GenerateKeyForm: React.FC<{
         label="Type"
         options={[
           {
-            value: 'private',
+            value: 'downloaded',
             label: (
               <>
                 <LockClosedIcon className="text-gray-600 w-4 h-4 inline-block" />{' '}
-                Stored by you
+                Stored by you (Downloaded)
               </>
             ),
             description:
               'Only the public key remains in Fossil, you keep the private key. This is the most secure.',
           },
           {
-            value: 'hosted',
+            value: 'managed',
             label: (
               <>
                 <ShieldCheckIcon className="text-green-600 w-4 h-4 inline-block" />{' '}
-                A copy is stored in Fossil
+                A copy is stored in Fossil (Managed)
               </>
             ),
             description:

@@ -25,7 +25,7 @@ export class PublicKeysReadModel {
       {
         checkpointStore: new WithEventsCheckpointStore(
           this.store,
-          'ConsumerCheckpoint-api-v2',
+          'ConsumerCheckpoint-Keys-v1',
         ),
       },
     );
@@ -40,21 +40,22 @@ export class PublicKeysReadModel {
     type,
     data,
     stream_name,
-  }: EventInStore): Promise<void> {
+  }: EventInStore<AnyStoreEvent>): Promise<void> {
     const { identifier: storeId } = StreamName.decompose(stream_name);
 
-    if (type === 'KeyGenerated') {
-      if (!data.key_id || !data.public_key) {
-        // TODO: Remove this -- was needed for BC.
-        return;
-      }
-
+    if (type === 'KeyCreated') {
       await this.pool.query(
-        sql`INSERT INTO public_keys (store_id, key_id, key_name, public_key_kid, public_key)
+        sql`INSERT INTO keys (store_id, key_id, key_name, public_key_kid, public_key, private_key)
             VALUES (${storeId}, ${data.key_id}, ${data.name}, ${
           data.public_key.kid
-        }, ${JSON.stringify(data.public_key)})
+        }, ${JSON.stringify(data.public_key)}, ${
+          data.private_key ? JSON.stringify(data.private_key) : null
+        })
             ON CONFLICT DO NOTHING`,
+      );
+    } else if (type === 'KeyDeleted') {
+      await this.pool.query(
+        sql`DELETE FROM keys WHERE store_id = ${storeId} AND key_id = ${data.key_id}`,
       );
     }
   }

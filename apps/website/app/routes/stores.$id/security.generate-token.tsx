@@ -1,5 +1,5 @@
-import { ActionFunction, json, redirect } from '@remix-run/node';
-import { StoreService } from '../../modules/stores/service';
+import { ActionFunction, json, LoaderFunction } from '@remix-run/node';
+import { getAuthenticatedStoreApi } from '../../modules/stores/service';
 import { withZod } from '@remix-validated-form/with-zod';
 import { z } from 'zod';
 import { zValidJsonAsString } from '../../modules/zod-forms/validators/json';
@@ -7,7 +7,6 @@ import { validationError } from 'remix-validated-form';
 import { DateTime } from 'luxon';
 import { H2 } from '../../modules/design-system/h2';
 import { useActionData, useLoaderData } from '@remix-run/react';
-import { generateToken } from '~/modules/security/security.backend';
 import { storeApiBaseUrl } from '~/modules/api-client/config';
 
 const streamTemplate = z.string().min(1);
@@ -30,6 +29,12 @@ export const generateTokenValidator = withZod(
         types: z.array(z.string()).optional(),
       })
       .optional(),
+    management: z
+      .preprocess(
+        (value) => (typeof value === 'string' ? [value] : value),
+        z.array(z.enum(['subscriptions', 'keys', '*']))
+      )
+      .optional(),
     exp: z.string().datetime(),
     metadata: zValidJsonAsString.optional(),
   })
@@ -38,16 +43,14 @@ export const generateTokenValidator = withZod(
 type ActionData = { token: string };
 type LoaderData = { store_id: string };
 
-export const loader = async ({ params }) => {
-  await StoreService.resolve().load(params.id!);
-
+export const loader: LoaderFunction = async ({ params }) => {
   return json<LoaderData>({
     store_id: params.id!,
   });
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
-  const store = await StoreService.resolve().load(params.id!);
+  const store_id = params.id!;
   const { data, error } = await generateTokenValidator.validate(
     await request.formData()
   );
@@ -55,26 +58,21 @@ export const action: ActionFunction = async ({ params, request }) => {
     return validationError(error);
   }
 
-  const key = store.jwks.find((key) => key.key_id === data.key_id);
-  if (!key) {
-    throw new Error(`Key was not found`);
-  } else if (key.type !== 'hosted' || !key.private_key) {
-    throw new Error(`Can only generate tokens for hosted keys.`);
-  }
-
-  const { read, write, metadata } = data;
-  const claims = {
+  const api = await getAuthenticatedStoreApi(store_id);
+  const {
+    data: { token },
+  } = await api.generateToken(store_id, {
+    key_id: data.key_id,
     exp: DateTime.fromISO(data.exp).valueOf() / 1000,
-    fossil: {
-      store_id: store.id,
-      read,
-      write,
-      metadata,
+    claims: {
+      read: data.read,
+      write: data.write,
+      management: data.management,
     },
-  };
+  });
 
   return json<ActionData>({
-    token: await generateToken(key.private_key, claims),
+    token,
   });
 };
 

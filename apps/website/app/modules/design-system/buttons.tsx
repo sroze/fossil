@@ -2,12 +2,12 @@ import { classNames } from '../../utils/remix-front-end';
 import React from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger';
-type Size = 'small' | 'medium';
+export type ButtonSize = 'small' | 'medium';
 
 export const buttonClassNames = (): string =>
   'inline-flex items-center rounded-md border font-medium  shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2';
 
-export const sizeClassNames = (size: Size): string =>
+export const sizeClassNames = (size: ButtonSize): string =>
   size === 'small' ? 'mr-2 px-2.5 py-1.5 text-xs' : 'mr-3 py-2 px-4 text-sm';
 
 export const colorSchemeClassNames = (scheme: ButtonVariant): string => {
@@ -24,13 +24,14 @@ export const PrimaryButton: React.FC<{
   className?: string;
   onClick?: () => void;
   type?: 'button' | 'submit';
-}> = ({ children, type, className, onClick }) => (
+  size?: ButtonSize;
+}> = ({ children, type, className, onClick, size = 'medium' }) => (
   <button
     type={type || 'button'}
     onClick={onClick}
     className={classNames(
       buttonClassNames(),
-      sizeClassNames('medium'),
+      sizeClassNames(size),
       colorSchemeClassNames('primary'),
       className
     )}
@@ -39,16 +40,16 @@ export const PrimaryButton: React.FC<{
   </button>
 );
 
-export const SecondaryButton: React.FC<{ onClick?: () => void }> = ({
-  children,
-  onClick,
-}) => (
+export const SecondaryButton: React.FC<{
+  onClick?: () => void;
+  size?: ButtonSize;
+}> = ({ children, size = 'medium', onClick }) => (
   <button
     type="button"
     onClick={onClick}
     className={classNames(
       buttonClassNames(),
-      sizeClassNames('medium'),
+      sizeClassNames(size),
       colorSchemeClassNames('secondary')
     )}
   >
@@ -59,7 +60,7 @@ export const SecondaryButton: React.FC<{ onClick?: () => void }> = ({
 export const DangerButton: React.FC<{
   type?: 'button' | 'submit';
   onClick?: () => void;
-  size?: Size;
+  size?: ButtonSize;
 }> = ({ type = 'button', size = 'medium', onClick, children }) => (
   <button
     type={type}

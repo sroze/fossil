@@ -1,6 +1,7 @@
 import { Decider } from 'eskit-ish';
 import { AnyOrganisationEvent } from '~/modules/organisations/events';
 import { AnyOrganisationCommand } from '~/modules/organisations/commands';
+import { managementApi } from '~/modules/api-client/management';
 
 export type State = {
   name: string;
@@ -40,7 +41,7 @@ export const decider: Decider<
 
     return state;
   },
-  decide: ({ type, data }, state) => {
+  decide: async ({ type, data }, state) => {
     if (type === 'CreateOrganisationCommand') {
       return [
         {
@@ -78,6 +79,38 @@ export const decider: Decider<
           },
         ];
       }
+    } else if (type === 'CreateStore') {
+      const {
+        data: { id: store_id, management_token },
+      } = await managementApi.createStore({
+        id: data.id,
+        name: data.name,
+      });
+
+      return [
+        {
+          type: 'StoreCreated',
+          data: {
+            store_id,
+            management_token,
+            name: data.name,
+          },
+        },
+      ];
+    } else if (type === 'ArchiveStore') {
+      // TODO: at some point, we need to implement this.
+      // await managementApi.archiveStore({
+      //   store_id: data.store_id,
+      // });
+
+      return [
+        {
+          type: 'StoreArchived',
+          data: {
+            store_id: data.store_id,
+          },
+        },
+      ];
     }
 
     return [];

@@ -24,15 +24,15 @@ describe('Read', () => {
       stream = `Foo-${v4()}`;
       events = generateEvents(20);
 
-      const store = await app.get(StoreLocator).locate('123');
+      const store = await app.get(StoreLocator).locate(app.defaultStoreId);
       await store.appendEvents(stream, events, -1n);
     });
 
     it('returns 401 for a stream if the token does not match this store', async () => {
       await request(app.getHttpServer())
-        .get('/stores/123/streams/Foo-123/events')
+        .get(`/stores/${app.defaultStoreId}/streams/Foo-123/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             store_id: '678',
           }),
         )
@@ -41,8 +41,12 @@ describe('Read', () => {
 
     it('returns events in stream order', async () => {
       const { body } = await request(app.getHttpServer())
-        .get(`/stores/123/streams/${encodeURI(stream)}/events?size=10`)
-        .use(app.withToken('123', { read: { streams: [stream] } }))
+        .get(
+          `/stores/${app.defaultStoreId}/streams/${encodeURI(
+            stream,
+          )}/events?size=10`,
+        )
+        .use(app.withToken(app.defaultStoreId, { read: { streams: [stream] } }))
         .expect(200);
 
       const ids = body.items.map((e) => e.id);
@@ -53,13 +57,17 @@ describe('Read', () => {
       const {
         body: { pagination },
       } = await request(app.getHttpServer())
-        .get(`/stores/123/streams/${encodeURI(stream)}/events?size=10`)
-        .use(app.withToken('123', { read: { streams: [stream] } }))
+        .get(
+          `/stores/${app.defaultStoreId}/streams/${encodeURI(
+            stream,
+          )}/events?size=10`,
+        )
+        .use(app.withToken(app.defaultStoreId, { read: { streams: [stream] } }))
         .expect(200);
 
       const { body } = await request(app.getHttpServer())
         .get(pagination.next)
-        .use(app.withToken('123', { read: { streams: [stream] } }))
+        .use(app.withToken(app.defaultStoreId, { read: { streams: [stream] } }))
         .expect(200);
 
       const ids = body.items.map((e) => e.id);
@@ -68,8 +76,8 @@ describe('Read', () => {
 
     it('returns the head of the stream', async () => {
       const { body } = await request(app.getHttpServer())
-        .get(`/stores/123/streams/${encodeURI(stream)}/head`)
-        .use(app.withToken('123', { read: { streams: [stream] } }))
+        .get(`/stores/${app.defaultStoreId}/streams/${encodeURI(stream)}/head`)
+        .use(app.withToken(app.defaultStoreId, { read: { streams: [stream] } }))
         .expect(200);
 
       expect(body.id).toEqual(events[events.length - 1].id);
@@ -84,7 +92,7 @@ describe('Read', () => {
       category = `Category${v4().replace(/-/g, '')}`;
       events = generateEvents(20);
 
-      const store = await app.get(StoreLocator).locate('123');
+      const store = await app.get(StoreLocator).locate(app.defaultStoreId);
       for (const event of events) {
         await store.appendEvents(`${category}-${v4()}`, [event], -1n);
       }
@@ -92,9 +100,13 @@ describe('Read', () => {
 
     it('returns 401 for a category if the token does not match this store', async () => {
       await request(app.getHttpServer())
-        .get(`/stores/123/categories/${encodeURI(category)}/events`)
+        .get(
+          `/stores/${app.defaultStoreId}/categories/${encodeURI(
+            category,
+          )}/events`,
+        )
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             store_id: '678',
           }),
         )
@@ -103,9 +115,13 @@ describe('Read', () => {
 
     it('returns 403 for a category if the token does not allow the category', async () => {
       await request(app.getHttpServer())
-        .get(`/stores/123/categories/${encodeURI(category)}/events`)
+        .get(
+          `/stores/${app.defaultStoreId}/categories/${encodeURI(
+            category,
+          )}/events`,
+        )
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             read: { streams: [`Foo-*`] },
           }),
         )
@@ -114,8 +130,16 @@ describe('Read', () => {
 
     it('returns events based on the global order', async () => {
       const { body } = await request(app.getHttpServer())
-        .get(`/stores/123/categories/${encodeURI(category)}/events?size=10`)
-        .use(app.withToken('123', { read: { streams: [`${category}-*`] } }))
+        .get(
+          `/stores/${app.defaultStoreId}/categories/${encodeURI(
+            category,
+          )}/events?size=10`,
+        )
+        .use(
+          app.withToken(app.defaultStoreId, {
+            read: { streams: [`${category}-*`] },
+          }),
+        )
         .expect(200);
 
       const ids = body.items.map((e) => e.id);
@@ -126,13 +150,25 @@ describe('Read', () => {
       const {
         body: { pagination },
       } = await request(app.getHttpServer())
-        .get(`/stores/123/categories/${encodeURI(category)}/events?size=10`)
-        .use(app.withToken('123', { read: { streams: [`${category}-*`] } }))
+        .get(
+          `/stores/${app.defaultStoreId}/categories/${encodeURI(
+            category,
+          )}/events?size=10`,
+        )
+        .use(
+          app.withToken(app.defaultStoreId, {
+            read: { streams: [`${category}-*`] },
+          }),
+        )
         .expect(200);
 
       const { body } = await request(app.getHttpServer())
         .get(pagination.next)
-        .use(app.withToken('123', { read: { streams: [`${category}-*`] } }))
+        .use(
+          app.withToken(app.defaultStoreId, {
+            read: { streams: [`${category}-*`] },
+          }),
+        )
         .expect(200);
 
       const ids = body.items.map((e) => e.id);

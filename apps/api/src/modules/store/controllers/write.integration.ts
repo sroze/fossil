@@ -64,12 +64,12 @@ describe('Write', () => {
       const token = await generateToken(anotherKey.private, {
         exp: DateTime.now().valueOf() / 1000 + 3600,
         fossil: {
-          store_id: '123',
+          store_id: app.defaultStoreId,
         },
       });
 
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .set('authorization', `Bearer ${token}`)
         .send({ stream: 'Foo-123', events: [fooEvent] })
         .expect(401);
@@ -77,9 +77,9 @@ describe('Write', () => {
 
     it('returns 401 if the token does not match this store', async () => {
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             store_id: '678',
           }),
         )
@@ -91,17 +91,17 @@ describe('Write', () => {
   describe('With a valid authentication token', () => {
     it('returns 403 if they are not to write', async () => {
       await request(app.getHttpServer())
-        .post('/stores/123/events')
-        .use(app.withToken('123', {}))
+        .post(`/stores/${app.defaultStoreId}/events`)
+        .use(app.withToken(app.defaultStoreId, {}))
         .send({ stream: 'Foo-123', events: [fooEvent] })
         .expect(403);
     });
 
     it('returns 403 if the allowed streams are not matching', async () => {
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: ['Bar-123'] },
           }),
         )
@@ -113,9 +113,9 @@ describe('Write', () => {
       const stream = `Foo-${v4()}`;
 
       const { body } = await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [stream] },
           }),
         )
@@ -129,9 +129,9 @@ describe('Write', () => {
       const stream = `Foo-${v4()}`;
 
       const { body } = await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [stream] },
           }),
         )
@@ -148,9 +148,9 @@ describe('Write', () => {
       const stream = `Foo-${v4()}`;
 
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [stream] },
           }),
         )
@@ -162,9 +162,9 @@ describe('Write', () => {
       const stream = `Foo-${v4()}`;
 
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [stream] },
           }),
         )

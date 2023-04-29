@@ -87,7 +87,9 @@ export class SqsProxyController {
         ? request.headers['x-amz-security-token'][0]
         : request.headers['x-amz-security-token'];
 
-      const claims = await this.authenticator.authenticateToken(storeId, token);
+      const {
+        claims: { fossil: claims },
+      } = await this.authenticator.authenticateToken(storeId, token);
       if (!claims.read || claims.store_id !== storeId) {
         throw new ForbiddenException(
           'You are not authorized to read from this store with this token.',

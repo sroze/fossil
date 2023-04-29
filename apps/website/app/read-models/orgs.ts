@@ -30,7 +30,7 @@ export function factory(
         checkpointStore,
       }
     ),
-    handler: async ({ data, type, stream_name }) => {
+    handler: async ({ data, type, stream_name, global_position }) => {
       const { identifier } = StreamName.decompose(stream_name);
 
       const addUserToOrg = async (user_id: string, role: Role) => {
@@ -66,6 +66,22 @@ export function factory(
         );
       } else if (type === 'OrganisationDeleted') {
         await pool.query(sql`DELETE FROM orgs WHERE org_id = ${identifier}`);
+      } else if (type === 'StoreCreated') {
+        await pool.query(
+          sql`INSERT INTO stores (store_id, org_id, name, management_token, last_known_checkpoint)
+              VALUES (${data.store_id}, ${identifier}, ${data.name}, ${
+            data.management_token
+          }, ${String(global_position)}) ON CONFLICT (store_id) DO
+          UPDATE
+            SET name = EXCLUDED.name,
+            org_id = EXCLUDED.org_id,
+            last_known_checkpoint = EXCLUDED.last_known_checkpoint,
+            management_token = EXCLUDED.management_token`
+        );
+      } else if (type === 'StoreArchived') {
+        await pool.query(
+          sql`DELETE FROM stores WHERE store_id = ${data.store_id} AND org_id = ${identifier}`
+        );
       }
     },
   };

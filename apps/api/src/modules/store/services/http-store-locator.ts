@@ -4,7 +4,7 @@ import { IEventStore } from 'event-store';
 import {
   authorizeReadCategory,
   authorizeReadStream,
-  authorizeWrite,
+  authorizeWriteStream,
 } from 'store-security';
 import { HttpAuthenticator } from './http-authenticator';
 import { StoreLocator } from 'store-locator';
@@ -65,7 +65,7 @@ export class HttpStoreLocator {
       throw new ForbiddenException(
         'You are not authorized to write with this token.',
       );
-    } else if (!authorizeWrite(payload.write, stream)) {
+    } else if (!authorizeWriteStream(payload.write, stream)) {
       throw new ForbiddenException(
         'You are not authorized to write in this stream with this token.',
       );

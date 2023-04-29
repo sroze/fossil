@@ -22,11 +22,10 @@ export type ReadClaims = {
 
 export type WriteClaims = {
   streams?: string[];
-  types?: string[];
   subscriptions?: string[];
 };
 
-export type ManagementClaim = 'subscriptions';
+export type ManagementClaim = 'subscriptions' | 'keys' | '*';
 
 export interface FossilClaims {
   store_id: string;

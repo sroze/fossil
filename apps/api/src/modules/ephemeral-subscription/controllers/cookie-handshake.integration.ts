@@ -15,21 +15,21 @@ describe('Authenticated with a cookie', () => {
   describe('generates cookie through handshake', () => {
     it('refuses to set the cookie if the token is invalid', async () => {
       await request(app.getHttpServer())
-        .post('/stores/123/cookie-handshake')
+        .post(`/stores/${app.defaultStoreId}/cookie-handshake`)
         .use(app.withToken('678'))
         .expect(401);
     });
 
     it('sets a response cookie with a valid token', async () => {
       const { headers } = await request(app.getHttpServer())
-        .post('/stores/123/cookie-handshake')
-        .use(app.withToken('123'))
+        .post(`/stores/${app.defaultStoreId}/cookie-handshake`)
+        .use(app.withToken(app.defaultStoreId))
         .expect(201);
 
       expect('set-cookie' in headers).toBeTruthy();
       const setCookieString = headers['set-cookie'][0];
       expect(setCookieString).toBeDefined();
-      expect(setCookieString).toContain('fossil-123=');
+      expect(setCookieString).toContain(`fossil-${app.defaultStoreId}=`);
     });
   });
 
@@ -38,12 +38,12 @@ describe('Authenticated with a cookie', () => {
       const stream = 'a-stream';
 
       const { headers } = await request(app.getHttpServer())
-        .post('/stores/123/cookie-handshake')
-        .use(app.withToken('123', { read: { streams: [stream] } }))
+        .post(`/stores/${app.defaultStoreId}/cookie-handshake`)
+        .use(app.withToken(app.defaultStoreId, { read: { streams: [stream] } }))
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/stores/123/streams/a-stream/events?size=10`)
+        .get(`/stores/${app.defaultStoreId}/streams/a-stream/events?size=10`)
         .set('cookie', headers['set-cookie'][0])
         .expect(200);
     });

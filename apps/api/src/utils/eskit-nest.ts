@@ -29,17 +29,25 @@ export class EskitService<A extends Aggregate<any, any, any>> {
     private readonly category: Category,
   ) {}
 
+  async read(id: string): Promise<
+    | undefined
+    | {
+        state: inferredStateFromDecider<inferredDecider<A>>;
+        version: bigint;
+      }
+  > {
+    return createAggregate(this.store, this.decider).read(
+      this.category.stream(id),
+    );
+  }
+
   async readOrFail(id: string): Promise<{
     state: inferredStateFromDecider<inferredDecider<A>>;
     version: bigint;
   }> {
-    const { state, version } = await createAggregate(
-      this.store,
-      this.decider,
-    ).read(this.category.stream(id));
-
+    const { state, version } = await this.read(id);
     if (!state) {
-      throw new Error(`Relay was not found`);
+      throw new Error(`Aggregate not found.`);
     }
 
     return { state, version };

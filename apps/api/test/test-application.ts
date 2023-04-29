@@ -12,7 +12,16 @@ import { configureApplication } from '../src/application/configure';
 import type { Plugin, SuperAgentRequest } from 'superagent';
 import { DateTime } from 'luxon';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { KeyLocatorSymbol } from '../src/symbols';
+import {
+  KeyLocatorSymbol,
+  SystemDatabasePool,
+  SystemStore,
+} from '../src/symbols';
+import { createStore } from '../src/modules/store/utils/testing';
+import { IEventStore } from 'event-store';
+import { v4 } from 'uuid';
+import { DatabaseKeyLocator } from '../src/modules/store/services/database-key-locator';
+import { Pool } from 'pg';
 
 const asyncPlugin = (
   plugin: (req: SuperAgentRequest) => Promise<void>,
@@ -31,6 +40,8 @@ const asyncPlugin = (
 export class TestApplication {
   private app: INestApplication;
   private keyForStore: GeneratedKey;
+
+  public defaultStoreId: string;
 
   get<TInput = any, TResult = TInput>(
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -68,26 +79,34 @@ export class TestApplication {
     return new TestApplication();
   }
 
-  async init(defaultStoreIdentifier = '123'): Promise<TestApplication> {
+  async init(defaultStoreIdentifier = v4()): Promise<TestApplication> {
+    this.defaultStoreId = defaultStoreIdentifier;
     this.keyForStore = await generateKey();
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(KeyLocatorSymbol)
-      .useValue(
-        new InMemoryKeyLocator([
-          {
-            storeId: defaultStoreIdentifier,
-            keyId: this.keyForStore.private.kid,
-            key: this.keyForStore.public,
-          },
-        ]),
-      )
+      .useFactory({
+        inject: [SystemDatabasePool],
+        factory: (pool: Pool) =>
+          new InMemoryKeyLocator(
+            [
+              {
+                storeId: defaultStoreIdentifier,
+                keyId: this.keyForStore.private.kid,
+                key: this.keyForStore.public,
+              },
+            ],
+            new DatabaseKeyLocator(pool),
+          ),
+      })
       .compile();
 
     this.app = configureApplication(moduleRef.createNestApplication());
     await this.app.init();
+
+    await createStore(this.app, defaultStoreIdentifier);
 
     return this;
   }

@@ -2,9 +2,8 @@ import { loader } from './stores.$id';
 import { v4 } from 'uuid';
 import { authenticatedAsUser } from '~/utils/testing';
 import { organisation } from '~/modules/organisations/service';
-import { store } from '~/modules/stores/service';
+// import { store } from '~/modules/stores/service';
 import { factory as orgsFactory } from '~/read-models/orgs';
-import { factory as storeFactory } from '~/read-models/store';
 import { fossilEventStore, pool } from '~/config.backend';
 import { runUntilEof } from '~/utils/subscription';
 import * as identityResolver from '~/modules/identity-and-authorization/identity-resolver.server';
@@ -50,7 +49,7 @@ describe('stores.$id', () => {
     // Runs the necessary projections.
     await Promise.all([
       runUntilEof(orgsFactory(fossilEventStore, pool), 1000),
-      runUntilEof(storeFactory(fossilEventStore, pool), 1000),
+      // runUntilEof(storeFactory(fossilEventStore, pool), 1000),
     ]);
   });
 
@@ -151,7 +150,7 @@ describe('stores.$id', () => {
     });
 
     await sleep(50);
-    await runUntilEof(storeFactory(fossilEventStore, pool), 1000);
+    // await runUntilEof(storeFactory(fossilEventStore, pool), 1000);
 
     const response = await responsePromise;
     expect(response.status).toEqual(200);

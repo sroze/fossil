@@ -21,13 +21,13 @@ describe('Subscribe', () => {
   describe('to a category', () => {
     it('refuses if the token has not been crafted for this stream', async () => {
       // Receive events.
-      const token = await app.generateToken('123', {
+      const token = await app.generateToken(app.defaultStoreId, {
         read: { streams: [`AnotherCategory-*`] },
       });
 
       const client = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/categories/CategoryOne/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/categories/CategoryOne/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,
@@ -49,9 +49,9 @@ describe('Subscribe', () => {
       // Write some events
       const events = generateEvents(5);
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [`${category}-*`] },
           }),
         )
@@ -62,13 +62,13 @@ describe('Subscribe', () => {
         .expect(201);
 
       // Receive events.
-      const token = await app.generateToken('123', {
+      const token = await app.generateToken(app.defaultStoreId, {
         read: { streams: [`${category}-*`] },
       });
 
       const client = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/categories/${category}/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/categories/${category}/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,
@@ -91,13 +91,13 @@ describe('Subscribe', () => {
     });
 
     it('sends events that are being written after the subscription is opened', async () => {
-      const token = await app.generateToken('123', {
+      const token = await app.generateToken(app.defaultStoreId, {
         read: { streams: ['Foo-*'] },
       });
 
       const client = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/categories/Foo/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/categories/Foo/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,
@@ -111,9 +111,9 @@ describe('Subscribe', () => {
         const stream = `Foo-${v4()}`;
         const event = generateEvent();
         await request(app.getHttpServer())
-          .post('/stores/123/events')
+          .post(`/stores/${app.defaultStoreId}/events`)
           .use(
-            app.withToken('123', {
+            app.withToken(app.defaultStoreId, {
               write: { streams: [stream] },
             }),
           )
@@ -141,9 +141,9 @@ describe('Subscribe', () => {
       // Write some events
       const events = generateEvents(5);
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [`${category}-*`] },
           }),
         )
@@ -154,13 +154,13 @@ describe('Subscribe', () => {
         .expect(201);
 
       // Receive events.
-      const token = await app.generateToken('123', {
+      const token = await app.generateToken(app.defaultStoreId, {
         read: { streams: [`${category}-*`] },
       });
 
       const client = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/categories/${category}/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/categories/${category}/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,
@@ -188,7 +188,7 @@ describe('Subscribe', () => {
       // Receive again...
       const secondClient = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/categories/${category}/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/categories/${category}/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,
@@ -217,9 +217,9 @@ describe('Subscribe', () => {
       // Write some events
       const events = generateEvents(5);
       await request(app.getHttpServer())
-        .post('/stores/123/events')
+        .post(`/stores/${app.defaultStoreId}/events`)
         .use(
-          app.withToken('123', {
+          app.withToken(app.defaultStoreId, {
             write: { streams: [`${category}-*`] },
           }),
         )
@@ -230,13 +230,13 @@ describe('Subscribe', () => {
         .expect(201);
 
       // Receive events.
-      const token = await app.generateToken('123', {
+      const token = await app.generateToken(app.defaultStoreId, {
         read: { streams: [`${category}-*`] },
       });
 
       const client = new SseClient(app, {
         method: 'GET',
-        path: `/stores/123/streams/${stream}/sse-stream`,
+        path: `/stores/${app.defaultStoreId}/streams/${stream}/sse-stream`,
         headers: {
           Accept: 'text/event-stream',
           Authorization: `Bearer ${token}`,

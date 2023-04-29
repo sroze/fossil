@@ -4,8 +4,8 @@ import { validationError } from 'remix-validated-form';
 import { z } from 'zod';
 import { v4 } from 'uuid';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
-import { store } from '~/modules/stores/service';
 import { serializeCheckpoint } from '~/utils/eventual-consistency';
+import { organisation } from '~/modules/organisations/service';
 
 export const generateStoreValidator = withZod(
   z.object({
@@ -25,17 +25,16 @@ export const action: ActionFunction = (args) =>
       return validationError(error);
     }
 
-    const identifier = v4();
-    const { global_position } = await store(identifier).write({
-      type: 'CreateStoreCommand',
+    const storeId = v4();
+    const { global_position } = await organisation(params.id!).write({
+      type: 'CreateStore',
       data: {
-        ...data,
-        id: identifier,
-        owning_org_id: params.id!,
+        id: storeId,
+        name: data.name,
       },
     });
 
     return redirect(
-      `/stores/${identifier}?c=${serializeCheckpoint({ global_position })}`
+      `/stores/${storeId}?c=${serializeCheckpoint({ global_position })}`
     );
   });

@@ -17,7 +17,7 @@ import { SqsProxyController } from './modules/sqs-relay/controllers/sqs-proxy';
 import { SQSClient } from '@aws-sdk/client-sqs';
 import { PrepareQueueProcess } from './modules/sqs-relay/processes/prepare-queue';
 import { SqsRelayRunner } from './modules/sqs-relay/runner/runner';
-import { PublicKeysReadModel } from './modules/store/read-models/public-keys';
+import { PublicKeysReadModel } from './modules/store/read-models/keys';
 import { RunningSubscriptionsManager } from './modules/sqs-relay/runner-pool/manager';
 import { DurableSubscriptionsReadModel } from './modules/durable-subscription/read-models/durable-subscriptions';
 import { DurableSubscriptionFactory } from './modules/durable-subscription/factory';
@@ -27,6 +27,13 @@ import { SqsRelayManagement } from './modules/sqs-relay/controllers/management';
 import { EskitService } from './utils/eskit-nest';
 import { aggregate as durableSubscription } from './modules/durable-subscription/domain/aggregate';
 import { aggregate as sqsRelay } from './modules/sqs-relay/domain/decider';
+import { aggregate as store } from './modules/store/domain/aggregate';
+import { KeysController } from './modules/store/controllers/keys';
+import { StoreManagementController } from './modules/store/controllers/management';
+import { HttpAuthorizer } from './modules/store/services/http-authorizer';
+import { TokensController } from './modules/store/controllers/tokens';
+import { GenerateTokenCommand } from './modules/store/commands/generake-token';
+import { InitCommand } from './modules/store/commands/init';
 
 @Module({
   imports: [PrometheusModule.register()],
@@ -39,10 +46,14 @@ import { aggregate as sqsRelay } from './modules/sqs-relay/domain/decider';
     PollAndCommitSubscriptionController,
     DurableSubscriptionManagementController,
     SqsRelayManagement,
+    KeysController,
+    StoreManagementController,
+    TokensController,
   ],
   providers: [
     HttpAuthenticator,
     HttpStoreLocator,
+    HttpAuthorizer,
     {
       provide: SystemDatabasePool,
       useFactory: () =>
@@ -108,6 +119,14 @@ import { aggregate as sqsRelay } from './modules/sqs-relay/domain/decider';
         new EskitService(store, sqsRelay.decider, sqsRelay.category),
       inject: [SystemStore],
     },
+    {
+      provide: store.symbol,
+      useFactory: (s: IEventStore) =>
+        new EskitService(s, store.decider, store.category),
+      inject: [SystemStore],
+    },
+    GenerateTokenCommand,
+    InitCommand,
   ],
 })
 export class AppModule implements OnApplicationShutdown {

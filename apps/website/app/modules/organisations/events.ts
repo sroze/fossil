@@ -2,7 +2,9 @@ export type AnyOrganisationEvent =
   | OrganisationCreated
   | OrganisationDeleted
   | UserJoinedOrganisation
-  | UserLeftOrganisation;
+  | UserLeftOrganisation
+  | StoreCreated
+  | StoreArchived;
 
 export type Role = 'member' | 'admin';
 export type OrganisationCreated = {
@@ -30,5 +32,21 @@ export type UserLeftOrganisation = {
   type: 'UserLeftOrganisation';
   data: {
     user_id: string;
+  };
+};
+
+export type StoreCreated = {
+  type: 'StoreCreated';
+  data: {
+    store_id: string;
+    management_token: string;
+    name: string;
+  };
+};
+
+export type StoreArchived = {
+  type: 'StoreArchived';
+  data: {
+    store_id: string;
   };
 };

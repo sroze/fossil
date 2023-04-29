@@ -18,7 +18,7 @@ export type Decider<S, E, C> = {
   /**
    * The decision function. Given a command and current state, what decisions should be made?
    */
-  decide: (command: C, state: S) => E[];
+  decide: (command: C, state: S) => E[] | Promise<E[]>;
   /**
    * Optional but highly encouraged.
    * A terminal decider can make no more decisions and is a prime
@@ -117,7 +117,8 @@ export const createAggregate = <
       );
     }
 
-    const eventsToAppend = decider.decide(command, state).map((ev) => {
+    const events = await decider.decide(command, state);
+    const eventsToAppend = events.map((ev) => {
       const encoded = codec.encode(ev);
       return {
         id: encoded.id,

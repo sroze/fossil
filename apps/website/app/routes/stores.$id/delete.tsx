@@ -1,8 +1,8 @@
 import { ActionFunction, redirect } from '@remix-run/node';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
-import { store } from '~/modules/stores/service';
 import { pool } from '~/config.backend';
 import sql from 'sql-template-tag';
+import { organisation } from '~/modules/organisations/service';
 
 export const action: ActionFunction = (args) =>
   actionWithAuthorization(args, async ({ params, request }) => {
@@ -27,10 +27,21 @@ export const action: ActionFunction = (args) =>
       );
     }
 
-    // Delete the store
-    await store(params.id!).write({
-      type: 'DeleteStore',
-      data: {},
+    // Get the organisation
+    const {
+      rows: [{ org_id }],
+    } = await pool.query<{ org_id: string }>(
+      sql`SELECT org_id FROM stores WHERE store_id = ${store_id}`
+    );
+    if (!org_id) {
+      throw new Error(`Store not found`);
+    }
+
+    await organisation(org_id).write({
+      type: 'ArchiveStore',
+      data: {
+        store_id,
+      },
     });
 
     return redirect(`/`);

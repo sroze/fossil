@@ -1,21 +1,16 @@
-import { withZod } from '@remix-validated-form/with-zod';
-import { z } from 'zod';
-import { ActionFunction, DataFunctionArgs, json } from '@remix-run/node';
-import { generateKey } from '../../../modules/security/security.backend';
-import { StoreService } from '../../../modules/stores/service';
+import { ActionFunction, json } from '@remix-run/node';
 import { actionWithAuthorization } from '~/modules/identity-and-authorization/remix-utils.server';
 import { assertPermissionOnStore } from '~/utils/security';
+import { withZod } from '@remix-validated-form/with-zod';
+import { z } from 'zod';
+import { getAuthenticatedStoreApi } from '~/modules/stores/service';
 
 export const generateKeyValidator = withZod(
   z.object({
     name: z.string().min(1),
-    type: z.enum(['private', 'hosted']),
+    type: z.enum(['managed', 'downloaded']),
   })
 );
-
-export type SuccessfulGenerateKeyResponse = Awaited<
-  ReturnType<typeof generateKey>
->;
 
 export const action: ActionFunction = (args) =>
   actionWithAuthorization(args, async ({ request, params, profile }) => {
@@ -30,7 +25,8 @@ export const action: ActionFunction = (args) =>
       return json(error, 400);
     }
 
-    const key = await StoreService.resolve().createKey(store_id, data);
+    const api = await getAuthenticatedStoreApi(store_id);
+    const { data: response } = await api.createKey(store_id, data);
 
-    return json<SuccessfulGenerateKeyResponse>(key);
+    return response;
   });

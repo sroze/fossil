@@ -14,7 +14,7 @@ import { Navbar } from '../modules/layout/organisms/Navbar';
 import { Nav } from '~/modules/design-system/nav';
 import { assertPermissionOnStore } from '~/utils/security';
 import { deserializeCheckpoint, waitFor } from '~/utils/eventual-consistency';
-import { factory } from '~/read-models/store';
+import { factory } from '~/read-models/orgs';
 import { fossilEventStore, pool } from '~/config.backend';
 
 type LoaderData = {
