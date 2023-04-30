@@ -136,6 +136,7 @@ export default function Task() {
   return (
     <div>
       <form action={`/tasks/${id}`} method="post">
+        // FIXME: Can we explicitly send `false` when not checked?
         <input
           type="checkbox"
           checked={task.completed}

@@ -19,31 +19,39 @@ export class StreamClient<T> {
     };
   }
 
-  receive(responseCallback?: (res: http.IncomingMessage) => void) {
+  receive(
+    responseCallback?: (res: http.IncomingMessage) => void,
+    optionsOverrides: RequestOptions = {},
+  ) {
     this.received = [];
 
     return new Promise<T[]>((resolve, reject) => {
-      this.request = http.request(this.options, (res) => {
-        if (responseCallback) {
-          responseCallback(res);
-        }
-
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-          if (chunk.length === 0) {
-            return;
+      this.request = http.request(
+        { ...this.options, ...optionsOverrides },
+        (res) => {
+          if (responseCallback) {
+            responseCallback(res);
           }
 
-          const parsed = this.parse(chunk);
-          if (parsed) {
-            this.received.push(...(Array.isArray(parsed) ? parsed : [parsed]));
-          }
-        });
+          res.setEncoding('utf8');
+          res.on('data', (chunk) => {
+            if (chunk.length === 0) {
+              return;
+            }
 
-        res.on('end', () => {
-          resolve(this.received);
-        });
-      });
+            const parsed = this.parse(chunk);
+            if (parsed) {
+              this.received.push(
+                ...(Array.isArray(parsed) ? parsed : [parsed]),
+              );
+            }
+          });
+
+          res.on('end', () => {
+            resolve(this.received);
+          });
+        },
+      );
 
       this.request.on('close', () => {
         resolve(this.received);
@@ -82,6 +90,17 @@ export class SseClient extends StreamClient<Partial<MessageEvent>> {
       }
 
       return 'data' in parsed ? parsed : undefined;
+    });
+  }
+}
+
+export class NdjsonClient<T = object> extends StreamClient<T> {
+  constructor(app: TestApplication, request: RequestOptions) {
+    super(app, request, (chunk) => {
+      return chunk
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
     });
   }
 }

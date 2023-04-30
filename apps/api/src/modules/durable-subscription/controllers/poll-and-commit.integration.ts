@@ -1,7 +1,7 @@
 import { v4 } from 'uuid';
 import { TestApplication } from '../../../../test/test-application';
 import request from 'supertest';
-import { createSubscription, NdjsonClient } from '../utils/testing';
+import { createSubscription } from '../utils/testing';
 import { EventToWrite, IEventStore } from 'event-store';
 import { SystemStore } from '../../../symbols';
 import { runUntilEof } from '../../../utils/runners';
@@ -12,6 +12,7 @@ import {
 } from '../../../../test/event-generator';
 import { StoreLocator } from 'store-locator';
 import { EventOverTheWire } from 'event-serialization';
+import { NdjsonClient } from '../../ephemeral-subscription/utils/testing';
 
 describe('Poll & Commit', () => {
   const storeId = v4();

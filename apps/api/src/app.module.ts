@@ -10,7 +10,7 @@ import { StoreLocator } from 'store-locator';
 import { ReadController } from './modules/store/controllers/read';
 import { HttpAuthenticator } from './modules/store/services/http-authenticator';
 import { HttpStoreLocator } from './modules/store/services/http-store-locator';
-import { SubscribeController } from './modules/ephemeral-subscription/controllers/sse-stream';
+import { SseStreamController } from './modules/ephemeral-subscription/controllers/sse-stream';
 import { DatabaseKeyLocator } from './modules/store/services/database-key-locator';
 import { CookieHandshakeController } from './modules/ephemeral-subscription/controllers/cookie-handshake';
 import { SqsProxyController } from './modules/sqs-relay/controllers/sqs-proxy';
@@ -34,14 +34,16 @@ import { HttpAuthorizer } from './modules/store/services/http-authorizer';
 import { TokensController } from './modules/store/controllers/tokens';
 import { GenerateTokenCommand } from './modules/store/commands/generake-token';
 import { InitCommand } from './modules/store/commands/init';
+import { PollController } from './modules/ephemeral-subscription/controllers/poll';
 
 @Module({
   imports: [PrometheusModule.register()],
   controllers: [
     WriteController,
     ReadController,
-    SubscribeController,
+    SseStreamController,
     CookieHandshakeController,
+    PollController,
     SqsProxyController,
     PollAndCommitSubscriptionController,
     DurableSubscriptionManagementController,

@@ -27,17 +27,16 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import type { WritableHeaderStream } from '@nestjs/core/router/sse-stream';
-import { NdjsonStream } from '../utils/ndjson-stream';
-import { serializeEventInStoreForWire } from 'event-serialization';
 import {
   authorizeReadSubscription,
   authorizeWriteSubscription,
 } from 'store-security';
 import { HttpAuthenticator } from '../../store/services/http-authenticator';
+import { subscriptionAsNdjsonStream } from '../../ephemeral-subscription/utils/ndjson-stream';
+import { Type } from 'class-transformer';
 
-class PollQueryParams {
+class PollSubscriptionParams {
   @ApiPropertyOptional({
     description: 'The maximum number of events to return.',
     default: 50,
@@ -60,12 +59,6 @@ class PollQueryParams {
   @Min(0)
   @Max(30)
   idleTimeout = 30;
-
-  // TODO: add a `from` parameter to allow resuming from a specific position. While
-  //       this is not necessary, it would be nice to be able to have long-running
-  //       consumers sending this back in parallel to the commit process, so we don't
-  //       add unnecessary latency when not needed. We'd have to handle conflict when a
-  //       consumer sends a position lower than the last known committed position, though.
 }
 
 class CommitBody {
@@ -95,9 +88,9 @@ export class PollAndCommitSubscriptionController {
   async poll(
     @Param('storeId') storeId: string,
     @Param('subscriptionId') subscriptionId: string,
-    @Query() { maxEvents, idleTimeout }: PollQueryParams,
+    @Query() queryParams: PollSubscriptionParams,
     @Req() request: Request,
-    @Res() res: WritableHeaderStream,
+    @Res() response: WritableHeaderStream,
   ) {
     const payload = await this.authenticator.authenticate(storeId, request);
     if (!payload.read) {
@@ -114,31 +107,13 @@ export class PollAndCommitSubscriptionController {
       subscriptionId,
     );
 
-    const controller = new AbortController();
-    request.on('close', () => controller.abort());
-
-    const stream = new NdjsonStream(request);
-    stream.pipe(res, {});
-
-    let idleTimeoutId: NodeJS.Timeout | undefined = setTimeout(
-      () => controller.abort(),
-      idleTimeout * 1000,
+    await subscriptionAsNdjsonStream(
+      request,
+      response,
+      subscription,
+      queryParams.maxEvents,
+      queryParams.idleTimeout,
     );
-
-    let numberOfEvents = 0;
-    await subscription.start(async (event) => {
-      clearTimeout(idleTimeoutId);
-      idleTimeoutId = setTimeout(() => controller.abort(), idleTimeout * 1000);
-
-      await stream.writeLine(serializeEventInStoreForWire(event));
-
-      if (++numberOfEvents >= maxEvents) {
-        controller.abort();
-      }
-    }, controller.signal);
-
-    clearTimeout(idleTimeoutId);
-    res.end();
   }
 
   @ApiOperation({

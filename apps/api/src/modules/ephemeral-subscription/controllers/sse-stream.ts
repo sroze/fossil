@@ -57,7 +57,7 @@ export const ServerSentEventsOperation = (): MethodDecorator &
 
 @ApiTags('ServerSentEvents')
 @Controller()
-export class SubscribeController {
+export class SseStreamController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
 
   @ApiOperation({
@@ -113,7 +113,7 @@ export class SubscribeController {
       lastEventId = lastEventId[0];
     }
 
-    const manager = new Subscription(store, subscribeTo, {
+    const subscription = new Subscription(store, subscribeTo, {
       checkpointStore: new InMemoryCheckpointStore(
         lastEventId ? BigInt(lastEventId) : 0n,
       ),
@@ -131,7 +131,7 @@ export class SubscribeController {
     const eventPositionResolver = (event: EventInStore) =>
       'category' in subscribeTo ? event.global_position : event.position + 1n;
 
-    await manager.start((event) => {
+    await subscription.start((event) => {
       return new Promise<void>((resolve, reject) => {
         stream.writeMessage(
           {

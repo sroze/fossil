@@ -1,8 +1,5 @@
 import { IEventStore } from 'event-store';
-import { RequestOptions } from 'http';
 import { AnySubscriptionEvent } from '../domain/events';
-import { TestApplication } from '../../../../test/test-application';
-import { StreamClient } from '../../ephemeral-subscription/utils/testing';
 import { Subscription } from '../domain/category';
 
 export const createSubscription = async (
@@ -27,14 +24,3 @@ export const createSubscription = async (
     -1n,
   );
 };
-
-export class NdjsonClient<T = object> extends StreamClient<T> {
-  constructor(app: TestApplication, request: RequestOptions) {
-    super(app, request, (chunk) => {
-      return chunk
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => JSON.parse(line));
-    });
-  }
-}
