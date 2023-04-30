@@ -1,7 +1,6 @@
 import { Subscription } from './subscription';
-import { EventInStore, IEventStore } from 'event-store';
+import type { EventInStore, IEventStore } from 'event-store';
 import { InMemoryCheckpointStore } from './checkpoint-store/in-memory';
-import { CheckpointAfterNMessages } from './checkpoint-strategy/message-count';
 import { sleep } from './sleep';
 import { v4 } from 'uuid';
 

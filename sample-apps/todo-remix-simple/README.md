@@ -8,7 +8,15 @@ This application demonstrates multiple examples of using Fossil with Remix.
 - The list of tasks is an asynchronous projection, maintaining a list of tasks in a PostgreSQL table.
 
 **Note:** they are many ways to implement this application (including ones that only use Fossil and
-do not require a database). This is intended to demonstrate most fossil features.
+do not require a database). It does not feature the usage of Fossil's `aggregate` feature, or the durable subscriptions.
+
+## Installation
+
+1. Create a store in Fossil and generate a management token (go to "Security" > "Generate token" and select `*` under "Management").
+   Add the token to the `.env` file:
+   ```
+   FOSSIL_MANAGEMENT_TOKEN=...
+   ```
 
 ## Getting started
 

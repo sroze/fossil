@@ -15,7 +15,33 @@ import { Type } from 'class-transformer';
 import { signalForRequest } from '../../../utils/requests';
 import { HttpStoreLocator } from '../services/http-store-locator';
 
-export class EventInStoreDto {}
+export class EventInStoreDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  stream_name: string;
+
+  @ApiProperty()
+  position: string;
+
+  @ApiProperty()
+  global_position: string;
+
+  @ApiProperty()
+  type: string;
+
+  @ApiProperty()
+  data: object;
+
+  @ApiProperty({
+    description: 'Datetime at which the event was written (ISO format).',
+  })
+  time: string;
+
+  @ApiPropertyOptional()
+  metadata?: object;
+}
 
 /**
  * This pagination is heavily inspired from RFC 5005 which talks

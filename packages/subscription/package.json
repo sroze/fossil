@@ -28,9 +28,7 @@
     "jest-presets": "workspace:*",
     "tsconfig": "workspace:*",
     "typescript": "^4.8.3",
-    "uuid": "^9.0.0"
-  },
-  "dependencies": {
+    "uuid": "^9.0.0",
     "event-store": "workspace:*"
   }
 }

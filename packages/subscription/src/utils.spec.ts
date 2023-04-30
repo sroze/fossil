@@ -1,4 +1,4 @@
-import { EventInStore } from 'event-store';
+import type { EventInStore } from 'event-store';
 import { composeHandlers } from './utils';
 
 const dummyEvent: EventInStore = {

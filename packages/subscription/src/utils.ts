@@ -1,4 +1,4 @@
-import { MinimumEventType } from 'event-store';
+import type { MinimumEventType } from 'event-store';
 import {
   AdvancedHandler,
   asAdvancedHandler,

@@ -31,7 +31,7 @@ export class InitCommand extends CommandRunner {
         throw new Error(`Management key was not found.`);
       }
 
-      console.log(`Store was already created.`);
+      console.log(`Store was created.`);
     } else {
       console.log(`Store already exists.`);
     }

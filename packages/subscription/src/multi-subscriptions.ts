@@ -3,8 +3,7 @@ import {
   Handler,
   SubscriptionInterface,
 } from './subscription';
-import { MinimumEventType } from 'event-store';
-import { composeHandlers } from './utils';
+import type { MinimumEventType } from 'event-store';
 
 export class MultiSubscriptions {
   constructor(private readonly subscriptions: SubscriptionInterface[]) {}

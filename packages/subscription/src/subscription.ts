@@ -3,7 +3,7 @@ import type { EventInStore, IEventStore } from 'event-store';
 import type { ICheckpointStore } from './checkpoint-store/interfaces';
 import type { CheckpointStrategy } from './checkpoint-strategy/interfaces';
 import { sleep } from './sleep';
-import { MinimumEventType } from 'event-store';
+import type { MinimumEventType } from 'event-store';
 import { CheckpointAfterNMessages } from './checkpoint-strategy/message-count';
 
 export type MessageFunctionHandler<

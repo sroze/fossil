@@ -5,7 +5,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "@remix-run/react";
+} from '@remix-run/react';
+import stylesheet from '~/tailwind.css';
+import { LinksFunction } from '@remix-run/node';
+
+export const links: LinksFunction = () => [
+  { rel: 'stylesheet', href: stylesheet },
+];
 
 export default function App() {
   return (
