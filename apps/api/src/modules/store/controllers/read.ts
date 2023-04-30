@@ -1,5 +1,13 @@
-import { Controller, Get, Param, Query, Req } from '@nestjs/common';
 import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+  Req,
+} from '@nestjs/common';
+import {
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiProperty,
@@ -134,6 +142,7 @@ export class ReadController {
     operationId: 'streamHead',
   })
   @ApiOkResponse({ type: EventInStoreDto })
+  @ApiNotFoundResponse()
   async streamHead(
     @Param('id') storeId: string,
     @Param('stream') stream: string,
@@ -145,9 +154,12 @@ export class ReadController {
       stream,
     );
 
-    return serializeEventInStoreForWire(
-      await store.lastEventFromStream(stream),
-    );
+    const head = await store.lastEventFromStream(stream);
+    if (!head) {
+      throw new NotFoundException(`Stream was not found.`);
+    }
+
+    return serializeEventInStoreForWire(head);
   }
 
   @Get('stores/:id/categories/:category/events')

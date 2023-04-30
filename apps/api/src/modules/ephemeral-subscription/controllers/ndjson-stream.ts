@@ -40,12 +40,12 @@ class PollParams {
   after?: string;
 }
 
-@ApiTags('Poll')
+@ApiTags('Stream')
 @Controller()
 export class PollController {
   constructor(private readonly storeLocator: HttpStoreLocator) {}
 
-  @Get('stores/:storeId/categories/:category/poll')
+  @Get('stores/:storeId/categories/:category/ndjson-stream')
   @ApiOperation({
     summary: 'Poll for events in a category.',
     operationId: 'pollCategory',
@@ -84,7 +84,7 @@ export class PollController {
     );
   }
 
-  @Get('stores/:storeId/streams/:stream/poll')
+  @Get('stores/:storeId/streams/:stream/ndjson-stream')
   @ApiOperation({
     summary: 'Poll for events in a stream.',
     operationId: 'pollStream',

@@ -82,6 +82,22 @@ describe('Read', () => {
 
       expect(body.id).toEqual(events[events.length - 1].id);
     });
+
+    it('returns a not found response when the stream does not exists and we are asking the head', async () => {
+      const unknownStream = `Stream-${v4()}`;
+      await request(app.getHttpServer())
+        .get(
+          `/stores/${app.defaultStoreId}/streams/${encodeURI(
+            unknownStream,
+          )}/head`,
+        )
+        .use(
+          app.withToken(app.defaultStoreId, {
+            read: { streams: [unknownStream] },
+          }),
+        )
+        .expect(404);
+    });
   });
 
   describe('a category', () => {

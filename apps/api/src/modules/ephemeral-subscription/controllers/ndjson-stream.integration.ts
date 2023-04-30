@@ -10,7 +10,7 @@ import { NdjsonClient } from '../utils/testing';
 import { EventInStoreDto } from '../../store/controllers/read';
 import { EventOverTheWire } from 'event-serialization';
 
-describe('Poll', () => {
+describe('Stream', () => {
   let app: TestApplication;
 
   beforeAll(async () => {
@@ -43,7 +43,7 @@ describe('Poll', () => {
     it('returns a batch of messages and can continue through with the position query', async () => {
       const path = `/stores/${
         app.defaultStoreId
-      }/categories/${encodeURIComponent(category)}/poll?maxEvents=10`;
+      }/categories/${encodeURIComponent(category)}/ndjson-stream?maxEvents=10`;
 
       const client = new NdjsonClient<EventInStoreDto>(app, {
         method: 'GET',
@@ -81,7 +81,7 @@ describe('Poll', () => {
         method: 'GET',
         path: `/stores/${app.defaultStoreId}/categories/${encodeURIComponent(
           category,
-        )}/poll?maxEvents=21&idleTimeout=1`,
+        )}/ndjson-stream?maxEvents=21&idleTimeout=1`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -98,7 +98,7 @@ describe('Poll', () => {
         method: 'GET',
         path: `/stores/${app.defaultStoreId}/categories/${encodeURIComponent(
           category,
-        )}/poll?maxEvents=21&idleTimeout=1`,
+        )}/ndjson-stream?maxEvents=21&idleTimeout=1`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -137,7 +137,7 @@ describe('Poll', () => {
     it('works similarly to the category', async () => {
       const path = `/stores/${app.defaultStoreId}/streams/${encodeURIComponent(
         stream,
-      )}/poll?maxEvents=10`;
+      )}/ndjson-stream?maxEvents=10`;
 
       const client = new NdjsonClient<EventInStoreDto>(app, {
         method: 'GET',
@@ -167,4 +167,6 @@ describe('Poll', () => {
       );
     });
   });
+
+  it.todo('expose EOF events');
 });

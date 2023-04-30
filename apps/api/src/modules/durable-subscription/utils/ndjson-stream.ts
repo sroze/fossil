@@ -51,7 +51,7 @@ export class NdjsonStream extends Transform {
     encoding: string,
     callback: (error?: Error | null, data?: any) => void,
   ) {
-    this.push(JSON.stringify(message));
+    this.push(JSON.stringify(message) + '\n');
     callback();
   }
 

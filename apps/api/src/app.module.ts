@@ -34,7 +34,7 @@ import { HttpAuthorizer } from './modules/store/services/http-authorizer';
 import { TokensController } from './modules/store/controllers/tokens';
 import { GenerateTokenCommand } from './modules/store/commands/generake-token';
 import { InitCommand } from './modules/store/commands/init';
-import { PollController } from './modules/ephemeral-subscription/controllers/poll';
+import { PollController } from './modules/ephemeral-subscription/controllers/ndjson-stream';
 
 @Module({
   imports: [PrometheusModule.register()],
