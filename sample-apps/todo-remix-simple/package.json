@@ -6,8 +6,7 @@
     "dev": "concurrently \"remix dev\" \"npm run dev:read-models\"",
     "dev:read-models": "tsup app/entry.read-models.ts --format cjs --watch --onSuccess \"node dist/entry.read-models.js\"",
     "start": "remix-serve build",
-    "typecheck": "tsc",
-    "migrate": "if [ -f .env ]; then source .env; fi && pg-migrations apply --directory ../todo-remix/migrations -c $DATABASE_URL"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@remix-run/node": "^1.15.0",
@@ -18,7 +17,6 @@
     "event-store": "workspace:*",
     "fossil-api-client": "workspace:*",
     "isbot": "^3.6.8",
-    "pg-migrations": "^0.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "uuid": "^9.0.0",
