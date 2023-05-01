@@ -1,9 +1,8 @@
 import { ActionFunction, LoaderFunction, redirect } from '@remix-run/node';
 import { zfd } from 'zod-form-data';
-import { storeApi } from '~/config/fossil';
 import { v4 } from 'uuid';
-import { AnyTaskEvent, TaskCreatedEvent } from '~/domain/events';
-import { FossilStoreClient } from '~/config/client';
+import { AnyTaskEvent } from '../domain/events';
+import { FossilStoreClient } from '../config/client';
 
 const newTaskSchema = zfd.formData({
   name: zfd.text(),

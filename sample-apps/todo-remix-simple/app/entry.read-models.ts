@@ -1,4 +1,7 @@
 import { FossilStoreClient } from './config/client';
+import { handle } from './read-models/to-dos';
+import { EventInStoreDto } from 'fossil-api-client';
+import { AnyTaskEvent } from './domain/events';
 
 type PositionChangedEvent = {
   type: 'PositionChanged';
@@ -16,21 +19,26 @@ type PositionChangedEvent = {
 
   const offsetStream = `Offsets-TasksSubscription-v1`;
   const lastPosition = await client.head<PositionChangedEvent>(offsetStream);
-  const stream = client.streamCategory(
-    `Task`,
-    lastPosition?.data.position,
-    abortController.signal
-  );
 
-  for await (const event of stream) {
-    console.log('received', event);
+  try {
+    const stream = client.streamCategory<EventInStoreDto & AnyTaskEvent>(
+      `Task`,
+      lastPosition?.data.position,
+      abortController.signal
+    );
 
-    // Store the position in another stream, so we can get it when the script
-    // starts again with `lastEvent`.
-    await client.appendEvents<PositionChangedEvent>(offsetStream, [
-      { type: 'PositionChanged', data: { position: event.global_position } },
-    ]);
+    console.log('Started consuming category "Task".');
+
+    for await (const event of handle(stream)) {
+      // Store the position in another stream, so we can get it when the script
+      // starts again with `lastEvent`.
+      await client.appendEvents<PositionChangedEvent>(offsetStream, [
+        { type: 'PositionChanged', data: { position: event.global_position } },
+      ]);
+    }
+  } catch (e) {
+    console.log('Something happened, finishing.', e);
   }
 
-  // TODO: store the position in another stream.
+  console.log('Finished.');
 })();

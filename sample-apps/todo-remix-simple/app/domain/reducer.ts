@@ -1,18 +1,11 @@
-import type { AnyTaskEvent } from '~/domain/events';
+import type { AnyTaskEvent } from './events';
 
 export type TaskState = {
   name: string;
   completed: boolean;
 };
 
-export function reduceMany(
-  events: AnyTaskEvent[],
-  state?: TaskState | undefined
-): TaskState | undefined {
-  return events.reduce(reduce, state);
-}
-
-const reduce = (
+export const reduce = (
   state: TaskState | undefined,
   { type, data }: AnyTaskEvent
 ): TaskState | undefined => {
