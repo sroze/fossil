@@ -2,14 +2,9 @@
 
 ## Run it!
 
-1. Start a bootstrap node -- i.e. with a set port.
+1. Start as many members as you need.
    ```
-   go run main.go -port=10000
-   ```
-
-2. Start as many members needed from this discovery one.
-   ```
-   go run main.go -discover=localhost:10000
+   go run main.go
    ```
 
 ## Documentation

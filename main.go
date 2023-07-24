@@ -2,14 +2,21 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
+	v1 "github.com/sroze/fossil/writer/api/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
+	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 )
 
 var serviceName = "my-service"
@@ -18,29 +25,40 @@ func main() {
 	// Define and parse command-line arguments
 	var nodeName string
 	var portNumber int
-	var otherClusterNodes string
 	flag.StringVar(&nodeName, "name", uuid.New().String(), "Name of the node")
 	flag.IntVar(&portNumber, "port", 0, "Port number")
-	flag.StringVar(&otherClusterNodes, "discover", "", "Comma-separated list of other cluster nodes")
 	flag.Parse()
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", portNumber))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	addr := lis.Addr().(*net.TCPAddr)
+	s := grpc.NewServer()
+	v1.RegisterWriterServer(s, &Server{})
+
+	// Start the GRPC API in the background.
+	go func() {
+		log.Printf("server listening at %v", addr)
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
 	// Create a Consul API client
 	client, _ := api.NewClient(api.DefaultConfig())
 
-	serviceAddress := "127.0.0.1"
-	servicePort := portNumber
-
 	// Create a new service instance
-	agentId := fmt.Sprintf("%s-%s:%d", serviceName, serviceAddress, servicePort)
 	service := &api.AgentServiceRegistration{
-		ID:      agentId,
+		ID:      nodeName,
 		Name:    serviceName,
-		Address: serviceAddress,
-		Port:    servicePort,
+		Address: "127.0.0.1",
+		Port:    addr.Port,
 	}
 
 	// Register the service with Consul
-	err := client.Agent().ServiceRegister(service)
+	err = client.Agent().ServiceRegister(service)
 	if err != nil {
 		panic(err)
 	}
@@ -64,6 +82,24 @@ func main() {
 					fmt.Printf("Agent Port: %d\n", agent.Service.Port)
 					fmt.Println("-----")
 				}
+			} else if strings.HasPrefix(cmd, "hello ") {
+				conn, err := grpc.Dial(cmd[6:], grpc.WithTransportCredentials(insecure.NewCredentials()))
+				if err != nil {
+					log.Fatalf("did not connect: %v", err)
+				}
+				c := v1.NewWriterClient(conn)
+
+				// Contact the server and print out its response.
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				r, err := c.SayHello(ctx, &v1.HelloRequest{Name: "hardcoded for now"})
+				if err != nil {
+					log.Fatalf("could not greet: %v", err)
+				} else {
+					log.Printf("Greeting: %s", r.GetMessage())
+				}
+
+				conn.Close()
 			}
 		}
 		if err := scanner.Err(); err != nil {
@@ -77,9 +113,11 @@ func main() {
 
 	fmt.Println("\nReceived termination signal, leaving cluster and shutting down...")
 
-	err = client.Agent().ServiceDeregister(agentId)
+	err = client.Agent().ServiceDeregister(nodeName)
 	if err != nil {
 		log.Println("Error deregistering service:", err)
 		os.Exit(1)
 	}
+
+	s.Stop()
 }
