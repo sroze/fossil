@@ -19,3 +19,8 @@
 ## TODO, for the future
 
 - Rolling updates: https://github.com/lni/dragonboat/issues/270#issuecomment-1430805371
+
+## Install
+
+1. FoundationDB 7.2.9 -> [downloads](https://github.com/apple/foundationdb/releases/tag/7.2.9).
+2. `cp /usr/local/etc/foundationdb/fdb.cluster ./fdb.cluster`

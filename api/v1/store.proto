@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "github.com/sroze/fossil/store/api/v1";
+
+package fossil;
+
+// The writer service definition.
+service Writer {
+  rpc AppendEvent (AppendRequest) returns (AppendReply) {}
+  rpc ReadStream (ReadStreamRequest) returns (stream ReadStreamReplyItem) {}
+}
+
+// Appends an event to the store.
+message AppendRequest {
+  string stream_name = 1;
+  string event_id = 2;
+  string event_type = 3;
+
+  bytes payload = 4;
+}
+
+// The response message after successfully appending an event to the store.
+message AppendReply {
+  uint32 stream_position = 1;
+}
+
+message ReadStreamRequest {
+  string stream_name = 1;
+}
+
+message ReadStreamReplyItem {
+  string event_id = 1;
+  string event_type = 2;
+  uint32 stream_position = 3;
+
+  bytes payload = 4;
+}

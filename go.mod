@@ -1,13 +1,11 @@
-module github.com/sroze/fossil/writer
+module github.com/sroze/fossil/store
 
 go 1.20
 
 require (
+	github.com/apple/foundationdb/bindings/go v0.0.0-20230525024711-1da3568cbcea
 	github.com/google/uuid v1.3.0
-	github.com/hashicorp/consul v1.16.0
-	github.com/hashicorp/consul/api v1.22.0
-	github.com/hashicorp/memberlist v0.5.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.53.0-dev
 	google.golang.org/protobuf v1.30.0
 )
 
@@ -23,13 +21,13 @@ require (
 	github.com/circonus-labs/circonusllhist v0.1.3 // indirect
 	github.com/cncf/xds/go v0.0.0-20230310173818-32f1caf87195 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/envoyproxy/go-control-plane v0.11.0 // indirect
+	github.com/envoyproxy/go-control-plane v0.10.3 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.10.0 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/hashicorp/consul-net-rpc v0.0.0-20221205195236-156cfab66a69 // indirect
-	github.com/hashicorp/consul/envoyextensions v0.3.0 // indirect
+	github.com/hashicorp/consul/envoyextensions v0.2.1 // indirect
 	github.com/hashicorp/consul/sdk v0.14.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-bexpr v0.1.2 // indirect
@@ -77,6 +75,7 @@ require (
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
