@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/binary"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
@@ -24,21 +23,28 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	position, err := s.db.Transact(func(t fdb.Transaction) (interface{}, error) {
 		head := t.Get(streamSpace.Sub("head")).MustGet()
 
-		var position uint16
+		// Get the current currentStreamPosition.
+		var currentStreamPosition uint64
+		var err error
 		if head == nil {
-			position = 1
+			currentStreamPosition = 0
 		} else {
-			position = binary.LittleEndian.Uint16(head) + 1
+			currentStreamPosition = positionFromByteArray(head)
 		}
 
-		b := make([]byte, 2) // 2 bytes for uint16.
-		binary.LittleEndian.PutUint16(b, position)
-		t.Set(streamSpace.Sub("head"), b)
-		t.Set(streamSpace.Sub("events").Pack(tuple.Tuple{
-			int64(position),
-			in.EventId,
-			in.EventType,
-		}), in.Payload)
+		// Write the new event.
+		eventPosition := currentStreamPosition + 1
+		row, err := EncodeEventRow(EventRow{
+			EventId:   in.EventId,
+			EventType: in.EventType,
+			Payload:   in.Payload,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		t.Set(streamSpace.Sub("head"), positionAsByteArray(eventPosition))
+		t.Set(EventInStreamKey(streamSpace, eventPosition), row)
 
 		// TODO: + the data for the poller
 		// @see https://apple.github.io/foundationdb/data-modeling.html#versionstamps
@@ -48,7 +54,7 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 		// TODO: + heartbeat
 		// TODO: Optimistic write control here.
 
-		return &position, nil
+		return &eventPosition, nil
 	})
 
 	if err != nil {
@@ -56,6 +62,6 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	}
 
 	return &v1.AppendReply{
-		StreamPosition: uint32(*position.(*uint16)),
+		StreamPosition: *position.(*uint64),
 	}, nil
 }
