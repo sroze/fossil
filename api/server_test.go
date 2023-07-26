@@ -50,7 +50,7 @@ func Test_server(t *testing.T) {
 		r, err := c.AppendEvent(context.Background(), &request)
 
 		assert.Nil(t, err)
-		assert.Equal(t, uint32(1), r.StreamPosition)
+		assert.Equal(t, uint64(1), r.StreamPosition)
 
 		stream, err := c.ReadStream(context.Background(), &v1.ReadStreamRequest{
 			StreamName: streamName,
@@ -61,6 +61,6 @@ func Test_server(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, sumStreamResponse.EventId, request.EventId)
 		assert.Equal(t, request.Payload, sumStreamResponse.Payload)
-		assert.Equal(t, uint32(1), sumStreamResponse.StreamPosition)
+		assert.Equal(t, uint64(1), sumStreamResponse.StreamPosition)
 	})
 }

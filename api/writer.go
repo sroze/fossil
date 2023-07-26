@@ -32,6 +32,13 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 			currentStreamPosition = positionFromByteArray(head)
 		}
 
+		if in.ExpectedPosition != nil {
+			if *in.ExpectedPosition != currentStreamPosition {
+				return nil, status.Errorf(codes.FailedPrecondition,
+					"Expected position %d, but got %d.", *in.ExpectedPosition, currentStreamPosition)
+			}
+		}
+
 		// Write the new event.
 		eventPosition := currentStreamPosition + 1
 		row, err := EncodeEventRow(EventRow{
@@ -46,13 +53,10 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 		t.Set(streamSpace.Sub("head"), positionAsByteArray(eventPosition))
 		t.Set(EventInStreamKey(streamSpace, eventPosition), row)
 
-		// TODO: + the data for the poller
+		// TODO: + the data for the poller (+ maybe heartbeat?)
 		// @see https://apple.github.io/foundationdb/data-modeling.html#versionstamps
 		// @see https://github.com/apple/foundationdb/pull/1187
 		// t.Set(storeSpace.Sub(tuple.IncompleteVersionstamp()), "")
-
-		// TODO: + heartbeat
-		// TODO: Optimistic write control here.
 
 		return &eventPosition, nil
 	})

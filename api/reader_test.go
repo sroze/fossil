@@ -12,27 +12,6 @@ import (
 	"time"
 )
 
-// FillStreamWithDummyEvents fills a stream with dummy events.
-// It returns the list of event IDs.
-func FillStreamWithDummyEvents(c v1.WriterClient, stream string, count int) ([]string, error) {
-	var eventIds = make([]string, count)
-	for i := 0; i < count; i++ {
-		eventIds[i] = uuid.New().String()
-		_, err := c.AppendEvent(context.Background(), &v1.AppendRequest{
-			StreamName: stream,
-			EventId:    eventIds[i],
-			EventType:  "AnEventType",
-			Payload:    []byte("{\"foo\": 123}"),
-		})
-
-		if err != nil {
-			return eventIds, err
-		}
-	}
-
-	return eventIds, nil
-}
-
 func ReaderAsChannel(stream v1.Writer_ReadStreamClient) chan *v1.ReadStreamReplyItem {
 	ch := make(chan *v1.ReadStreamReplyItem)
 
@@ -46,15 +25,12 @@ func ReaderAsChannel(stream v1.Writer_ReadStreamClient) chan *v1.ReadStreamReply
 
 			if err != nil {
 				if e, ok := status.FromError(err); ok {
-					if e.Code() == codes.Aborted {
-						close(ch)
+					if e.Code() == codes.Canceled {
 						return
-					} else {
-						panic(err)
 					}
-				} else {
-					panic(err)
 				}
+
+				panic(err)
 			}
 
 			ch <- item
@@ -118,7 +94,10 @@ func Test_reader(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Start streaming all events.
-		stream, err := c.ReadStream(context.Background(), &v1.ReadStreamRequest{
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		stream, err := c.ReadStream(ctx, &v1.ReadStreamRequest{
 			StreamName: anotherStream,
 			Subscribe:  true,
 		})

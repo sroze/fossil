@@ -52,9 +52,9 @@ func Test_EventInStreamKey(t *testing.T) {
 
 		sort.Sort(byteSlices(items))
 
-		assert.Equal(t, items[0], EventInStreamKey(s1, 1).FDBKey())
-		assert.Equal(t, items[1], EventInStreamKey(s1, 12).FDBKey())
-		assert.Equal(t, items[2], EventInStreamKey(s2, 2).FDBKey())
+		assert.Equal(t, items[0], []byte(EventInStreamKey(s1, 1).FDBKey()))
+		assert.Equal(t, items[1], []byte(EventInStreamKey(s1, 12).FDBKey()))
+		assert.Equal(t, items[2], []byte(EventInStreamKey(s2, 2).FDBKey()))
 	})
 }
 
