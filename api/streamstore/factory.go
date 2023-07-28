@@ -1,4 +1,4 @@
-package store
+package streamstore
 
 import "github.com/apple/foundationdb/bindings/go/src/fdb"
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/sroze/fossil/store/api/index"
-	"github.com/sroze/fossil/store/api/store"
+	"github.com/sroze/fossil/store/api/streamstore"
 	v1 "github.com/sroze/fossil/store/api/v1"
 	"google.golang.org/grpc"
 	"log"
@@ -14,7 +14,7 @@ import (
 type Server struct {
 	db    *fdb.Database
 	lm    *index.IndexManager
-	store *store.FoundationDBStore
+	store *streamstore.FoundationDBStore
 
 	v1.UnimplementedWriterServer
 }
@@ -29,7 +29,7 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 	s := grpc.NewServer()
 	v1.RegisterWriterServer(s, &Server{
 		db:    &db,
-		store: store.NewStore(db),
+		store: streamstore.NewStore(db),
 		lm:    index.NewManager(db),
 	})
 

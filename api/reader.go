@@ -2,12 +2,12 @@ package api
 
 import (
 	"fmt"
-	"github.com/sroze/fossil/store/api/store"
+	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/api/v1"
 )
 
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {
-	var ch chan store.ReadItem
+	var ch chan streamstore.ReadItem
 	if request.Subscribe {
 		ch = s.store.ReadAndListen(server.Context(), request.StreamName, request.StartingPosition)
 	} else {

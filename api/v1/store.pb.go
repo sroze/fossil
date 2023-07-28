@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        v4.23.4
-// source: api/v1/store.proto
+// source: api/v1/streamstore.proto
 
 package v1
 
@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Appends an event to the store.
+// Appends an event to the streamstore.
 type AppendRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -100,7 +100,7 @@ func (x *AppendRequest) GetExpectedPosition() uint64 {
 	return 0
 }
 
-// The response message after successfully appending an event to the store.
+// The response message after successfully appending an event to the streamstore.
 type AppendReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

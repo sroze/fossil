@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/sroze/fossil/store/api/store"
+	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/api/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +16,7 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	}
 
 	result, err := s.db.Transact(func(t fdb.Transaction) (interface{}, error) {
-		return s.store.AppendEvent(t, in.StreamName, []store.Event{
+		return s.store.AppendEvent(t, in.StreamName, []streamstore.Event{
 			{
 				EventId:   in.EventId,
 				EventType: in.EventType,
@@ -35,6 +35,6 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	}
 
 	return &v1.AppendReply{
-		StreamPosition: result.(*store.AppendResult).StreamPosition,
+		StreamPosition: result.(*streamstore.AppendResult).StreamPosition,
 	}, nil
 }

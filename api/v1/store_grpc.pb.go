@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.23.4
-// source: api/v1/store.proto
+// source: api/v1/streamstore.proto
 
 package v1
 
@@ -170,5 +170,5 @@ var Writer_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "api/v1/store.proto",
+	Metadata: "api/v1/streamstore.proto",
 }
