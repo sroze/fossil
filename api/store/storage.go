@@ -1,0 +1,58 @@
+package store
+
+import (
+	"bytes"
+	"encoding/binary"
+	"encoding/gob"
+	"github.com/apple/foundationdb/bindings/go/src/fdb"
+	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
+	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
+)
+
+// TODO: Move to protobuf instead of `gob`
+type Event struct {
+	EventId   string
+	EventType string
+	Payload   []byte
+}
+
+func DecodeEvent(b []byte) (*Event, error) {
+	var row Event
+	err := gob.NewDecoder(bytes.NewReader(b)).Decode(&row)
+
+	return &row, err
+}
+
+func EncodeEvent(row Event) ([]byte, error) {
+	var b bytes.Buffer
+	err := gob.NewEncoder(&b).Encode(row)
+
+	return b.Bytes(), err
+}
+
+func streamInStoreSpace(stream string) subspace.Subspace {
+	return subspace.Sub(tuple.Tuple{"s", stream})
+}
+
+func eventsInStreamSpace(streamSpace subspace.Subspace) subspace.Subspace {
+	return streamSpace.Sub("events")
+}
+
+func headInStreamKey(stream string) fdb.KeyConvertible {
+	return streamInStoreSpace(stream).Sub("head")
+}
+
+func eventInStreamKey(stream string, position uint64) fdb.KeyConvertible {
+	return eventsInStreamSpace(streamInStoreSpace(stream)).Sub(positionAsByteArray(position))
+}
+
+func positionAsByteArray(position uint64) []byte {
+	encodedBytes := make([]byte, 8) // uint64 is 8 bytes
+	binary.BigEndian.PutUint64(encodedBytes, position)
+
+	return encodedBytes
+}
+
+func positionFromByteArray(b []byte) uint64 {
+	return binary.BigEndian.Uint64(b)
+}

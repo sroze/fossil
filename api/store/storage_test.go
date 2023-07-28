@@ -1,7 +1,6 @@
-package api
+package store
 
 import (
-	"github.com/apple/foundationdb/bindings/go/src/fdb/subspace"
 	"github.com/stretchr/testify/assert"
 	"sort"
 	"testing"
@@ -9,18 +8,18 @@ import (
 
 func Test_EventRow(t *testing.T) {
 	t.Run("it can encode and decode an event row", func(t *testing.T) {
-		row := EventRow{
+		row := Event{
 			EventId:   "123",
 			EventType: "Foo",
 			Payload:   []byte("payload"),
 		}
 
-		encoded, err := EncodeEventRow(row)
+		encoded, err := EncodeEvent(row)
 		if err != nil {
 			t.Error(err)
 		}
 
-		decoded, err := DecodeEventRow(encoded)
+		decoded, err := DecodeEvent(encoded)
 		if err != nil {
 			t.Error(err)
 		}
@@ -41,20 +40,20 @@ func Test_EventRow(t *testing.T) {
 
 func Test_EventInStreamKey(t *testing.T) {
 	t.Run("is binary order preserving", func(t *testing.T) {
-		s1 := subspace.Sub("stream", "a")
-		s2 := subspace.Sub("stream", "b")
+		s1 := "foo/a"
+		s2 := "foo/b"
 
 		items := [][]byte{
-			EventInStreamKey(s1, 12).FDBKey(),
-			EventInStreamKey(s2, 2).FDBKey(),
-			EventInStreamKey(s1, 1).FDBKey(),
+			eventInStreamKey(s1, 12).FDBKey(),
+			eventInStreamKey(s2, 2).FDBKey(),
+			eventInStreamKey(s1, 1).FDBKey(),
 		}
 
 		sort.Sort(byteSlices(items))
 
-		assert.Equal(t, items[0], []byte(EventInStreamKey(s1, 1).FDBKey()))
-		assert.Equal(t, items[1], []byte(EventInStreamKey(s1, 12).FDBKey()))
-		assert.Equal(t, items[2], []byte(EventInStreamKey(s2, 2).FDBKey()))
+		assert.Equal(t, items[0], []byte(eventInStreamKey(s1, 1).FDBKey()))
+		assert.Equal(t, items[1], []byte(eventInStreamKey(s1, 12).FDBKey()))
+		assert.Equal(t, items[2], []byte(eventInStreamKey(s2, 2).FDBKey()))
 	})
 }
 
