@@ -7,13 +7,44 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 )
 
+var TransactionContextKey = "transaction"
+
 type ReadItem struct {
 	Event          *Event
 	StreamPosition uint64
 	Error          error
 }
 
-func (f FoundationDBStore) Read(ctx context.Context, t fdb.ReadTransaction, stream string, startingPosition uint64) chan ReadItem {
+func (s FoundationDBStore) Read(ctx context.Context, stream string, startingPosition uint64) chan ReadItem {
+	// If `Read` is called without a transaction in the context, we create it and call `Read` again.
+	t, ok := ctx.Value(TransactionContextKey).(fdb.ReadTransaction)
+	if !ok {
+		ch := make(chan ReadItem)
+
+		go func() {
+			defer close(ch)
+			_, err := s.db.ReadTransact(func(t fdb.ReadTransaction) (interface{}, error) {
+				for item := range s.Read(context.WithValue(ctx, TransactionContextKey, t), stream, startingPosition) {
+					ch <- item
+
+					if item.Error != nil {
+						break
+					}
+				}
+
+				return nil, nil
+			})
+
+			if err != nil {
+				ch <- ReadItem{
+					Error: fmt.Errorf("error while setting up a transaction: %w", err),
+				}
+			}
+		}()
+
+		return ch
+	}
+
 	streamSpace := streamInStoreSpace(stream)
 	streamEventsSpace := eventsInStreamSpace(streamSpace)
 
@@ -63,6 +94,50 @@ func (f FoundationDBStore) Read(ctx context.Context, t fdb.ReadTransaction, stre
 			}
 		}
 	})()
+
+	return ch
+}
+
+// ReadAndListen reads the stream and listens for new events.
+func (s FoundationDBStore) ReadAndListen(ctx context.Context, stream string, startingPosition uint64) chan ReadItem {
+	ch := make(chan ReadItem)
+
+	go func() {
+		defer close(ch)
+
+		for {
+			var lastPosition uint64 = 0
+			for item := range s.Read(ctx, stream, startingPosition) {
+				ch <- item
+
+				if item.Error != nil {
+					return
+				}
+
+				lastPosition = item.StreamPosition
+			}
+
+			err := s.WaitForEvent(ctx, stream, lastPosition)
+			if err != nil {
+				ch <- ReadItem{
+					Error: fmt.Errorf("error while waiting for event: %w", err),
+				}
+
+				return
+			}
+
+			// Let's get events!
+			startingPosition = lastPosition + 1
+
+			// If context is done, we stop:
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				// continue!
+			}
+		}
+	}()
 
 	return ch
 }
