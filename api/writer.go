@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/api/v1"
 	"google.golang.org/grpc/codes"
@@ -15,26 +14,28 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 			"Events must have a type.")
 	}
 
-	result, err := s.db.Transact(func(t fdb.Transaction) (interface{}, error) {
-		return s.store.AppendEvent(t, in.StreamName, []streamstore.Event{
+	result, err := s.streamStore.Write(streamstore.AppendToStream{
+		Stream:           in.StreamName,
+		ExpectedPosition: in.ExpectedPosition,
+		Events: []streamstore.Event{
 			{
 				EventId:   in.EventId,
 				EventType: in.EventType,
 				Payload:   in.Payload,
 			},
-		}, in.ExpectedPosition)
-
-		// TODO: + the data for the poller (+ maybe heartbeat?)
-		// @see https://apple.github.io/foundationdb/data-modeling.html#versionstamps
-		// @see https://github.com/apple/foundationdb/pull/1187
-		// t.Set(storeSpace.Sub(tuple.IncompleteVersionstamp()), "")
+		},
 	})
+
+	// @see https://apple.github.io/foundationdb/data-modeling.html#versionstamps
+	// @see https://github.com/apple/foundationdb/pull/1187
+	// t.Set(storeSpace.Sub(tuple.IncompleteVersionstamp()), "")
+	// TODO: + the data for the poller (+ maybe heartbeat?)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &v1.AppendReply{
-		StreamPosition: result.(*streamstore.AppendResult).StreamPosition,
+		StreamPosition: result.StreamPosition,
 	}, nil
 }

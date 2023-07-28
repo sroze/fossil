@@ -7,11 +7,11 @@ import (
 )
 
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {
-	var ch chan streamstore.ReadItem
+	ch := make(chan streamstore.ReadItem, 10)
 	if request.Subscribe {
-		ch = s.store.ReadAndListen(server.Context(), request.StreamName, request.StartingPosition)
+		go s.streamStore.ReadAndFollow(server.Context(), request.StreamName, request.StartingPosition, ch, nil)
 	} else {
-		ch = s.store.Read(server.Context(), request.StreamName, request.StartingPosition)
+		go s.streamStore.Read(server.Context(), request.StreamName, request.StartingPosition, ch)
 	}
 
 	for item := range ch {

@@ -12,9 +12,8 @@ import (
 )
 
 type Server struct {
-	db    *fdb.Database
-	lm    *index.IndexManager
-	store *streamstore.FoundationDBStore
+	indexManager *index.IndexManager
+	streamStore  *streamstore.FoundationDBStore
 
 	v1.UnimplementedWriterServer
 }
@@ -27,10 +26,10 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 
 	addr := lis.Addr().(*net.TCPAddr)
 	s := grpc.NewServer()
+	ss := streamstore.NewStore(db)
 	v1.RegisterWriterServer(s, &Server{
-		db:    &db,
-		store: streamstore.NewStore(db),
-		lm:    index.NewManager(db),
+		streamStore:  ss,
+		indexManager: index.NewManager(ss),
 	})
 
 	// Start the GRPC API in the background.
