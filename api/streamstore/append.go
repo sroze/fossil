@@ -31,6 +31,13 @@ func (ss FoundationDBStore) Write(commands []AppendToStream) ([]AppendResult, er
 			results[i] = r
 		}
 
+		if ss.hooks.OnWrite != nil {
+			err := ss.hooks.OnWrite(transaction, commands, results)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return nil, nil
 	})
 
@@ -65,7 +72,7 @@ func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToSt
 			return AppendResult{}, err
 		}
 
-		t.Set(eventInStreamKey(command.Stream, currentStreamPosition), row)
+		t.Set(EventInStreamKey(command.Stream, currentStreamPosition), row)
 	}
 
 	// Update the head position.

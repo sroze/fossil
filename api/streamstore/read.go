@@ -4,44 +4,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 )
 
 func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
-	streamSpace := streamInStoreSpace(stream)
-	streamEventsSpace := eventsInStreamSpace(streamSpace)
-
-	var readRange fdb.Range = streamEventsSpace
-	if startingPosition > 0 {
-		readRange = fdb.KeyRange{
-			Begin: streamEventsSpace.Pack(tuple.Tuple{positionAsByteArray(startingPosition)}),
-			End:   streamEventsSpace.Pack(tuple.Tuple{[]byte{0xFF}}),
-		}
-	}
-
 	defer close(ch)
 
 	_, err := ss.db.ReadTransact(func(t fdb.ReadTransaction) (interface{}, error) {
-		ri := t.GetRange(readRange, fdb.RangeOptions{}).Iterator()
+		ri := t.GetRange(StreamEventsKeyRange(stream, startingPosition), fdb.RangeOptions{}).Iterator()
 
 		for ri.Advance() {
 			kv := ri.MustGet()
-			keyTuples, err := streamEventsSpace.Unpack(kv.Key)
-			if err != nil {
-				return nil, fmt.Errorf("error while unpacking stream item key: %w", err)
-			}
-
-			streamPosition := positionFromByteArray(keyTuples[0].([]byte))
-			row, err := DecodeEvent(kv.Value)
+			event, err := EventInStreamFromKeyValue(kv)
 			if err != nil {
 				return nil, fmt.Errorf("error while decoding stream item: %w", err)
 			}
 
 			ch <- ReadItem{
-				EventInStream: &EventInStream{
-					Event:          *row,
-					StreamPosition: streamPosition,
-				},
+				EventInStream: &event,
 			}
 
 			// Check that the context is not done before continuing.

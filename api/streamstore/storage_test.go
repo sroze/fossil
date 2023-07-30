@@ -6,6 +6,17 @@ import (
 	"testing"
 )
 
+func Test_ReverseEventInStreamKey(t *testing.T) {
+	t.Run("a key can be reversed", func(t *testing.T) {
+		stream, position, err := ReverseEventInStreamKey(
+			EventInStreamKey("foo/bar", 12).FDBKey(),
+		)
+
+		assert.Nil(t, err)
+		assert.Equal(t, "foo/bar", stream)
+		assert.Equal(t, uint64(12), position)
+	})
+}
 func Test_EventRow(t *testing.T) {
 	t.Run("it can encode and decode an event row", func(t *testing.T) {
 		row := Event{
@@ -44,16 +55,16 @@ func Test_EventInStreamKey(t *testing.T) {
 		s2 := "foo/b"
 
 		items := [][]byte{
-			eventInStreamKey(s1, 12).FDBKey(),
-			eventInStreamKey(s2, 2).FDBKey(),
-			eventInStreamKey(s1, 1).FDBKey(),
+			EventInStreamKey(s1, 12).FDBKey(),
+			EventInStreamKey(s2, 2).FDBKey(),
+			EventInStreamKey(s1, 1).FDBKey(),
 		}
 
 		sort.Sort(byteSlices(items))
 
-		assert.Equal(t, items[0], []byte(eventInStreamKey(s1, 1).FDBKey()))
-		assert.Equal(t, items[1], []byte(eventInStreamKey(s1, 12).FDBKey()))
-		assert.Equal(t, items[2], []byte(eventInStreamKey(s2, 2).FDBKey()))
+		assert.Equal(t, items[0], []byte(EventInStreamKey(s1, 1).FDBKey()))
+		assert.Equal(t, items[1], []byte(EventInStreamKey(s1, 12).FDBKey()))
+		assert.Equal(t, items[2], []byte(EventInStreamKey(s2, 2).FDBKey()))
 	})
 }
 
