@@ -11,19 +11,21 @@ type watchHeadResult struct {
 	Future       fdb.FutureNil
 }
 
-// WaitForEvent waits for an event to be written to the stream and returns the position of the event.
 func (ss FoundationDBStore) WaitForEvent(ctx context.Context, stream string, currentPosition uint64) error {
 	headKey := headInStreamKey(stream)
 
 	// Watch the head for a change. We'll validate that _current_ position is not different from the
 	// one currently expected.
 	result, err := ss.db.Transact(func(t fdb.Transaction) (interface{}, error) {
+		headPosition := uint64(0)
 		head := t.Get(headKey).MustGet()
-		future := t.Watch(headKey)
+		if head != nil {
+			headPosition = positionFromByteArray(head)
+		}
 
 		return watchHeadResult{
-			HeadPosition: positionFromByteArray(head),
-			Future:       future,
+			HeadPosition: headPosition,
+			Future:       t.Watch(headKey),
 		}, nil
 	})
 

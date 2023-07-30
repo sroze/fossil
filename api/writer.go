@@ -14,14 +14,16 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 			"Events must have a type.")
 	}
 
-	result, err := s.streamStore.Write(streamstore.AppendToStream{
-		Stream:           in.StreamName,
-		ExpectedPosition: in.ExpectedPosition,
-		Events: []streamstore.Event{
-			{
-				EventId:   in.EventId,
-				EventType: in.EventType,
-				Payload:   in.Payload,
+	result, err := s.streamStore.Write([]streamstore.AppendToStream{
+		{
+			Stream:           in.StreamName,
+			ExpectedPosition: in.ExpectedPosition,
+			Events: []streamstore.Event{
+				{
+					EventId:   in.EventId,
+					EventType: in.EventType,
+					Payload:   in.Payload,
+				},
 			},
 		},
 	})
@@ -36,6 +38,6 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	}
 
 	return &v1.AppendReply{
-		StreamPosition: result.StreamPosition,
+		StreamPosition: result[0].StreamPosition,
 	}, nil
 }

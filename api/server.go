@@ -26,10 +26,10 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 
 	addr := lis.Addr().(*net.TCPAddr)
 	s := grpc.NewServer()
-	ss := streamstore.NewStore(db)
+	ss := streamstore.NewFoundationStore(db)
 	v1.RegisterWriterServer(s, &Server{
 		streamStore:  ss,
-		indexManager: index.NewManager(ss),
+		indexManager: index.NewManager(ss, "core/indexes"),
 	})
 
 	// Start the GRPC API in the background.

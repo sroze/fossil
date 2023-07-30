@@ -7,12 +7,6 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 )
 
-type ReadItem struct {
-	Event          *Event
-	StreamPosition uint64
-	Error          error
-}
-
 func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
 	streamSpace := streamInStoreSpace(stream)
 	streamEventsSpace := eventsInStreamSpace(streamSpace)
@@ -44,8 +38,10 @@ func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPos
 			}
 
 			ch <- ReadItem{
-				Event:          row,
-				StreamPosition: streamPosition,
+				EventInStream: &EventInStream{
+					Event:          *row,
+					StreamPosition: streamPosition,
+				},
 			}
 
 			// Check that the context is not done before continuing.
@@ -66,15 +62,7 @@ func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPos
 	}
 }
 
-// ReadAndFollow reads the stream and listens for new events.
-//
-// This function is blocking and will return only when the context is done.
-//
-// If not nil, the `endOfStream` channel receives the position of the last event read
-// when the end of the stream has been reached. As the stream continues to be followed,
-// the channel will receive the position of the last events read. It is not guaranteed
-// to receive the position of all events.
-func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem, endOfStream *chan uint64) {
+func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
 	defer close(ch)
 
 	for {
@@ -88,7 +76,9 @@ func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, st
 					return
 				}
 
-				lastPosition = item.StreamPosition
+				if item.EventInStream != nil {
+					lastPosition = item.EventInStream.StreamPosition
+				}
 			}
 		}()
 
@@ -96,8 +86,10 @@ func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, st
 		ss.Read(ctx, stream, startingPosition, readChannel)
 
 		// If the end of the stream notification is requested, we notify.
-		if endOfStream != nil {
-			*endOfStream <- lastPosition
+		ch <- ReadItem{
+			EndOfStreamSignal: &EndOfStreamSignal{
+				StreamPosition: lastPosition,
+			},
 		}
 
 		// Wait for additional events to arrive.

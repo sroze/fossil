@@ -19,7 +19,7 @@ type AppendToStream struct {
 // TODO: use a custom for the conflict (@see https://earthly.dev/blog/golang-errors/)
 // var FailedPrecondition = errors.New("expected position %d, but got %d.")
 
-func (ss FoundationDBStore) MultiWrite(commands []AppendToStream) ([]AppendResult, error) {
+func (ss FoundationDBStore) Write(commands []AppendToStream) ([]AppendResult, error) {
 	results := make([]AppendResult, len(commands))
 	_, err := ss.db.Transact(func(transaction fdb.Transaction) (interface{}, error) {
 		for i, command := range commands {
@@ -35,15 +35,6 @@ func (ss FoundationDBStore) MultiWrite(commands []AppendToStream) ([]AppendResul
 	})
 
 	return results, err
-}
-
-func (ss FoundationDBStore) Write(command AppendToStream) (AppendResult, error) {
-	result, err := ss.MultiWrite([]AppendToStream{command})
-	if err != nil {
-		return AppendResult{}, err
-	}
-
-	return result[0], nil
 }
 
 func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToStream) (AppendResult, error) {
