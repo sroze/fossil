@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
@@ -9,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 )
 
@@ -27,22 +25,6 @@ func main() {
 	} else {
 		defer server.Stop()
 	}
-
-	// Start a goroutine to listen for CLI commands
-	go func() {
-		scanner := bufio.NewScanner(os.Stdin)
-		for scanner.Scan() {
-			cmd := scanner.Text()
-			if cmd == "list" {
-
-			} else if strings.HasPrefix(cmd, "hello ") {
-
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			log.Println("Error reading standard input:", err)
-		}
-	}()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
