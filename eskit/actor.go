@@ -9,8 +9,6 @@ import (
 	"sync"
 )
 
-type EvolveFunc[T any] func(state T, event interface{}) T
-
 type Actor[T any] struct {
 	// Provided by the user.
 	ss     streamstore.Store
