@@ -3,7 +3,7 @@ package eskit
 import (
 	"context"
 	"github.com/google/uuid"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

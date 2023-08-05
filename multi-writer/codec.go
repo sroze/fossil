@@ -1,9 +1,9 @@
 package multi_writer
 
 import (
-	"github.com/sroze/fossil/store/eskit/codec"
-	"github.com/sroze/fossil/store/multi-writer/segments"
-	"github.com/sroze/fossil/store/presence"
+	"github.com/sroze/fossil/eskit/codec"
+	"github.com/sroze/fossil/multi-writer/segments"
+	"github.com/sroze/fossil/presence"
 )
 
 var rootCodec = codec.NewGobCodec(

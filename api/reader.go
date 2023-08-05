@@ -2,8 +2,8 @@ package api
 
 import (
 	"fmt"
-	"github.com/sroze/fossil/store/api/v1"
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/api/v1"
+	"github.com/sroze/fossil/streamstore"
 )
 
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {

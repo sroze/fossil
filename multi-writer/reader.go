@@ -2,8 +2,8 @@ package multi_writer
 
 import (
 	"context"
-	"github.com/sroze/fossil/store/multi-writer/segments"
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/multi-writer/segments"
+	"github.com/sroze/fossil/streamstore"
 )
 
 type Reader struct {

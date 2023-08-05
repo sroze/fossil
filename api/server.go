@@ -3,9 +3,9 @@ package api
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/sroze/fossil/store/api/index"
-	v1 "github.com/sroze/fossil/store/api/v1"
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/api/index"
+	v1 "github.com/sroze/fossil/api/v1"
+	"github.com/sroze/fossil/streamstore"
 	"google.golang.org/grpc"
 	"log"
 	"net"

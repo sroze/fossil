@@ -1,9 +1,6 @@
 workspace {
     !docs workspace-docs
 
-    // TODO: split 'segment topology & segment manager' AND 'node presence' & 'router'
-    //    -> reason: `router` & `node presence` are just an optimisation.
-    // TODO: extract `streamstore` as its own system.
     model {
         user = person "User"
         softwareSystem = softwareSystem "Fossil" {
@@ -12,23 +9,22 @@ workspace {
 
                 grpcHandler = component "GrpcHandler" "Handles incoming gRPC requests"
 
-                writeRequestRouter = component "WriteRequestRouter" "Routes incoming write requests to the writer that holds the stream."
+                writeRequestRouter = component "WriteRequestRouter" "Routes incoming write requests to preferred writers for performance reasons."
                 grpcHandler -> writeRequestRouter
 
-                reader = component "Reader" "Handle stream reads"
+                reader = component "Reader" "Handle reads across streams"
                 grpcHandler -> reader
 
                 presence = component "Node Presence" "Keeps track of the node in the cluster"
+                writeRequestRouter -> presence
 
                 segmentsTopology = component "Segments Topology" "Keeps track of segments and their location in the system"
-                writeRequestRouter -> segmentsTopology
                 reader -> segmentsTopology
 
-                allocator = component "Segment Allocator" "Allocates segments to nodes"
-                allocator -> presence
+                allocator = component "Segment Manager" "Opens and close segments based on needs"
                 allocator -> segmentsTopology
 
-                writer = component "Writer" "Is single-reader for specific segments and write for them."
+                writer = component "Writer" "Writes events in segments & streams."
                 writeRequestRouter -> writer
                 writer -> segmentsTopology
 
@@ -37,7 +33,6 @@ workspace {
                     reader -> this
                 }
             }
-
 
             kv = container "KV store" {
                 streamStore -> this "Reads & write"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dustin/go-broadcast"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 	"sync"
 )
 

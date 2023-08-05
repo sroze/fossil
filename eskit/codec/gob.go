@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/streamstore"
 	"reflect"
 )
 

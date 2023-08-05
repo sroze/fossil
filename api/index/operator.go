@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 )
 
 // Operator is responsible for reading & writing into indexes.

@@ -2,8 +2,8 @@ package eskit
 
 import (
 	"context"
-	"github.com/sroze/fossil/store/eskit/codec"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/eskit/codec"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 )
 
 type EventInStream struct {

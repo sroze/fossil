@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"github.com/sroze/fossil/store/api/v1"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/api/v1"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

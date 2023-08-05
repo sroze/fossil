@@ -3,7 +3,7 @@ package presence
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/eskit"
+	"github.com/sroze/fossil/eskit"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

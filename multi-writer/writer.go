@@ -2,10 +2,10 @@ package multi_writer
 
 import (
 	"github.com/google/uuid"
-	v1 "github.com/sroze/fossil/store/api/v1"
-	"github.com/sroze/fossil/store/eskit"
-	"github.com/sroze/fossil/store/multi-writer/segments"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	v1 "github.com/sroze/fossil/api/v1"
+	"github.com/sroze/fossil/eskit"
+	"github.com/sroze/fossil/multi-writer/segments"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 )
 
 //type WriterState struct {

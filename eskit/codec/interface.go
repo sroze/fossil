@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/streamstore"
 )
 
 type Codec interface {

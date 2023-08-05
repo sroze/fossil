@@ -2,7 +2,7 @@ package segments
 
 import (
 	"fmt"
-	"github.com/sroze/fossil/store/eskit"
+	"github.com/sroze/fossil/eskit"
 	"reflect"
 )
 

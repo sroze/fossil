@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
-	streamstore2 "github.com/sroze/fossil/store/streamstore"
+	streamstore2 "github.com/sroze/fossil/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

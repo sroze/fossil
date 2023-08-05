@@ -3,8 +3,8 @@ package eskit
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/eskit/codec"
-	"github.com/sroze/fossil/store/streamstore"
+	"github.com/sroze/fossil/eskit/codec"
+	"github.com/sroze/fossil/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

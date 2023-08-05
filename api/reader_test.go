@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"github.com/google/uuid"
-	v1 "github.com/sroze/fossil/store/api/v1"
+	v1 "github.com/sroze/fossil/api/v1"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

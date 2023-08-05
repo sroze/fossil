@@ -3,9 +3,9 @@ package multi_writer
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/eskit"
-	"github.com/sroze/fossil/store/multi-writer/segments"
-	presence2 "github.com/sroze/fossil/store/presence"
+	"github.com/sroze/fossil/eskit"
+	"github.com/sroze/fossil/multi-writer/segments"
+	presence2 "github.com/sroze/fossil/presence"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

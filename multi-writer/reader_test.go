@@ -3,10 +3,10 @@ package multi_writer
 import (
 	"context"
 	"github.com/google/uuid"
-	v1 "github.com/sroze/fossil/store/api/v1"
-	"github.com/sroze/fossil/store/eskit"
-	"github.com/sroze/fossil/store/multi-writer/segments"
-	"github.com/sroze/fossil/store/streamstore"
+	v1 "github.com/sroze/fossil/api/v1"
+	"github.com/sroze/fossil/eskit"
+	"github.com/sroze/fossil/multi-writer/segments"
+	"github.com/sroze/fossil/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
