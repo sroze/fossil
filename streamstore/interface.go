@@ -28,10 +28,14 @@ type ReadItem struct {
 }
 
 type EventInStream struct {
-	Event          Event
-	StreamPosition uint64
+	Event Event
+
+	// Position of the event in the stream. Starts at 0.
+	Position uint64
 }
 
 type EndOfStreamSignal struct {
+	// Position of the stream. It is the position of next to-be-written event (or aldo
+	// described as the number of events in the stream).
 	StreamPosition uint64
 }

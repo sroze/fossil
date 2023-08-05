@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
-	"github.com/sroze/fossil/store/api/streamstore"
+	streamstore2 "github.com/sroze/fossil/store/streamstore"
 )
 
 // Operator is responsible for reading & writing into indexes.
@@ -15,7 +15,7 @@ type Operator struct {
 }
 
 type ReadIndexItem struct {
-	EventInStream streamstore.EventInStream
+	EventInStream streamstore2.EventInStream
 	Error         error
 
 	// TODO: EndOfIndex
@@ -26,7 +26,7 @@ func NewOperator(im IndexLocator, db fdb.Database) *Operator {
 }
 
 // OnWrite is the hook called when a write is performed on `streamstore`.
-func (o *Operator) OnWrite(t fdb.Transaction, writes []streamstore.AppendToStream, results []streamstore.AppendResult) error {
+func (o *Operator) OnWrite(t fdb.Transaction, writes []streamstore2.AppendToStream, results []streamstore2.AppendResult) error {
 	for i, write := range writes {
 		indexes := o.indexLocator.GetIndexesToWriteInto(write.Stream)
 		for _, index := range indexes {
@@ -63,7 +63,7 @@ func (o *Operator) ReadFromIndexes(ctx context.Context, streamPrefix string, fro
 			referenceKey := fdb.Key(kv.Value)
 
 			// TODO: use `stream` and add to `EventInStream`
-			_, _, err := streamstore.ReverseEventInStreamKey(referenceKey)
+			_, _, err := streamstore2.ReverseEventInStreamKey(referenceKey)
 			if err != nil {
 				return nil, fmt.Errorf("unable to reverse reference key")
 			}
@@ -73,7 +73,7 @@ func (o *Operator) ReadFromIndexes(ctx context.Context, streamPrefix string, fro
 				return nil, fmt.Errorf("unable to get event value: %s", referenceKey)
 			}
 
-			event, err := streamstore.EventInStreamFromKeyValue(fdb.KeyValue{
+			event, err := streamstore2.EventInStreamFromKeyValue(fdb.KeyValue{
 				Key:   referenceKey,
 				Value: value,
 			})
@@ -103,7 +103,7 @@ func (o *Operator) ReadFromIndexes(ctx context.Context, streamPrefix string, fro
 	}
 }
 
-func (o *Operator) writeInIndex(t fdb.Transaction, index Index, write streamstore.AppendToStream, result streamstore.AppendResult) error {
+func (o *Operator) writeInIndex(t fdb.Transaction, index Index, write streamstore2.AppendToStream, result streamstore2.AppendResult) error {
 	for i, _ := range write.Events {
 		packed, err := tuple.Tuple{"indexFor1", index.Id, tuple.IncompleteVersionstamp(uint16(i))}.PackWithVersionstamp(nil)
 		if err != nil {
@@ -112,7 +112,7 @@ func (o *Operator) writeInIndex(t fdb.Transaction, index Index, write streamstor
 
 		t.SetVersionstampedKey(
 			fdb.Key(packed),
-			streamstore.EventInStreamKey(write.Stream, result.StreamPosition-uint64(len(write.Events)-i-1)).FDBKey(),
+			streamstore2.EventInStreamKey(write.Stream, result.Position-uint64(len(write.Events)-i-1)).FDBKey(),
 		)
 	}
 

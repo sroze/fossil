@@ -10,7 +10,7 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 )
 
-// TODO: Move to protobuf instead of `gob`
+// TODO: Move to shared types with client.
 type Event struct {
 	EventId   string
 	EventType string
@@ -62,8 +62,8 @@ func EventInStreamFromKeyValue(kv fdb.KeyValue) (EventInStream, error) {
 	}
 
 	return EventInStream{
-		Event:          *row,
-		StreamPosition: position,
+		Event:    *row,
+		Position: position,
 	}, nil
 }
 

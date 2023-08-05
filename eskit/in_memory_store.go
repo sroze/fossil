@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/dustin/go-broadcast"
-	"github.com/sroze/fossil/store/api/streamstore"
+	streamstore2 "github.com/sroze/fossil/store/streamstore"
 	"sync"
 )
 
 type InMemoryStore struct {
-	streamstore.Store
+	streamstore2.Store
 
-	store map[string][]streamstore.Event
+	store map[string][]streamstore2.Event
 	b     broadcast.Broadcaster
 	mu    sync.Mutex
 }
@@ -23,45 +23,45 @@ type appendNotification struct {
 
 func NewInMemoryStore() *InMemoryStore {
 	return &InMemoryStore{
-		store: map[string][]streamstore.Event{},
+		store: map[string][]streamstore2.Event{},
 		b:     broadcast.NewBroadcaster(1),
 	}
 }
 
-func (s *InMemoryStore) Write(commands []streamstore.AppendToStream) ([]streamstore.AppendResult, error) {
+func (s *InMemoryStore) Write(commands []streamstore2.AppendToStream) ([]streamstore2.AppendResult, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	results := make([]streamstore.AppendResult, len(commands))
+	results := make([]streamstore2.AppendResult, len(commands))
 
 	for i, command := range commands {
 		if _, ok := s.store[command.Stream]; !ok {
-			s.store[command.Stream] = []streamstore.Event{}
+			s.store[command.Stream] = []streamstore2.Event{}
 		}
 
-		currentPosition := uint64(len(s.store[command.Stream]))
-		if command.ExpectedPosition != nil && *command.ExpectedPosition != currentPosition {
-			return nil, fmt.Errorf("expected position %d, but got %d", *command.ExpectedPosition, currentPosition)
+		positionOfFirstEvent := uint64(len(s.store[command.Stream]))
+		if command.ExpectedPosition != nil && *command.ExpectedPosition != positionOfFirstEvent {
+			return nil, fmt.Errorf("expected position %d, but got %d", *command.ExpectedPosition, positionOfFirstEvent)
 		}
 
 		for _, event := range command.Events {
 			s.store[command.Stream] = append(s.store[command.Stream], event)
 		}
 
-		results[i] = streamstore.AppendResult{
-			StreamPosition: currentPosition + uint64(len(command.Events)),
+		results[i] = streamstore2.AppendResult{
+			Position: positionOfFirstEvent + uint64(len(command.Events)) - 1,
 		}
 
 		s.b.Submit(appendNotification{
 			stream:   command.Stream,
-			position: results[i].StreamPosition,
+			position: results[i].Position,
 		})
 	}
 
 	return results, nil
 }
 
-func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore.ReadItem) {
+func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore2.ReadItem) {
 	s.mu.Lock()
 
 	if len(s.store[stream]) < int(startingPosition) {
@@ -73,27 +73,27 @@ func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPositio
 	s.mu.Unlock()
 
 	for i, event := range eventsToBeSent {
-		ch <- streamstore.ReadItem{
-			EventInStream: &streamstore.EventInStream{
-				Event:          event,
-				StreamPosition: startingPosition + uint64(i) + 1,
+		ch <- streamstore2.ReadItem{
+			EventInStream: &streamstore2.EventInStream{
+				Event:    event,
+				Position: startingPosition + uint64(i),
 			},
 		}
 	}
 }
 
-func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore.ReadItem) {
+func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore2.ReadItem) {
 	s.Read(ctx, stream, startingPosition, ch)
 	nextPosition := uint64(len(s.store[stream]))
-	ch <- streamstore.ReadItem{
-		EndOfStreamSignal: &streamstore.EndOfStreamSignal{
-			StreamPosition: nextPosition - 1,
+	ch <- streamstore2.ReadItem{
+		EndOfStreamSignal: &streamstore2.EndOfStreamSignal{
+			StreamPosition: nextPosition,
 		},
 	}
 
 	err := s.WaitForEvent(ctx, stream, nextPosition)
 	if err != nil {
-		ch <- streamstore.ReadItem{
+		ch <- streamstore2.ReadItem{
 			Error: err,
 		}
 	}
@@ -104,7 +104,8 @@ func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, starti
 func (s *InMemoryStore) WaitForEvent(ctx context.Context, stream string, currentPosition uint64) error {
 	s.mu.Lock()
 	events, ok := s.store[stream]
-	if ok && len(events) >= int(currentPosition) {
+	// FIXME: test for `>` instead of `>=`
+	if ok && len(events) > int(currentPosition) {
 		s.mu.Unlock()
 		return nil
 	}

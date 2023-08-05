@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/api/streamstore"
+	"github.com/sroze/fossil/store/streamstore"
 	"reflect"
 )
 
@@ -17,8 +17,9 @@ type GobCodec struct {
 
 func NewGobCodec(objects ...interface{}) Codec {
 	types := make([]reflect.Type, len(objects))
-	for i, t := range objects {
-		types[i] = reflect.TypeOf(t)
+	for i, object := range objects {
+		types[i] = reflect.TypeOf(object)
+		gob.Register(object)
 	}
 
 	return &GobCodec{
@@ -57,5 +58,5 @@ func (c *GobCodec) Deserialize(event streamstore.Event) (interface{}, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("unknown event type %s", event.EventType)
+	return nil, fmt.Errorf("cannot deserialize unknown event type %s", event.EventType)
 }

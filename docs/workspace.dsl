@@ -1,47 +1,51 @@
 workspace {
     !docs workspace-docs
 
+    // TODO: split 'segment topology & segment manager' AND 'node presence' & 'router'
+    //    -> reason: `router` & `node presence` are just an optimisation.
+    // TODO: extract `streamstore` as its own system.
     model {
         user = person "User"
         softwareSystem = softwareSystem "Fossil" {
-            writer = container "Writer" {
+            store = container "Fossil Store" {
                 user -> this "Uses"
 
-                httpHandler = component "HttpHandler" "Handles incoming HTTP requests"
-                requestRouter = component "RequestRouter" "Routes incoming requests to the writer that holds the stream."
-                httpHandler -> requestRouter "delegates"
-                streamOwnershipRing = component "StreamOwnershipRing" "Defines which writer owns which stream"
-                requestRouter -> streamOwnershipRing "identifies ownership"
-                writerMembershipList = component "WriterMembershipList" "Knows about which writer exists in the cluster."
-                streamOwnershipRing -> writerMembershipList "identifies ownership"
+                grpcHandler = component "GrpcHandler" "Handles incoming gRPC requests"
 
-                requestHandler = component "EventWriter" "Actually writes events"
-                requestRouter -> requestHandler "executes"
-                streamLocker = component "StreamLocker" "Distributed lock, per-stream."
-                requestHandler -> streamLocker "uses"
+                writeRequestRouter = component "WriteRequestRouter" "Routes incoming write requests to the writer that holds the stream."
+                grpcHandler -> writeRequestRouter
+
+                reader = component "Reader" "Handle stream reads"
+                grpcHandler -> reader
+
+                presence = component "Node Presence" "Keeps track of the node in the cluster"
+
+                segmentsTopology = component "Segments Topology" "Keeps track of segments and their location in the system"
+                writeRequestRouter -> segmentsTopology
+                reader -> segmentsTopology
+
+                allocator = component "Segment Allocator" "Allocates segments to nodes"
+                allocator -> presence
+                allocator -> segmentsTopology
+
+                writer = component "Writer" "Is single-reader for specific segments and write for them."
+                writeRequestRouter -> writer
+                writer -> segmentsTopology
+
+                streamStore = component "Stream Store" "Read and writes events within a specific stream" {
+                    writer -> this
+                    reader -> this
+                }
             }
 
-            consul = container "Consul" {
-                writer -> this "Reads & write configuration"
+
+            kv = container "KV store" {
+                streamStore -> this "Reads & write"
             }
-
-            writerMembershipList -> consul
-            streamLocker -> consul
-
-            pulsar = container "Pulsar" {
-                writer -> this "Writes events in order"
-            }
-
-            requestHandler -> pulsar
         }
     }
 
     views {
-        systemlandscape "SystemLandscape" {
-            include *
-            autoLayout
-        }
-
         systemContext softwareSystem {
             include *
             autolayout lr
@@ -52,7 +56,7 @@ workspace {
             autolayout lr
         }
 
-        component writer "Writer" {
+        component store "FossilStore" {
             include *
             autoLayout
             description "The component diagram."

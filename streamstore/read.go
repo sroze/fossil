@@ -56,7 +56,7 @@ func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, st
 				}
 
 				if item.EventInStream != nil {
-					lastPosition = item.EventInStream.StreamPosition
+					lastPosition = item.EventInStream.Position
 				}
 			}
 		}()

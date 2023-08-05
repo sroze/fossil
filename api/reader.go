@@ -2,8 +2,8 @@ package api
 
 import (
 	"fmt"
-	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/api/v1"
+	"github.com/sroze/fossil/store/streamstore"
 )
 
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {
@@ -21,7 +21,7 @@ func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_Read
 
 		if item.EventInStream != nil {
 			err := server.Send(&v1.ReadStreamReplyItem{
-				StreamPosition: item.EventInStream.StreamPosition,
+				StreamPosition: item.EventInStream.Position,
 				EventId:        item.EventInStream.Event.EventId,
 				EventType:      item.EventInStream.Event.EventType,
 				Payload:        item.EventInStream.Event.Payload,

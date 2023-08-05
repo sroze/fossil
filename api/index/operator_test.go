@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/api/streamstore"
+	streamstore2 "github.com/sroze/fossil/store/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -13,21 +13,21 @@ func Test_Operator(t *testing.T) {
 	fdb.MustAPIVersion(720)
 	db := fdb.MustOpenDatabase("../../fdb.cluster")
 	im := NewManager(
-		streamstore.NewFoundationStore(db),
+		streamstore2.NewFoundationStore(db),
 		uuid.NewString()+"test/indexes",
 	)
 	assert.Nil(t, im.Start())
 
 	assert.Nil(t, im.CreateIndex("stores/123"))
 	operator := NewOperator(im, db)
-	ss := streamstore.NewFoundationStoreWithHooks(db, streamstore.Hooks{
+	ss := streamstore2.NewFoundationStoreWithHooks(db, streamstore2.Hooks{
 		OnWrite: operator.OnWrite,
 	})
 
 	t.Run("write to the relevant index and is able to fetch event", func(t *testing.T) {
-		event := streamstore.Event{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("")}
-		_, err := ss.Write([]streamstore.AppendToStream{
-			{Stream: "stores/123/streams/456", Events: []streamstore.Event{event}},
+		event := streamstore2.Event{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("")}
+		_, err := ss.Write([]streamstore2.AppendToStream{
+			{Stream: "stores/123/streams/456", Events: []streamstore2.Event{event}},
 		})
 
 		assert.Nil(t, err)

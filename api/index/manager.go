@@ -3,9 +3,9 @@ package index
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/eskit"
 	"github.com/sroze/fossil/store/eskit/codec"
+	"github.com/sroze/fossil/store/streamstore"
 	"reflect"
 	"strings"
 )
@@ -14,7 +14,7 @@ import (
 // TODO: rename to controller?
 // TODO: split between "controller" and "locator"?
 type IndexManager struct {
-	ss    *streamstore.FoundationDBStore
+	ss    streamstore.Store
 	actor *eskit.Actor[ManagerState]
 }
 
@@ -40,7 +40,7 @@ func Evolve(state ManagerState, event interface{}) ManagerState {
 
 // NewManager creates a new SegmentsManager.
 func NewManager(
-	ss *streamstore.FoundationDBStore,
+	ss streamstore.Store,
 	stream string,
 ) *IndexManager {
 	return &IndexManager{
@@ -73,28 +73,28 @@ func (m *IndexManager) Stop() {
 }
 
 func (m *IndexManager) CreateIndex(streamPrefix string) error {
-	position := m.actor.Position
+	position := m.actor.GetPosition()
 
 	// TODO: check if the index already exists?
 
 	id := uuid.NewString()
-	err := m.actor.Write(&IndexCreated{
+	result, err := m.actor.Write([]interface{}([]IndexCreated{{
 		Id:     id,
 		Prefix: streamPrefix,
-	}, position)
+	}}), position)
 	if err != nil {
 		return err
 	}
 
 	// Wait for the actor to be ready.
-	m.actor.WaitForPosition(position + 1)
+	m.actor.WaitForPosition(result.StreamPosition)
 
 	return nil
 }
 
 func (m *IndexManager) GetIndexesToWriteInto(streamName string) []Index {
 	var indexes []Index
-	for _, index := range m.actor.State.indexes {
+	for _, index := range m.actor.GetState().indexes {
 		if strings.HasPrefix(streamName, index.StreamPrefix) {
 			indexes = append(indexes, index)
 		}
@@ -105,7 +105,7 @@ func (m *IndexManager) GetIndexesToWriteInto(streamName string) []Index {
 
 func (m *IndexManager) GetIndexesToReadFrom(streamPrefix string) []Index {
 	var indexes []Index
-	for _, index := range m.actor.State.indexes {
+	for _, index := range m.actor.GetState().indexes {
 		if index.Status == READY && strings.HasPrefix(streamPrefix, index.StreamPrefix) {
 			indexes = append(indexes, index)
 		}

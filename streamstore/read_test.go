@@ -38,7 +38,7 @@ func Test_ReadAndFollow(t *testing.T) {
 		// Expects the first event to be streamed.
 		item := <-ch
 		assert.NotNil(t, item.EventInStream)
-		assert.Equal(t, uint64(1), item.EventInStream.StreamPosition)
+		assert.Equal(t, uint64(1), item.EventInStream.Position)
 		assert.Equal(t, "Foo", item.EventInStream.Event.EventType)
 
 		// Expects the end-of-stream to be notified.
@@ -64,7 +64,7 @@ func Test_ReadAndFollow(t *testing.T) {
 		// Expects the second event to be streamed.
 		item = <-ch
 		assert.NotNil(t, item.EventInStream)
-		assert.Equal(t, uint64(2), item.EventInStream.StreamPosition)
+		assert.Equal(t, uint64(2), item.EventInStream.Position)
 		assert.Equal(t, "Bar", item.EventInStream.Event.EventType)
 
 		// Expects a second end-of-stream event.

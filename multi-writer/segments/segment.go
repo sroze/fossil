@@ -1,4 +1,4 @@
-package segmentplacement
+package segments
 
 import "github.com/google/uuid"
 

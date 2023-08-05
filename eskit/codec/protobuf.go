@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/api/streamstore"
+	"github.com/sroze/fossil/store/streamstore"
 	"reflect"
 )
 

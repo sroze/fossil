@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
-	"github.com/sroze/fossil/store/api/streamstore"
 	"github.com/sroze/fossil/store/api/v1"
+	streamstore2 "github.com/sroze/fossil/store/streamstore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,11 +14,11 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 			"Events must have a type.")
 	}
 
-	result, err := s.streamStore.Write([]streamstore.AppendToStream{
+	result, err := s.streamStore.Write([]streamstore2.AppendToStream{
 		{
 			Stream:           in.StreamName,
 			ExpectedPosition: in.ExpectedPosition,
-			Events: []streamstore.Event{
+			Events: []streamstore2.Event{
 				{
 					EventId:   in.EventId,
 					EventType: in.EventType,
@@ -38,6 +38,6 @@ func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.App
 	}
 
 	return &v1.AppendReply{
-		StreamPosition: result[0].StreamPosition,
+		StreamPosition: result[0].Position,
 	}, nil
 }

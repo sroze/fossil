@@ -1,4 +1,6 @@
-package segmentplacement
+package segments
+
+type SegmentNodes []SegmentNode
 
 func (tree SegmentNodes) Find(
 	condition func(SegmentNode) bool,
@@ -49,6 +51,29 @@ func (tree SegmentNodes) WalkAndModify(
 	}
 
 	return treeCopy
+}
+
+// TODO: replace with proper DAG
+// https://pkg.go.dev/github.com/heimdalr/dag#DAG.DescendantsFlow
+// https://pkg.go.dev/github.com/hashicorp/terraform/dag#Walker
+func (tree SegmentNodes) Walk(
+	walker func(SegmentNode) error,
+) error {
+	for _, node := range tree {
+		err := walker(node)
+		if err != nil {
+			return err
+		}
+
+		if len(node.Next) > 0 {
+			err = node.Next.Walk(walker)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (tree SegmentNodes) Count() int {

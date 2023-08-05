@@ -7,7 +7,7 @@ import (
 )
 
 type AppendResult struct {
-	StreamPosition uint64
+	Position uint64
 }
 
 type AppendToStream struct {
@@ -79,6 +79,6 @@ func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToSt
 	t.Set(headKey, positionAsByteArray(currentStreamPosition))
 
 	return AppendResult{
-		StreamPosition: currentStreamPosition,
+		Position: currentStreamPosition,
 	}, nil
 }

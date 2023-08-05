@@ -3,7 +3,7 @@ package index
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/store/api/streamstore"
+	"github.com/sroze/fossil/store/streamstore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
