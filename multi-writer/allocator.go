@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/eskit"
-	"github.com/sroze/fossil/multi-writer/segments"
 	presence2 "github.com/sroze/fossil/presence"
+	"github.com/sroze/fossil/segments"
 	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/topology"
 	"golang.org/x/exp/maps"
 )
 
@@ -35,7 +36,7 @@ func NewAllocator(
 		stream: stream,
 		rw: eskit.NewReaderWriter(
 			ss,
-			rootCodec,
+			RootCodec,
 		),
 	}
 	a.state = eskit.NewProjection[AllocatorState](
@@ -81,7 +82,7 @@ func (a *Allocator) act(item eskit.ReadItem) error {
 			node := state.availableNodes[maps.Keys(state.availableNodes)[0]]
 
 			_, err := a.rw.Write([]eskit.EventToWrite{
-				{Stream: a.stream, Event: segments.SegmentAllocatedEvent{
+				{Stream: a.stream, Event: topology.SegmentAllocatedEvent{
 					SegmentId: segment.Id,
 					NodeId:    node.Id,
 				}, ExpectedPosition: &item.EndOfStreamSignal.StreamPosition},
@@ -98,9 +99,9 @@ func (a *Allocator) act(item eskit.ReadItem) error {
 
 func (a *Allocator) evolve(state AllocatorState, event interface{}) AllocatorState {
 	switch e := event.(type) {
-	case *segments.SegmentCreatedEvent:
+	case *topology.SegmentCreatedEvent:
 		state.segmentsWithoutNode[e.Segment.Id] = e.Segment
-	case *segments.SegmentAllocatedEvent:
+	case *topology.SegmentAllocatedEvent:
 		delete(state.segmentsWithoutNode, e.SegmentId)
 	case *presence2.NodeJoinedEvent:
 		state.availableNodes[e.Node.Id] = e.Node

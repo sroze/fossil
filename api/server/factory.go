@@ -1,9 +1,8 @@
-package api
+package server
 
 import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/sroze/fossil/api/index"
 	v1 "github.com/sroze/fossil/api/v1"
 	"github.com/sroze/fossil/streamstore"
 	"google.golang.org/grpc"
@@ -12,8 +11,7 @@ import (
 )
 
 type Server struct {
-	indexManager *index.IndexManager
-	streamStore  *streamstore.FoundationDBStore
+	streamStore *streamstore.FoundationDBStore
 
 	v1.UnimplementedWriterServer
 }
@@ -28,8 +26,7 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 	s := grpc.NewServer()
 	ss := streamstore.NewFoundationStore(db)
 	v1.RegisterWriterServer(s, &Server{
-		streamStore:  ss,
-		indexManager: index.NewManager(ss, "core/indexes"),
+		streamStore: ss,
 	})
 
 	// Start the GRPC API in the background.

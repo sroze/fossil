@@ -10,7 +10,7 @@ var rootCmd = &cobra.Command{
 	Use:   "fossil",
 	Short: "Fossil is an horizontally scalable event store",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Yay!")
+		// TODO: run all of the necessary pieces!
 	},
 }
 

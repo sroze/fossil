@@ -4,33 +4,31 @@ workspace {
     model {
         user = person "User"
         softwareSystem = softwareSystem "Fossil" {
-            store = container "Fossil Store" {
+            store = container "Fossil Store API" {
                 user -> this "Uses"
 
-                grpcHandler = component "GrpcHandler" "Handles incoming gRPC requests"
+                grpcServer = component "GrpcServer" "Handles incoming gRPC requests"
 
                 writeRequestRouter = component "WriteRequestRouter" "Routes incoming write requests to preferred writers for performance reasons."
-                grpcHandler -> writeRequestRouter
-
-                reader = component "Reader" "Handle reads across streams"
-                grpcHandler -> reader
+                grpcServer -> writeRequestRouter
 
                 presence = component "Node Presence" "Keeps track of the node in the cluster"
                 writeRequestRouter -> presence
 
                 segmentsTopology = component "Segments Topology" "Keeps track of segments and their location in the system"
-                reader -> segmentsTopology
 
                 allocator = component "Segment Manager" "Opens and close segments based on needs"
                 allocator -> segmentsTopology
 
-                writer = component "Writer" "Writes events in segments & streams."
-                writeRequestRouter -> writer
-                writer -> segmentsTopology
+
+                segmentsStore = component "Segments Store" "Event store, read/write and query-ing across streams." {
+                    writeRequestRouter -> this
+
+                    this -> segmentsTopology
+                }
 
                 streamStore = component "Stream Store" "Read and writes events within a specific stream" {
-                    writer -> this
-                    reader -> this
+                    segmentsStore -> this
                 }
             }
 

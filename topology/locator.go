@@ -1,4 +1,9 @@
-package segments
+package topology
+
+import (
+	"github.com/heimdalr/dag"
+	"github.com/sroze/fossil/segments"
+)
 
 // In Fossil, the store is split into smaller chucks:
 //
@@ -9,8 +14,8 @@ package segments
 
 type SegmentLocator interface {
 	// For a given stream, return the current active segments to write into.
-	GetSegmentToWriteInto(stream string) (Segment, error)
+	GetSegmentToWriteInto(stream string) (segments.Segment, error)
 
 	// For a given stream prefix (e.g. "user-"), return the list of segments to read from.
-	GetSegmentsToReadFrom(streamPrefix string) (SegmentNodes, error)
+	GetSegmentsToReadFrom(streamPrefix string) (*dag.DAG, error)
 }

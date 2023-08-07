@@ -1,42 +1,46 @@
-package api
+package server
 
 import (
 	"context"
-	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
 	v1 "github.com/sroze/fossil/api/v1"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
-	"log"
 	"testing"
 	"time"
 )
 
-func testClient() (v1.WriterClient, func() error) {
-	fdb.MustAPIVersion(720)
-	err, s, a := NewServer(fdb.MustOpenDatabase("../fdb.cluster"), 0)
+func ReaderAsChannel(stream v1.Writer_ReadStreamClient) chan *v1.ReadStreamReplyItem {
+	ch := make(chan *v1.ReadStreamReplyItem)
 
-	// Create the gRPC client.
-	conn, err := grpc.Dial(
-		a.String(),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
-	}
-	client := v1.NewWriterClient(conn)
+	go func() {
+		for {
+			item, err := stream.Recv()
+			if err == io.EOF {
+				close(ch)
+				return
+			}
 
-	return client, func() error {
-		err := conn.Close()
-		s.Stop()
+			if err != nil {
+				if e, ok := status.FromError(err); ok {
+					if e.Code() == codes.Canceled {
+						return
+					}
+				}
 
-		return err
-	}
+				panic(err)
+			}
+
+			ch <- item
+		}
+	}()
+
+	return ch
 }
 
-func Test_server(t *testing.T) {
+func Test_reader(t *testing.T) {
 	c, end := testClient()
 	defer end()
 
@@ -163,4 +167,6 @@ func Test_server(t *testing.T) {
 		assert.Equal(t, request.Payload, sumStreamResponse.Payload)
 		assert.Equal(t, uint64(1), sumStreamResponse.StreamPosition)
 	})
+
+	t.Skip("returns an error when stream does not exist")
 }

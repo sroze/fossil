@@ -4,8 +4,9 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/eskit"
-	"github.com/sroze/fossil/multi-writer/segments"
 	presence2 "github.com/sroze/fossil/presence"
+	segments2 "github.com/sroze/fossil/segments"
+	"github.com/sroze/fossil/topology"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -32,10 +33,10 @@ func Test_Allocator(t *testing.T) {
 				},
 				{
 					Stream: stream,
-					Event: segments.SegmentCreatedEvent{
-						Segment: segments.Segment{
+					Event: topology.SegmentCreatedEvent{
+						Segment: segments2.Segment{
 							Id:          segmentId,
-							StreamRange: segments.NewHashSplitRanges("", 1)[0],
+							StreamRange: segments2.NewHashSplitRanges(1)[0],
 						},
 					},
 				},
@@ -52,7 +53,7 @@ func Test_Allocator(t *testing.T) {
 			go a.rw.Read(context.Background(), stream, r[1].Position+1, ch)
 			event := <-ch
 
-			assert.Equal(t, &segments.SegmentAllocatedEvent{
+			assert.Equal(t, &topology.SegmentAllocatedEvent{
 				SegmentId: segmentId,
 				NodeId:    nodes[0].Id,
 			}, event.EventInStream.Event)

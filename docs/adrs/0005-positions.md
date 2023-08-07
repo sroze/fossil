@@ -18,4 +18,15 @@ This document clarifies.
 
 - **Expected position.**
   When writing to a stream, we can specify the expected position of the stream as it is _before_ writing
-  the provided event(s).
+  the provided event(s). Expecting to write in an empty stream means the expected position is `0`.
+
+- **Starting position.**
+  TODO: document.
+
+## Reflection
+
+This is actually quite confusing to have an offset difference between "event position"
+and "stream position". We can't have "stream position = -1" for empty streams just because we chose
+`uint64` as the type for event positions. We can and probably should change this.
+
+FIXME: enable `-1` (or similar value) when writing in the stream.
