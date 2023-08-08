@@ -18,8 +18,10 @@ type Watcher struct {
 	stream     string
 }
 
-var initialPresenceWatcherState = WatcherState{
-	availableNodes: map[uuid.UUID]Node{},
+func initialPresenceWatcherState() WatcherState {
+	return WatcherState{
+		availableNodes: map[uuid.UUID]Node{},
+	}
 }
 
 func NewWatcher(
@@ -42,7 +44,7 @@ func NewWatcher(
 	pw.projection = eskit.NewSubscribedProjection[WatcherState](
 		pw.rw,
 		stream,
-		initialPresenceWatcherState,
+		initialPresenceWatcherState(),
 		pw.evolve,
 	)
 

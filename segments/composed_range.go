@@ -10,9 +10,19 @@ func NewComposedRange(ranges ...StreamRange) ComposedRange {
 	}
 }
 
-func (r ComposedRange) Contains(streamOrPrefix string) bool {
+func (r ComposedRange) ContainsStream(stream string) bool {
 	for _, sr := range r.StreamRanges {
-		if !sr.Contains(streamOrPrefix) {
+		if !sr.ContainsStream(stream) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (r ComposedRange) ContainsStreamPrefixedWith(prefix string) bool {
+	for _, sr := range r.StreamRanges {
+		if !sr.ContainsStreamPrefixedWith(prefix) {
 			return false
 		}
 	}

@@ -30,8 +30,15 @@ func NewHashSplitRanges(partitionCount int) []HashSplitRange {
 	return NewHashSplitRangesWithSeed(partitionCount, generateSeed())
 }
 
-func (r HashSplitRange) Contains(streamOrPrefix string) bool {
-	return int(r.hash(streamOrPrefix))%r.PartitionCount == r.AssignedPartition
+func (r HashSplitRange) ContainsStream(stream string) bool {
+	return int(r.hash(stream))%r.PartitionCount == r.AssignedPartition
+}
+
+func (r HashSplitRange) ContainsStreamPrefixedWith(prefix string) bool {
+	// We currently hash on the entirety of the `stream` name to have even distribution
+	// between partitions. This means that we can't use the prefix to determine if the
+	// range contains the prefix.
+	return true
 }
 
 func (r HashSplitRange) hash(s string) uint32 {

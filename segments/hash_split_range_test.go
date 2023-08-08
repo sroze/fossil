@@ -11,12 +11,12 @@ func Test_HashSplitRange(t *testing.T) {
 	t.Run("will consistently assign the same stream to the same sub-range", func(t *testing.T) {
 		ranges := NewHashSplitRangesWithSeed(2, seed)
 
-		assert.True(t, ranges[0].Contains("bar/baz"))
-		assert.True(t, ranges[0].Contains("bar/baz"))
-		assert.False(t, ranges[1].Contains("bar/baz"))
+		assert.True(t, ranges[0].ContainsStream("bar/baz"))
+		assert.True(t, ranges[0].ContainsStream("bar/baz"))
+		assert.False(t, ranges[1].ContainsStream("bar/baz"))
 
-		assert.True(t, ranges[1].Contains("foo/bar"))
-		assert.True(t, ranges[1].Contains("foo/bar"))
-		assert.False(t, ranges[0].Contains("foo/bar"))
+		assert.True(t, ranges[1].ContainsStream("foo/bar"))
+		assert.True(t, ranges[1].ContainsStream("foo/bar"))
+		assert.False(t, ranges[0].ContainsStream("foo/bar"))
 	})
 }

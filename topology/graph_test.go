@@ -15,10 +15,10 @@ func Test_Graph(t *testing.T) {
 		b := a.Replacement()
 		c := b.Replacement()
 
-		g := initialState
-		g = Evolve(g, SegmentCreatedEvent{Segment: a})
-		g = Evolve(g, SegmentReplacedEvent{SegmentId: a.Id, ReplacedBy: b})
-		g = Evolve(g, SegmentReplacedEvent{SegmentId: b.Id, ReplacedBy: c})
+		g := initialGraphState()
+		g = EvolveGraphState(g, &SegmentCreatedEvent{Segment: a})
+		g = EvolveGraphState(g, &SegmentReplacedEvent{SegmentId: a.Id, ReplacedBy: b})
+		g = EvolveGraphState(g, &SegmentReplacedEvent{SegmentId: b.Id, ReplacedBy: c})
 
 		// Expects the last segment to be given for write
 		s, err := g.GetSegmentToWriteInto("foo")
@@ -51,13 +51,13 @@ func Test_Graph(t *testing.T) {
 		fAndg := e.Split(2)
 		iAndiAndj := fAndg[1].Split(3)
 
-		g := initialState
-		g = Evolve(g, SegmentCreatedEvent{Segment: a})
-		g = Evolve(g, SegmentReplacedEvent{SegmentId: a.Id, ReplacedBy: b})
-		g = Evolve(g, SegmentSplitEvent{SegmentId: b.Id, Into: cAndd})
-		g = Evolve(g, SegmentCreatedEvent{Segment: e})
-		g = Evolve(g, SegmentSplitEvent{SegmentId: e.Id, Into: fAndg})
-		g = Evolve(g, SegmentSplitEvent{SegmentId: fAndg[1].Id, Into: iAndiAndj})
+		g := initialGraphState()
+		g = EvolveGraphState(g, &SegmentCreatedEvent{Segment: a})
+		g = EvolveGraphState(g, &SegmentReplacedEvent{SegmentId: a.Id, ReplacedBy: b})
+		g = EvolveGraphState(g, &SegmentSplitEvent{SegmentId: b.Id, Into: cAndd})
+		g = EvolveGraphState(g, &SegmentCreatedEvent{Segment: e})
+		g = EvolveGraphState(g, &SegmentSplitEvent{SegmentId: e.Id, Into: fAndg})
+		g = EvolveGraphState(g, &SegmentSplitEvent{SegmentId: fAndg[1].Id, Into: iAndiAndj})
 
 		// Expects the last segments to be given for write
 		s, err := g.GetSegmentToWriteInto("foo/bar")
@@ -69,20 +69,26 @@ func Test_Graph(t *testing.T) {
 		assert.True(t, s.ID() == iAndiAndj[2].ID() || s.ID() == iAndiAndj[1].ID() || s.ID() == iAndiAndj[0].ID() || s.ID() == fAndg[0].ID())
 
 		// Expects the relevant segments to be given for read
-		d, err := g.GetSegmentsToReadFrom("foo/bar")
+		d, err := g.GetSegmentsToReadFrom("foo/")
 		assert.Nil(t, err)
 
 		assert.Equal(t, maps.Keys(d.GetRoots()), []string{a.ID()})
 		descendants, err := d.GetOrderedDescendants(a.ID())
 		assert.Nil(t, err)
-		assert.Equal(t, 2, len(descendants))
+		assert.Equal(t, 3, len(descendants))
 		assert.Equal(t, descendants[0], b.ID())
 		assert.True(t, descendants[1] == cAndd[0].ID() || descendants[1] == cAndd[1].ID())
+		assert.True(t, descendants[2] == cAndd[0].ID() || descendants[2] == cAndd[1].ID())
 
-		d, err = g.GetSegmentsToReadFrom("bar/baz")
+		d, err = g.GetSegmentsToReadFrom("bar/")
 		assert.Nil(t, err)
 		descendants, err = d.GetOrderedDescendants(e.ID())
 		assert.Nil(t, err)
-		assert.True(t, len(descendants) == 1 || len(descendants) == 4)
+		assert.True(t, len(descendants) == 5)
+		assert.True(t, descendants[0] == fAndg[0].ID() || descendants[0] == fAndg[1].ID())
+		assert.True(t, descendants[1] == fAndg[0].ID() || descendants[1] == fAndg[1].ID())
+		assert.True(t, descendants[2] == iAndiAndj[0].ID() || descendants[2] == iAndiAndj[1].ID() || descendants[2] == iAndiAndj[2].ID())
+		assert.True(t, descendants[3] == iAndiAndj[0].ID() || descendants[3] == iAndiAndj[1].ID() || descendants[3] == iAndiAndj[2].ID())
+		assert.True(t, descendants[4] == iAndiAndj[0].ID() || descendants[4] == iAndiAndj[1].ID() || descendants[4] == iAndiAndj[2].ID())
 	})
 }

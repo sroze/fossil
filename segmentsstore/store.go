@@ -13,7 +13,7 @@ type SegmentStore struct {
 	rw            *eskit.ReaderWriter
 	ss            streamstore.Store
 	locator       topology.SegmentLocator
-	segmentCursor map[uuid.UUID]uint64
+	segmentCursor map[uuid.UUID]int64
 }
 
 func NewSegmentStore(
@@ -23,7 +23,7 @@ func NewSegmentStore(
 	return &SegmentStore{
 		ss:            ss,
 		locator:       locator,
-		segmentCursor: map[uuid.UUID]uint64{},
+		segmentCursor: map[uuid.UUID]int64{},
 		rw: eskit.NewReaderWriter(
 			ss,
 			multi_writer.RootCodec,

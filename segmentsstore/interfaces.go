@@ -8,8 +8,13 @@ import (
 // TODO: this is the black magic to figure out.
 type Position string
 
+type EventInStore struct {
+	Event  streamstore.Event
+	Stream string
+}
+
 type QueryItem struct {
-	EventInStream *streamstore.EventInStream
+	EventInStream *EventInStore
 	Position      *Position
 	Error         error
 }

@@ -38,7 +38,7 @@ func NewProjectionFromEvents[T any](
 	a := NewProjection(initialState, evolveFunc)
 
 	for i, event := range events {
-		err := a.Apply(event, int64(i))
+		err := a.Apply(event, int64(i)-1)
 		if err != nil {
 			panic(err)
 		}
@@ -53,7 +53,7 @@ func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition int64) e
 	}
 
 	a.state = a.evolve(a.state, event)
-	a.position = expectedStreamPosition + 1
+	a.position = a.position + 1
 	a.eventBroadcaster.Submit(a.position)
 
 	return nil

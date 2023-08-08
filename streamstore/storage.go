@@ -15,6 +15,7 @@ type Event struct {
 	EventId   string
 	EventType string
 	Payload   []byte
+	Metadata  map[string]string
 }
 
 func EventInStreamKey(stream string, position int64) fdb.KeyConvertible {

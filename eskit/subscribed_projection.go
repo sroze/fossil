@@ -30,7 +30,7 @@ func NewSubscribedProjection[T any](
 
 func (sp *SubscribedProjection[T]) act(item ReadItem) error {
 	if item.EventInStream != nil {
-		return sp.projection.Apply(item.EventInStream.Event, item.EventInStream.Position)
+		return sp.projection.Apply(item.EventInStream.Event, item.EventInStream.Position-1)
 	}
 
 	return nil

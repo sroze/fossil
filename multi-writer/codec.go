@@ -12,6 +12,8 @@ var RootCodec = codec.NewGobCodec(
 	topology.SegmentReplacedEvent{},
 	topology.SegmentSplitEvent{},
 	segments.HashSplitRange{},
+	segments.PrefixRange{},
+	segments.ComposedRange{},
 	presence.NodeJoinedEvent{},
 	presence.NodeLeftEvent{},
 )

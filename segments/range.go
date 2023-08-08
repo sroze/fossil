@@ -1,6 +1,9 @@
 package segments
 
-// Defines a range of stream names.
 type StreamRange interface {
-	Contains(streamOrPrefix string) bool
+	// ContainsStream should return true if the stream name is contained within the range.
+	ContainsStream(stream string) bool
+
+	// ContainsStreamPrefixedWith should return true if the range will contain streams that have the provided prefix.
+	ContainsStreamPrefixedWith(prefix string) bool
 }

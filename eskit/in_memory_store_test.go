@@ -11,17 +11,31 @@ import (
 func Test_InMemoryStore(t *testing.T) {
 	s := NewInMemoryStore()
 
-	t.Run("write & stream from a stream", func(t *testing.T) {
+	t.Run("write & read from a stream", func(t *testing.T) {
 		stream := "test" + uuid.NewString()
 
+		eventId := uuid.NewString()
 		result, err := s.Write([]streamstore.AppendToStream{
 			{Stream: stream, Events: []streamstore.Event{
-				{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("bar")},
+				{EventId: eventId, EventType: "Foo", Payload: []byte("bar")},
 			}},
 		})
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(result))
 		assert.Equal(t, int64(0), result[0].Position)
+
+		ch := make(chan streamstore.ReadItem)
+		go s.Read(context.Background(), stream, 0, ch)
+
+		item := <-ch
+		assert.Equal(t, eventId, item.EventInStream.Event.EventId)
+
+		// Expect the end of stream signal.
+		item, more := <-ch
+		assert.False(t, more)
+		assert.Nil(t, item.EventInStream)
+		assert.Nil(t, item.Error)
+		assert.Nil(t, item.EndOfStreamSignal)
 	})
 
 	t.Run("read & follow on an empty stream", func(t *testing.T) {

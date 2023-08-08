@@ -30,8 +30,8 @@ func Test_Segment_Split(t *testing.T) {
 		assert.Equal(t, 2, len(splitSegments))
 
 		// Split segments should contain the original segment's prefix.
-		assert.False(t, splitSegments[0].StreamRange.Contains("bar/"))
-		assert.False(t, splitSegments[1].StreamRange.Contains("bar/"))
+		assert.False(t, splitSegments[0].StreamRange.ContainsStream("bar/"))
+		assert.False(t, splitSegments[1].StreamRange.ContainsStream("bar/"))
 
 		// Generate a number of streams and measure distribution between segmenrts.
 		distribution := sampleStreamDistribution(splitSegments, 1000, func() string {
@@ -84,7 +84,7 @@ func sampleStreamDistribution(
 		stream := streamGenerator()
 
 		for _, splitSegment := range segments {
-			if splitSegment.StreamRange.Contains(stream) {
+			if splitSegment.StreamRange.ContainsStream(stream) {
 				distribution[splitSegment.ID()]++
 			}
 		}

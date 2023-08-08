@@ -18,26 +18,28 @@ type GraphState struct {
 	segments map[string]segments.Segment
 }
 
-var initialState = GraphState{
-	d:        dag.NewDAG(),
-	segments: make(map[string]segments.Segment),
+func initialGraphState() GraphState {
+	return GraphState{
+		d:        dag.NewDAG(),
+		segments: make(map[string]segments.Segment),
+	}
 }
 
-func Evolve(state GraphState, event interface{}) GraphState {
+func EvolveGraphState(state GraphState, event interface{}) GraphState {
 	switch e := event.(type) {
-	case SegmentCreatedEvent:
+	case *SegmentCreatedEvent:
 		state.segments[e.Segment.ID()] = e.Segment
 		addVertexOrPanic(state.d, segmentInDag{
 			Id: e.Segment.ID(),
 		})
-	case SegmentSplitEvent:
+	case *SegmentSplitEvent:
 		for _, s := range e.Into {
 			state.segments[s.ID()] = s
 
 			addVertexOrPanic(state.d, segmentInDag{Id: s.ID()})
 			addEdgeOrPanic(state.d, e.SegmentId.String(), s.ID())
 		}
-	case SegmentReplacedEvent:
+	case *SegmentReplacedEvent:
 		state.segments[e.ReplacedBy.ID()] = e.ReplacedBy
 
 		addVertexOrPanic(state.d, segmentInDag{Id: e.ReplacedBy.ID()})
@@ -53,7 +55,7 @@ func (g GraphState) GetSegmentToWriteInto(stream string) (segments.Segment, erro
 	leaves := g.d.GetLeaves()
 	for _, l := range leaves {
 		segment := g.segments[l.(segmentInDag).Id]
-		if segment.StreamRange.Contains(stream) {
+		if segment.StreamRange.ContainsStream(stream) {
 			return segment, nil
 		}
 	}
@@ -65,8 +67,17 @@ func (g GraphState) GetSegmentsToReadFrom(streamPrefix string) (*dag.DAG, error)
 	return FilterDag(g.d, func(v dag.IDInterface) bool {
 		segment := g.segments[v.(segmentInDag).Id]
 
-		return segment.StreamRange.Contains(streamPrefix)
+		return segment.StreamRange.ContainsStreamPrefixedWith(streamPrefix)
 	}), nil
+}
+
+func (g GraphState) GetSegmentById(segmentId string) *segments.Segment {
+	segment, ok := g.segments[segmentId]
+	if !ok {
+		return nil
+	}
+
+	return &segment
 }
 
 func addVertexOrPanic(d *dag.DAG, v dag.IDInterface) {

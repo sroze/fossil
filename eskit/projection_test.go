@@ -2,6 +2,7 @@ package eskit
 
 import (
 	"context"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -11,22 +12,24 @@ type stringAppendState string
 
 func evolveStringAppend(state stringAppendState, event interface{}) stringAppendState {
 	switch e := event.(type) {
-	case appendEvent:
-		state = stringAppendState(string(state) + e.s)
+	case *appendEvent:
+		state = stringAppendState(string(state) + e.S)
+	default:
+		panic(fmt.Errorf("unknown event type %T", event))
 	}
 
 	return state
 }
 
 type appendEvent struct {
-	s string
+	S string
 }
 
 func Test_Projection_Apply(t *testing.T) {
 	t.Run("fails if position is different", func(t *testing.T) {
 		p := NewProjection("a", evolveStringAppend)
-		assert.NotNil(t, p.Apply(appendEvent{s: "b"}, 0))
-		assert.Nil(t, p.Apply(appendEvent{s: "b"}, -1))
+		assert.NotNil(t, p.Apply(appendEvent{S: "b"}, 0))
+		assert.Nil(t, p.Apply(appendEvent{S: "b"}, -1))
 	})
 }
 
@@ -44,7 +47,7 @@ func Test_Projection_WaitForPosition(t *testing.T) {
 			time.Sleep(5 * time.Millisecond)
 			events <- "start-applying"
 			assert.Nil(t, p.Apply(appendEvent{
-				s: "b",
+				S: "b",
 			}, -1))
 		}()
 

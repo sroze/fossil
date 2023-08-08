@@ -1,10 +1,11 @@
 package segments
 
-import "strings"
+import (
+	"golang.org/x/exp/constraints"
+	"strings"
+)
 
 type PrefixRange struct {
-	StreamRange
-
 	Prefix string
 }
 
@@ -14,6 +15,19 @@ func NewPrefixRange(prefix string) PrefixRange {
 	}
 }
 
-func (r PrefixRange) Contains(streamOrPrefix string) bool {
-	return strings.HasPrefix(streamOrPrefix, r.Prefix)
+func (r PrefixRange) ContainsStream(stream string) bool {
+	return strings.HasPrefix(stream, r.Prefix)
+}
+
+func (r PrefixRange) ContainsStreamPrefixedWith(prefix string) bool {
+	lengthsToCompare := min(len(prefix), len(r.Prefix))
+
+	return r.Prefix[:lengthsToCompare] == prefix[:lengthsToCompare]
+}
+
+func min[T constraints.Ordered](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
 }
