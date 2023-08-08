@@ -1,5 +1,7 @@
 package eskit
 
+import "context"
+
 type SubscribedProjection[T any] struct {
 	subscription Subscription
 	projection   *Projection[T]
@@ -38,12 +40,16 @@ func (sp *SubscribedProjection[T]) GetState() T {
 	return sp.projection.GetState()
 }
 
-func (sp *SubscribedProjection[T]) GetPosition() uint64 {
+func (sp *SubscribedProjection[T]) GetPosition() int64 {
 	return sp.projection.GetPosition()
 }
 
 func (sp *SubscribedProjection[T]) WaitEndOfStream() {
 	sp.subscription.WaitEndOfStream()
+}
+
+func (sp *SubscribedProjection[T]) WaitForPosition(ctx context.Context, position int64) {
+	sp.projection.WaitForPosition(ctx, position)
 }
 
 func (sp *SubscribedProjection[T]) Start() error {

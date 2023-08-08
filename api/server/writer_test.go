@@ -24,7 +24,7 @@ func Test_writer(t *testing.T) {
 			Payload:    []byte("{\"foo\": 123}"),
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, uint64(1), response.StreamPosition)
+		assert.Equal(t, int64(1), response.StreamPosition)
 
 		response, err = c.AppendEvent(context.Background(), &v1.AppendRequest{
 			StreamName: stream,
@@ -33,12 +33,12 @@ func Test_writer(t *testing.T) {
 			Payload:    []byte("{\"foo\": 123}"),
 		})
 		assert.Nil(t, err)
-		assert.Equal(t, uint64(2), response.StreamPosition)
+		assert.Equal(t, int64(2), response.StreamPosition)
 	})
 
 	t.Run("expects the write stream position", func(t *testing.T) {
 		t.Run("successfully expects an empty stream then fails expecting it to be empty", func(t *testing.T) {
-			emptyStreamPosition := uint64(0)
+			emptyStreamPosition := int64(0)
 			stream := "Foo/" + uuid.NewString()
 
 			_, err := c.AppendEvent(context.Background(), &v1.AppendRequest{
@@ -72,7 +72,7 @@ func Test_writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Writes an event at the expected position.
-			expectedVersion := uint64(20)
+			expectedVersion := int64(20)
 			_, err = c.AppendEvent(context.Background(), &v1.AppendRequest{
 				StreamName:       stream,
 				EventId:          uuid.New().String(),
@@ -97,7 +97,7 @@ func Test_writer(t *testing.T) {
 	})
 
 	t.Run("only one of multiple concurrent writes succeeds", func(t *testing.T) {
-		emptyStreamPosition := uint64(0)
+		emptyStreamPosition := int64(0)
 		stream := "Foo/" + uuid.NewString()
 
 		numberOfConcurrentRequests := 5

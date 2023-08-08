@@ -17,19 +17,19 @@ message AppendRequest {
   string event_type = 3;
   bytes payload = 4;
 
-  optional uint64 expected_position = 5;
+  optional int64 expected_position = 5;
 }
 
 // The response message after successfully appending an event to the store.
 message AppendReply {
-  uint64 stream_position = 1;
+  int64 stream_position = 1;
 }
 
 message ReadStreamRequest {
   string stream_name = 1;
 
   // Allows to set a starting position. When set at `0`, the starting position is the beginning of the stream.
-  uint64 starting_position = 2;
+  int64 starting_position = 2;
 
   // If true, subscribe to the stream and receive new events as they are appended.
   bool subscribe = 3;
@@ -38,7 +38,7 @@ message ReadStreamRequest {
 message ReadStreamReplyItem {
   string event_id = 1;
   string event_type = 2;
-  uint64 stream_position = 3;
+  int64 stream_position = 3;
 
   bytes payload = 4;
 }

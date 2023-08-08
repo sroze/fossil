@@ -12,21 +12,13 @@ This document clarifies.
   starting with `0`.
 
 - **Stream position.**
-  This is the position of the head, where events would be written. An empty stream
-  position is `0`, a stream with a single event is `1`, etc... In other words, a stream position
-  is the number of events it has in it.
+  The stream position is the position of the head event. For example, it is `0` if it has a single event.
+  If the stream is empty, its position is `-1`.
 
 - **Expected position.**
   When writing to a stream, we can specify the expected position of the stream as it is _before_ writing
-  the provided event(s). Expecting to write in an empty stream means the expected position is `0`.
+  the provided event(s). For example, expecting to write in an empty stream means the expected position is `-1`.
 
 - **Starting position.**
-  TODO: document.
-
-## Reflection
-
-This is actually quite confusing to have an offset difference between "event position"
-and "stream position". We can't have "stream position = -1" for empty streams just because we chose
-`uint64` as the type for event positions. We can and probably should change this.
-
-FIXME: enable `-1` (or similar value) when writing in the stream.
+  The (inclusive) position from which to read a stream from. It means that to start reading a stream from
+  the beginning, the starting position must be `0`.

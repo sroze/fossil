@@ -6,7 +6,7 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 )
 
-func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
+func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
 
 	_, err := ss.db.ReadTransact(func(t fdb.ReadTransaction) (interface{}, error) {
@@ -41,11 +41,11 @@ func (ss FoundationDBStore) Read(ctx context.Context, stream string, startingPos
 	}
 }
 
-func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
+func (ss FoundationDBStore) ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
 
 	for {
-		var lastPosition uint64 = 0
+		var lastPosition int64 = 0
 		readChannel := make(chan ReadItem)
 		go func() {
 			for item := range readChannel {

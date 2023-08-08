@@ -17,11 +17,11 @@ type Event struct {
 	Payload   []byte
 }
 
-func EventInStreamKey(stream string, position uint64) fdb.KeyConvertible {
+func EventInStreamKey(stream string, position int64) fdb.KeyConvertible {
 	return eventsInStreamSpace(streamInStoreSpace(stream)).Sub(positionAsByteArray(position))
 }
 
-func ReverseEventInStreamKey(key fdb.Key) (string, uint64, error) {
+func ReverseEventInStreamKey(key fdb.Key) (string, int64, error) {
 	keyTuples, err := subspace.Sub(tuple.Tuple{"s"}).Unpack(key)
 	if err != nil {
 		return "", 0, err
@@ -33,7 +33,7 @@ func ReverseEventInStreamKey(key fdb.Key) (string, uint64, error) {
 	return stream, position, nil
 }
 
-func StreamEventsKeyRange(stream string, startingPosition uint64) fdb.Range {
+func StreamEventsKeyRange(stream string, startingPosition int64) fdb.Range {
 	streamSpace := streamInStoreSpace(stream)
 	streamEventsSpace := eventsInStreamSpace(streamSpace)
 
@@ -93,13 +93,13 @@ func headInStreamKey(stream string) fdb.KeyConvertible {
 	return streamInStoreSpace(stream).Sub("head")
 }
 
-func positionAsByteArray(position uint64) []byte {
-	encodedBytes := make([]byte, 8) // uint64 is 8 bytes
-	binary.BigEndian.PutUint64(encodedBytes, position)
+func positionAsByteArray(position int64) []byte {
+	encodedBytes := make([]byte, 8) // int64 is 8 bytes
+	binary.BigEndian.PutUint64(encodedBytes, uint64(position))
 
 	return encodedBytes
 }
 
-func positionFromByteArray(b []byte) uint64 {
-	return binary.BigEndian.Uint64(b)
+func positionFromByteArray(b []byte) int64 {
+	return int64(binary.BigEndian.Uint64(b))
 }

@@ -4,42 +4,40 @@ import (
 	"context"
 	"fmt"
 	"github.com/dustin/go-broadcast"
-	streamstore2 "github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/streamstore"
 	"sync"
 )
 
 type InMemoryStore struct {
-	streamstore2.Store
-
-	store map[string][]streamstore2.Event
+	store map[string][]streamstore.Event
 	b     broadcast.Broadcaster
 	mu    sync.Mutex
 }
 
 type appendNotification struct {
 	stream   string
-	position uint64
+	position int64
 }
 
 func NewInMemoryStore() *InMemoryStore {
 	return &InMemoryStore{
-		store: map[string][]streamstore2.Event{},
+		store: map[string][]streamstore.Event{},
 		b:     broadcast.NewBroadcaster(1),
 	}
 }
 
-func (s *InMemoryStore) Write(commands []streamstore2.AppendToStream) ([]streamstore2.AppendResult, error) {
+func (s *InMemoryStore) Write(commands []streamstore.AppendToStream) ([]streamstore.AppendResult, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	results := make([]streamstore2.AppendResult, len(commands))
+	results := make([]streamstore.AppendResult, len(commands))
 
 	for i, command := range commands {
 		if _, ok := s.store[command.Stream]; !ok {
-			s.store[command.Stream] = []streamstore2.Event{}
+			s.store[command.Stream] = []streamstore.Event{}
 		}
 
-		positionOfFirstEvent := uint64(len(s.store[command.Stream]))
+		positionOfFirstEvent := int64(len(s.store[command.Stream]) - 1)
 		if command.ExpectedPosition != nil && *command.ExpectedPosition != positionOfFirstEvent {
 			return nil, fmt.Errorf("expected position %d, but got %d", *command.ExpectedPosition, positionOfFirstEvent)
 		}
@@ -48,8 +46,8 @@ func (s *InMemoryStore) Write(commands []streamstore2.AppendToStream) ([]streams
 			s.store[command.Stream] = append(s.store[command.Stream], event)
 		}
 
-		results[i] = streamstore2.AppendResult{
-			Position: positionOfFirstEvent + uint64(len(command.Events)) - 1,
+		results[i] = streamstore.AppendResult{
+			Position: positionOfFirstEvent + int64(len(command.Events)),
 		}
 
 		s.b.Submit(appendNotification{
@@ -61,7 +59,7 @@ func (s *InMemoryStore) Write(commands []streamstore2.AppendToStream) ([]streams
 	return results, nil
 }
 
-func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore2.ReadItem) {
+func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPosition int64, ch chan streamstore.ReadItem) {
 	s.mu.Lock()
 
 	if len(s.store[stream]) < int(startingPosition) {
@@ -73,27 +71,27 @@ func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPositio
 	s.mu.Unlock()
 
 	for i, event := range eventsToBeSent {
-		ch <- streamstore2.ReadItem{
-			EventInStream: &streamstore2.EventInStream{
+		ch <- streamstore.ReadItem{
+			EventInStream: &streamstore.EventInStream{
 				Event:    event,
-				Position: startingPosition + uint64(i),
+				Position: startingPosition + int64(i),
 			},
 		}
 	}
 }
 
-func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan streamstore2.ReadItem) {
+func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan streamstore.ReadItem) {
 	s.Read(ctx, stream, startingPosition, ch)
-	nextPosition := uint64(len(s.store[stream]))
-	ch <- streamstore2.ReadItem{
-		EndOfStreamSignal: &streamstore2.EndOfStreamSignal{
+	nextPosition := int64(len(s.store[stream]))
+	ch <- streamstore.ReadItem{
+		EndOfStreamSignal: &streamstore.EndOfStreamSignal{
 			StreamPosition: nextPosition,
 		},
 	}
 
 	err := s.WaitForEvent(ctx, stream, nextPosition)
 	if err != nil {
-		ch <- streamstore2.ReadItem{
+		ch <- streamstore.ReadItem{
 			Error: err,
 		}
 	}
@@ -101,7 +99,7 @@ func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, starti
 	s.ReadAndFollow(ctx, stream, nextPosition, ch)
 }
 
-func (s *InMemoryStore) WaitForEvent(ctx context.Context, stream string, currentPosition uint64) error {
+func (s *InMemoryStore) WaitForEvent(ctx context.Context, stream string, currentPosition int64) error {
 	s.mu.Lock()
 	events, ok := s.store[stream]
 	// FIXME: test for `>` instead of `>=`

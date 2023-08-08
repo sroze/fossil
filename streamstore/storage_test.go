@@ -14,7 +14,7 @@ func Test_ReverseEventInStreamKey(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, "foo/bar", stream)
-		assert.Equal(t, uint64(12), position)
+		assert.Equal(t, int64(12), position)
 	})
 }
 func Test_EventRow(t *testing.T) {

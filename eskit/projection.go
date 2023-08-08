@@ -14,7 +14,7 @@ type Projection[T any] struct {
 
 	// Internal matters.
 	state            T
-	position         uint64
+	position         int64
 	eventBroadcaster broadcast.Broadcaster
 }
 
@@ -23,6 +23,7 @@ func NewProjection[T any](
 	evolveFunc EvolveFunc[T],
 ) *Projection[T] {
 	return &Projection[T]{
+		position:         -1,
 		state:            initialState,
 		evolve:           evolveFunc,
 		eventBroadcaster: broadcast.NewBroadcaster(1),
@@ -37,7 +38,7 @@ func NewProjectionFromEvents[T any](
 	a := NewProjection(initialState, evolveFunc)
 
 	for i, event := range events {
-		err := a.Apply(event, uint64(i))
+		err := a.Apply(event, int64(i))
 		if err != nil {
 			panic(err)
 		}
@@ -46,7 +47,7 @@ func NewProjectionFromEvents[T any](
 	return a
 }
 
-func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition uint64) error {
+func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition int64) error {
 	if a.position != expectedStreamPosition {
 		return fmt.Errorf("expected position %d, but got %d", a.position, expectedStreamPosition)
 	}
@@ -58,7 +59,7 @@ func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition uint64) 
 	return nil
 }
 
-func (a *Projection[T]) WaitForPosition(ctx context.Context, position uint64) {
+func (a *Projection[T]) WaitForPosition(ctx context.Context, position int64) {
 	ch := make(chan interface{})
 	a.eventBroadcaster.Register(ch)
 	defer a.eventBroadcaster.Unregister(ch)
@@ -72,7 +73,7 @@ func (a *Projection[T]) WaitForPosition(ctx context.Context, position uint64) {
 		case <-ctx.Done():
 			return
 		case p := <-ch:
-			if p.(uint64) >= position {
+			if p.(int64) >= position {
 				return
 			}
 		}
@@ -83,6 +84,6 @@ func (a *Projection[T]) GetState() T {
 	return a.state
 }
 
-func (a *Projection[T]) GetPosition() uint64 {
+func (a *Projection[T]) GetPosition() int64 {
 	return a.position
 }

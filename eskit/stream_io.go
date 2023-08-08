@@ -3,18 +3,18 @@ package eskit
 import (
 	"context"
 	"github.com/sroze/fossil/eskit/codec"
-	streamstore2 "github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/streamstore"
 )
 
 type EventInStream struct {
 	Event    interface{}
-	Position uint64
+	Position int64
 }
 
 type ReadItem struct {
 	Error             error
 	EventInStream     *EventInStream
-	EndOfStreamSignal *streamstore2.EndOfStreamSignal
+	EndOfStreamSignal *streamstore.EndOfStreamSignal
 }
 
 type Reader interface {
@@ -22,28 +22,28 @@ type Reader interface {
 	// Events are decoded using the codec provided when creating the reader.
 	// EndOfStreamSignal is sent when the end of the stream is reached.
 	// The channel is closed when the context is done.
-	Read(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem)
-	ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem)
+	Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem)
+	ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem)
 }
 
 type EventToWrite struct {
 	Stream           string
 	Event            interface{}
-	ExpectedPosition *uint64
+	ExpectedPosition *int64
 }
 
 type Writer interface {
 	// Write writes the events to the stream.
-	Write(events []EventToWrite) ([]streamstore2.AppendResult, error)
+	Write(events []EventToWrite) ([]streamstore.AppendResult, error)
 }
 
 type ReaderWriter struct {
-	store streamstore2.Store
+	store streamstore.Store
 	codec codec.Codec
 }
 
 func NewReaderWriter(
-	store streamstore2.Store,
+	store streamstore.Store,
 	codec codec.Codec,
 ) *ReaderWriter {
 	return &ReaderWriter{
@@ -52,17 +52,17 @@ func NewReaderWriter(
 	}
 }
 
-func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore2.AppendResult, error) {
-	commands := make([]streamstore2.AppendToStream, len(events))
+func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore.AppendResult, error) {
+	commands := make([]streamstore.AppendToStream, len(events))
 	for i, event := range events {
 		serializedEvent, err := rw.codec.Serialize(event.Event)
 		if err != nil {
 			return nil, err
 		}
 
-		commands[i] = streamstore2.AppendToStream{
+		commands[i] = streamstore.AppendToStream{
 			Stream:           event.Stream,
-			Events:           []streamstore2.Event{serializedEvent},
+			Events:           []streamstore.Event{serializedEvent},
 			ExpectedPosition: event.ExpectedPosition,
 		}
 	}
@@ -70,21 +70,21 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore2.AppendResul
 	return rw.store.Write(commands)
 }
 
-func (rw *ReaderWriter) ReadAndFollow(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
+func (rw *ReaderWriter) ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
-	intermediaryCh := make(chan streamstore2.ReadItem, 10)
+	intermediaryCh := make(chan streamstore.ReadItem, 10)
 	go rw.store.ReadAndFollow(ctx, stream, startingPosition, intermediaryCh)
 	rw.transformToDecodedChannel(ctx, intermediaryCh, ch)
 }
 
-func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition uint64, ch chan ReadItem) {
+func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
-	intermediaryCh := make(chan streamstore2.ReadItem, 10)
+	intermediaryCh := make(chan streamstore.ReadItem, 10)
 	go rw.store.Read(ctx, stream, startingPosition, intermediaryCh)
 	rw.transformToDecodedChannel(ctx, intermediaryCh, ch)
 }
 
-func (rw *ReaderWriter) transformToDecodedChannel(ctx context.Context, source chan streamstore2.ReadItem, target chan ReadItem) {
+func (rw *ReaderWriter) transformToDecodedChannel(ctx context.Context, source chan streamstore.ReadItem, target chan ReadItem) {
 	for item := range source {
 		if item.Error != nil {
 			target <- ReadItem{

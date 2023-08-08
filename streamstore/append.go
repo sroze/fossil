@@ -7,13 +7,13 @@ import (
 )
 
 type AppendResult struct {
-	Position uint64
+	Position int64
 }
 
 type AppendToStream struct {
 	Stream           string
 	Events           []Event
-	ExpectedPosition *uint64
+	ExpectedPosition *int64
 }
 
 // TODO: use a custom for the conflict (@see https://earthly.dev/blog/golang-errors/)
@@ -49,7 +49,7 @@ func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToSt
 	head := t.Get(headKey).MustGet()
 
 	// Get the current currentStreamPosition.
-	var currentStreamPosition uint64
+	var currentStreamPosition int64
 	if head == nil {
 		currentStreamPosition = 0
 	} else {
