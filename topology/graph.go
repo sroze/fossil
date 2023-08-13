@@ -64,10 +64,14 @@ func (g GraphState) GetSegmentToWriteInto(stream string) (segments.Segment, erro
 }
 
 func (g GraphState) GetSegmentsToReadFrom(streamPrefix string) (*dag.DAG, error) {
-	return FilterDag(g.d, func(v dag.IDInterface) bool {
+	return FilterForwardDag(g.d, func(v dag.IDInterface) FilterResult {
 		segment := g.segments[v.(segmentInDag).Id]
 
-		return segment.StreamRange.ContainsStreamPrefixedWith(streamPrefix)
+		if segment.StreamRange.ContainsStreamPrefixedWith(streamPrefix) {
+			return IncludeAndContinueWalking
+		}
+
+		return ExcludeAndStopWalking
 	}), nil
 }
 
@@ -83,6 +87,11 @@ func (g GraphState) GetSegmentById(segmentId string) *segments.Segment {
 func addVertexOrPanic(d *dag.DAG, v dag.IDInterface) {
 	_, err := d.AddVertex(v)
 	if err != nil {
+		_, isDuplicate := err.(dag.VertexDuplicateError)
+		if isDuplicate {
+			return
+		}
+
 		panic(err)
 	}
 }

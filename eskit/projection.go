@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/dustin/go-broadcast"
+	"sync"
 )
 
 type EvolveFunc[T any] func(state T, event interface{}) T
@@ -16,6 +17,7 @@ type Projection[T any] struct {
 	state            T
 	position         int64
 	eventBroadcaster broadcast.Broadcaster
+	mutex            sync.Mutex
 }
 
 func NewProjection[T any](
@@ -48,6 +50,9 @@ func NewProjectionFromEvents[T any](
 }
 
 func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition int64) error {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+
 	if a.position != expectedStreamPosition {
 		return fmt.Errorf("expected position %d, but got %d", a.position, expectedStreamPosition)
 	}
@@ -61,12 +66,15 @@ func (a *Projection[T]) Apply(event interface{}, expectedStreamPosition int64) e
 
 func (a *Projection[T]) WaitForPosition(ctx context.Context, position int64) {
 	ch := make(chan interface{})
+	a.mutex.Lock()
 	a.eventBroadcaster.Register(ch)
 	defer a.eventBroadcaster.Unregister(ch)
 
 	if a.position >= position {
 		return
 	}
+
+	a.mutex.Unlock()
 
 	for {
 		select {

@@ -40,6 +40,7 @@ func (w *SegmentStore) Write(commands []streamstore.AppendToStream) ([]streamsto
 			//       we need to refetch the head position from the stream and retry.
 			ExpectedPosition: &segmentPosition,
 		})
+
 	}
 
 	result, err := w.ss.Write(writeCommands)

@@ -64,7 +64,7 @@ func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToSt
 	}
 
 	for _, event := range command.Events {
-		// Advance the stream position by one for each event.
+		// AdvanceTo the stream position by one for each event.
 		currentStreamPosition = currentStreamPosition + 1
 
 		row, err := EncodeEvent(event)

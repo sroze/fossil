@@ -5,8 +5,7 @@ import (
 	"github.com/sroze/fossil/streamstore"
 )
 
-// TODO: this is the black magic to figure out.
-type Position string
+type PositionCursor string
 
 type EventInStore struct {
 	Event  streamstore.Event
@@ -15,12 +14,12 @@ type EventInStore struct {
 
 type QueryItem struct {
 	EventInStream *EventInStore
-	Position      *Position
+	Position      *PositionCursor
 	Error         error
 }
 
 type QueryApi interface {
 	// Query returns a channel of `ReadItem` that will be filled with the
 	// content of the segments that are relevant to the query.
-	Query(ctx context.Context, prefix string, startingPosition Position, ch chan QueryItem)
+	Query(ctx context.Context, prefix string, startingPosition PositionCursor, ch chan QueryItem)
 }

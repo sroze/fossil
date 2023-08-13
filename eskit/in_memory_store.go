@@ -96,7 +96,9 @@ func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, starti
 		ch <- item
 	}
 
+	s.mu.Lock()
 	nextPosition := int64(len(s.store[stream]))
+	s.mu.Unlock()
 	ch <- streamstore.ReadItem{
 		EndOfStreamSignal: &streamstore.EndOfStreamSignal{
 			StreamPosition: nextPosition,
@@ -126,6 +128,7 @@ func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, starti
 
 func (s *InMemoryStore) WaitForEvent(ctx context.Context, stream string, currentPosition int64) error {
 	s.mu.Lock()
+
 	events, ok := s.store[stream]
 	// FIXME: test for `>` instead of `>=`
 	if ok && len(events) > int(currentPosition) {
