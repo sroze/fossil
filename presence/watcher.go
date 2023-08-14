@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/eskit"
 	"github.com/sroze/fossil/eskit/codec"
+	"github.com/sroze/fossil/livetail"
 	"github.com/sroze/fossil/streamstore"
 )
 
@@ -13,7 +14,7 @@ type WatcherState struct {
 
 type Watcher struct {
 	rw         *eskit.ReaderWriter
-	projection *eskit.SubscribedProjection[WatcherState]
+	projection *eskit.LiveProjection[WatcherState]
 	presence   NodePresence
 	stream     string
 }
@@ -29,21 +30,25 @@ func NewWatcher(
 	stream string,
 	presence NodePresence,
 ) *Watcher {
+	c := codec.NewGobCodec(
+		NodeLeftEvent{},
+		NodeJoinedEvent{},
+	)
+
 	pw := Watcher{
 		presence: presence,
 		stream:   stream,
 		rw: eskit.NewReaderWriter(
 			ss,
-			codec.NewGobCodec(
-				NodeLeftEvent{},
-				NodeJoinedEvent{},
-			),
+			c,
 		),
 	}
 
-	pw.projection = eskit.NewSubscribedProjection[WatcherState](
-		pw.rw,
-		stream,
+	pw.projection = eskit.NewLiveProjection[WatcherState](
+		livetail.NewLiveTail(
+			livetail.NewStreamReader(ss, stream),
+		),
+		c,
 		initialPresenceWatcherState(),
 		pw.evolve,
 	)
@@ -106,10 +111,7 @@ func (pw *Watcher) compareAndDispatchPresence() error {
 }
 
 func (pw *Watcher) Start() error {
-	err := pw.projection.Start()
-	if err != nil {
-		return err
-	}
+	pw.projection.Start()
 
 	return pw.compareAndDispatchPresence()
 }

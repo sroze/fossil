@@ -8,75 +8,80 @@ import (
 	"testing"
 )
 
-func Test_ReadAndFollow(t *testing.T) {
+func Test_Read(t *testing.T) {
 	fdb.MustAPIVersion(720)
-	ss := NewFoundationStore(fdb.MustOpenDatabase("../../fdb.cluster"))
+	s := NewSegmentStore(fdb.MustOpenDatabase("../fdb.cluster"))
 
-	t.Run("sends a message when end-of-stream is being hit", func(t *testing.T) {
-		stream := "Foo/" + uuid.NewString()
+	stream := "Foo/" + uuid.NewString()
+	writeRequests := GenerateStreamWriteRequests(stream, 20)
+	_, err := s.Write(writeRequests)
+	assert.Nil(t, err)
 
-		// Add one event to the stream.
-		_, err := ss.Write([]AppendToStream{
-			{
-				Stream: stream,
-				Events: []Event{
-					{
-						EventId:   uuid.NewString(),
-						EventType: "Foo",
-						Payload:   []byte(""),
-					},
-				},
-			},
-		})
-		assert.Nil(t, err)
+	dummyEventIds := make([]string, len(writeRequests))
+	for i := 0; i < len(writeRequests); i++ {
+		dummyEventIds[i] = writeRequests[i].Events[0].EventId
+	}
 
-		ch := make(chan ReadItem, 10)
+	t.Run("stream all events and closes the stream at the end", func(t *testing.T) {
+		ch := make(chan ReadItem)
+		go s.Read(context.Background(), stream, 0, ch)
 
-		ctx, cancel := context.WithCancel(context.Background())
-		go ss.ReadAndFollow(ctx, stream, 0, ch)
+		// Expects all the events to be streamed.
+		i := 0
+		for item := range ch {
+			assert.Nil(t, item.Error)
 
-		// Expects the first event to be streamed.
-		item := <-ch
-		assert.NotNil(t, item.EventInStream)
-		assert.Equal(t, int64(1), item.EventInStream.Position)
-		assert.Equal(t, "Foo", item.EventInStream.Event.EventType)
+			if item.EventInStream != nil {
+				assert.Equal(t, dummyEventIds[i], item.EventInStream.Event.EventId)
+				i++
+			}
+		}
+	})
 
-		// Expects the end-of-stream to be notified.
-		item = <-ch
-		assert.NotNil(t, item.EndOfStreamSignal)
-		assert.Equal(t, int64(1), item.EndOfStreamSignal.StreamPosition)
+	t.Run("list events from a given position", func(t *testing.T) {
+		assert.Greater(t, len(dummyEventIds), 5)
 
-		// Add another event, it should still continue follwing the stream.
-		_, err = ss.Write([]AppendToStream{
-			{
-				Stream: stream,
-				Events: []Event{
-					{
-						EventId:   uuid.NewString(),
-						EventType: "Bar",
-						Payload:   []byte(""),
-					},
-				},
-			},
-		})
-		assert.Nil(t, err)
+		ch := make(chan ReadItem)
+		go s.Read(context.Background(), stream, 4, ch)
 
-		// Expects the second event to be streamed.
-		item = <-ch
-		assert.NotNil(t, item.EventInStream)
-		assert.Equal(t, int64(2), item.EventInStream.Position)
-		assert.Equal(t, "Bar", item.EventInStream.Event.EventType)
+		// Expects all the events to be streamed.
+		expectedEvents := dummyEventIds[4:]
+		for i := 0; i < len(expectedEvents); i++ {
+			item := <-ch
 
-		// Expects a second end-of-stream event.
-		item = <-ch
-		assert.NotNil(t, item.EndOfStreamSignal)
-		assert.Equal(t, int64(2), item.EndOfStreamSignal.StreamPosition)
+			assert.Nil(t, item.Error)
 
-		// Cancel the context to stop.
-		cancel()
+			if item.EventInStream != nil {
+				assert.Equal(t, expectedEvents[i], item.EventInStream.Event.EventId)
+			}
+		}
 
 		// Expects the stream to be closed.
-		_, ok := <-ch
-		assert.False(t, ok)
+		_, more := <-ch
+		assert.False(t, more)
 	})
+
+	t.Run("it can read stream straight after write", func(t *testing.T) {
+		streamName := "Foo/" + uuid.NewString()
+		eventId := uuid.NewString()
+		r, err := s.Write([]AppendToStream{{
+			Stream: streamName,
+			Events: []Event{{
+				EventId:   eventId,
+				EventType: "SomeThing",
+				Payload:   []byte("{\"foo\": 123}"),
+			}},
+		}})
+		assert.Nil(t, err)
+		assert.Equal(t, int64(0), r[0].Position)
+
+		ch := make(chan ReadItem)
+		go s.Read(context.Background(), streamName, 0, ch)
+
+		item := <-ch
+		assert.Nil(t, item.Error)
+		assert.Equal(t, eventId, item.EventInStream.Event.EventId)
+	})
+
+	t.Skip("returns an error when stream does not exist")
 }

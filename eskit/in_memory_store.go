@@ -89,43 +89,6 @@ func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPositio
 	}
 }
 
-func (s *InMemoryStore) ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan streamstore.ReadItem) {
-	readChannel := make(chan streamstore.ReadItem)
-	go s.Read(ctx, stream, startingPosition, readChannel)
-	for item := range readChannel {
-		ch <- item
-	}
-
-	s.mu.Lock()
-	nextPosition := int64(len(s.store[stream]))
-	s.mu.Unlock()
-	ch <- streamstore.ReadItem{
-		EndOfStreamSignal: &streamstore.EndOfStreamSignal{
-			StreamPosition: nextPosition,
-		},
-	}
-
-	// Check if context is cancelled.
-	select {
-	case <-ctx.Done():
-		close(ch)
-		return
-	default:
-		// continue!
-	}
-
-	err := s.WaitForEvent(ctx, stream, nextPosition)
-	if err != nil {
-		ch <- streamstore.ReadItem{
-			Error: err,
-		}
-		close(ch)
-		return
-	}
-
-	s.ReadAndFollow(ctx, stream, nextPosition, ch)
-}
-
 func (s *InMemoryStore) WaitForEvent(ctx context.Context, stream string, currentPosition int64) error {
 	s.mu.Lock()
 

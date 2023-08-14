@@ -19,7 +19,7 @@ type AppendToStream struct {
 // TODO: use a custom for the conflict (@see https://earthly.dev/blog/golang-errors/)
 // var FailedPrecondition = errors.New("expected position %d, but got %d.")
 
-func (ss FoundationDBStore) Write(commands []AppendToStream) ([]AppendResult, error) {
+func (ss SegmentStore) Write(commands []AppendToStream) ([]AppendResult, error) {
 	results := make([]AppendResult, len(commands))
 	_, err := ss.db.Transact(func(transaction fdb.Transaction) (interface{}, error) {
 		for i, command := range commands {
@@ -31,20 +31,13 @@ func (ss FoundationDBStore) Write(commands []AppendToStream) ([]AppendResult, er
 			results[i] = r
 		}
 
-		if ss.hooks.OnWrite != nil {
-			err := ss.hooks.OnWrite(transaction, commands, results)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		return nil, nil
 	})
 
 	return results, err
 }
 
-func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToStream) (AppendResult, error) {
+func (ss SegmentStore) appendToStream(t fdb.Transaction, command AppendToStream) (AppendResult, error) {
 	headKey := headInStreamKey(command.Stream)
 	head := t.Get(headKey).MustGet()
 
@@ -64,21 +57,20 @@ func (ss FoundationDBStore) appendToStream(t fdb.Transaction, command AppendToSt
 	}
 
 	for _, event := range command.Events {
-		// AdvanceTo the stream position by one for each event.
-		currentStreamPosition = currentStreamPosition + 1
-
 		row, err := EncodeEvent(event)
 		if err != nil {
 			return AppendResult{}, err
 		}
 
 		t.Set(EventInStreamKey(command.Stream, currentStreamPosition), row)
+
+		currentStreamPosition = currentStreamPosition + 1
 	}
 
 	// Update the head position.
 	t.Set(headKey, positionAsByteArray(currentStreamPosition))
 
 	return AppendResult{
-		Position: currentStreamPosition,
+		Position: currentStreamPosition - 1,
 	}, nil
 }

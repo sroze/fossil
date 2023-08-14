@@ -80,7 +80,7 @@ func Test_Position(t *testing.T) {
 	})
 
 	t.Run("it can be serialized and deserialized", func(t *testing.T) {
-		p := Position{Cursors: map[uuid.UUID]int64{
+		p := &Position{Cursors: map[uuid.UUID]int64{
 			b.Id:        12,
 			dAndE[0].Id: 34,
 			fAndG[1].Id: 56,

@@ -11,7 +11,7 @@ import (
 )
 
 type Server struct {
-	streamStore *streamstore.FoundationDBStore
+	streamStore *streamstore.SegmentStore
 
 	v1.UnimplementedWriterServer
 }
@@ -24,7 +24,7 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 
 	addr := lis.Addr().(*net.TCPAddr)
 	s := grpc.NewServer()
-	ss := streamstore.NewFoundationStore(db)
+	ss := streamstore.NewSegmentStore(db)
 	v1.RegisterWriterServer(s, &Server{
 		streamStore: ss,
 	})

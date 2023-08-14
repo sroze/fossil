@@ -22,3 +22,30 @@
 ## How do we handle ordering and single-writing in segments?
 
 - We rely on "conditional writes" on KVs' site.
+
+## KV store structure
+
+### Overall structure
+
+- `/meta` is a segment, used by Fossil's internals.
+- `/s/{sid}` contains a database segment.
+  **Path parameters**
+  - `sid` is the segment's ID.
+
+### `segment` structure
+
+- `/e/{position}/{eid}` contains the events of the segment, in order.
+  **Path parameters**
+  - `position` is the event's position in the segment -- an increasing number starting at `0`
+  which may have a gap.
+  - `eid` is the event's ID.
+  **Payload**
+  - The event's payload & metadata, serialized as Protobuf.
+
+- `/s/{stream}/{position}/{eid}` contains the events, per stream, in order.
+  **Path parameters**
+  - `stream` is the stream's ID.
+  - `position` is the event's position in the stream.
+  - `eid` is the event's ID.
+  **Payload**
+  - The event's payload & metadata, serialized as Protobuf. 

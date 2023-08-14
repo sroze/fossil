@@ -9,7 +9,9 @@ import (
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {
 	ch := make(chan streamstore.ReadItem, 10)
 	if request.Subscribe {
-		go s.streamStore.ReadAndFollow(server.Context(), request.StreamName, request.StartingPosition, ch)
+		// FIXME: We need to implement this with LiveTail, the store itself
+		//        doesn't support "read & follow" anymore.
+		// go s.streamStore.ReadAndFollow(server.Context(), request.StreamName, request.StartingPosition, ch)
 	} else {
 		go s.streamStore.Read(server.Context(), request.StreamName, request.StartingPosition, ch)
 	}

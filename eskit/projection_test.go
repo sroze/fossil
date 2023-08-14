@@ -28,8 +28,8 @@ type appendEvent struct {
 func Test_Projection_Apply(t *testing.T) {
 	t.Run("fails if position is different", func(t *testing.T) {
 		p := NewProjection("a", evolveStringAppend)
-		assert.NotNil(t, p.Apply(appendEvent{S: "b"}, 0))
-		assert.Nil(t, p.Apply(appendEvent{S: "b"}, -1))
+		assert.NotNil(t, p.Apply(&appendEvent{S: "b"}, 0))
+		assert.Nil(t, p.Apply(&appendEvent{S: "b"}, -1))
 	})
 }
 
@@ -46,7 +46,7 @@ func Test_Projection_WaitForPosition(t *testing.T) {
 		go func() {
 			time.Sleep(5 * time.Millisecond)
 			events <- "start-applying"
-			assert.Nil(t, p.Apply(appendEvent{
+			assert.Nil(t, p.Apply(&appendEvent{
 				S: "b",
 			}, -1))
 		}()

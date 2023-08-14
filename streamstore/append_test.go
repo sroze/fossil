@@ -1,68 +1,139 @@
 package streamstore
 
 import (
-	"context"
-	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
-	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func Test_Write(t *testing.T) {
+func Test_Store_Append(t *testing.T) {
 	fdb.MustAPIVersion(720)
-	db := fdb.MustOpenDatabase("../../fdb.cluster")
-	testingPrefix := uuid.NewString()
+	s := NewSegmentStore(fdb.MustOpenDatabase("../fdb.cluster"))
 
-	t.Run("calls `OnWrite` hook when provided and provide a writable transaction", func(t *testing.T) {
-		writeKey := tuple.Tuple{testingPrefix, "hook-called"}
-		ss := NewFoundationStoreWithHooks(db, Hooks{
-			OnWrite: func(t fdb.Transaction, writes []AppendToStream, results []AppendResult) error {
-				t.Set(writeKey, []byte("true"))
-				return nil
-			},
-		})
-
-		_, err := ss.Write([]AppendToStream{{
-			Stream: "Foo/" + uuid.NewString(),
-			Events: []Event{{
-				EventId:   uuid.NewString(),
-				EventType: "Foo",
-				Payload:   []byte(""),
-			}},
-		}})
-		assert.Nil(t, err)
-
-		r, err := db.Transact(func(t fdb.Transaction) (interface{}, error) {
-			return t.Get(writeKey).Get()
-		})
-		assert.Nil(t, err)
-		assert.Equal(t, []byte("true"), r.([]byte))
-	})
-
-	t.Run("fails the whole transaction if hook returns an error", func(t *testing.T) {
-		ss := NewFoundationStoreWithHooks(db, Hooks{
-			OnWrite: func(t fdb.Transaction, writes []AppendToStream, results []AppendResult) error {
-				return fmt.Errorf("oups")
-			},
-		})
-
+	t.Run("it increments stream position by default", func(t *testing.T) {
 		stream := "Foo/" + uuid.NewString()
-		_, err := ss.Write([]AppendToStream{{
+		r, err := s.Write([]AppendToStream{{
 			Stream: stream,
 			Events: []Event{{
 				EventId:   uuid.NewString(),
-				EventType: "Foo",
-				Payload:   []byte(""),
+				EventType: "AnEventType",
+				Payload:   []byte("{\"foo\": 123}"),
 			}},
 		}})
-		assert.NotNil(t, err)
+		assert.Nil(t, err)
+		assert.Equal(t, int64(0), r[0].Position)
 
-		// Expects an empty channel.
-		ch := make(chan ReadItem)
-		go ss.Read(context.Background(), stream, 0, ch)
-		_, more := <-ch
-		assert.False(t, more)
+		r, err = s.Write([]AppendToStream{{
+			Stream: stream,
+			Events: []Event{{
+				EventId:   uuid.NewString(),
+				EventType: "AnEventType",
+				Payload:   []byte("{\"foo\": 123}"),
+			}},
+		}})
+		assert.Nil(t, err)
+		assert.Equal(t, int64(1), r[0].Position)
+	})
+
+	t.Run("expects the write stream position", func(t *testing.T) {
+		t.Run("successfully expects an empty stream then fails expecting it to be empty", func(t *testing.T) {
+			emptyStreamPosition := int64(0)
+			stream := "Foo/" + uuid.NewString()
+
+			_, err := s.Write([]AppendToStream{{
+				Stream:           stream,
+				ExpectedPosition: &emptyStreamPosition,
+				Events: []Event{{
+					EventId:   uuid.New().String(),
+					EventType: "AnEventType",
+					Payload:   []byte("{\"foo\": 123}"),
+				}},
+			}})
+			assert.Nil(t, err)
+
+			_, err = s.Write([]AppendToStream{{
+				Stream:           stream,
+				ExpectedPosition: &emptyStreamPosition,
+				Events: []Event{{
+					EventId:   uuid.New().String(),
+					EventType: "AnEventType",
+					Payload:   []byte("{\"foo\": 123}"),
+				}},
+			}})
+			assert.NotNil(t, err)
+		})
+
+		t.Run("expects a specific stream version", func(t *testing.T) {
+			stream := "Foo/" + uuid.NewString()
+			_, err := s.Write(GenerateStreamWriteRequests(stream, 20))
+			assert.Nil(t, err)
+
+			// Writes an event at the expected position.
+			expectedVersion := int64(20)
+			_, err = s.Write([]AppendToStream{{
+				Stream:           stream,
+				ExpectedPosition: &expectedVersion,
+				Events: []Event{{
+					EventId:   uuid.New().String(),
+					EventType: "AnEventType",
+					Payload:   []byte("{\"foo\": 123}"),
+				}},
+			}})
+
+			assert.Nil(t, err)
+
+			// Fails to write an event at the expected position.
+			_, err = s.Write([]AppendToStream{{
+				Stream:           stream,
+				ExpectedPosition: &expectedVersion,
+				Events: []Event{{
+					EventId:   uuid.New().String(),
+					EventType: "AnEventType",
+					Payload:   []byte("{\"foo\": 123}"),
+				}},
+			}})
+
+			assert.NotNil(t, err)
+		})
+	})
+
+	t.Run("only one of multiple concurrent writes succeeds", func(t *testing.T) {
+		emptyStreamPosition := int64(0)
+		stream := "Foo/" + uuid.NewString()
+
+		numberOfConcurrentRequests := 5
+		resultChan := make(chan error, numberOfConcurrentRequests)
+
+		for i := 0; i < numberOfConcurrentRequests; i++ {
+			go func() {
+				_, err := s.Write([]AppendToStream{{
+					Stream:           stream,
+					ExpectedPosition: &emptyStreamPosition,
+					Events: []Event{{
+						EventId:   uuid.New().String(),
+						EventType: "AnEventType",
+						Payload:   []byte("{\"foo\": 123}"),
+					}},
+				}})
+
+				resultChan <- err
+			}()
+		}
+
+		numberOfSuccesses := 0
+		numberOfFailures := 0
+		for i := 0; i < numberOfConcurrentRequests; i++ {
+			err := <-resultChan
+
+			if err != nil {
+				numberOfFailures++
+			} else {
+				numberOfSuccesses++
+			}
+		}
+
+		assert.Equal(t, 1, numberOfSuccesses)
+		assert.Equal(t, numberOfConcurrentRequests-1, numberOfFailures)
 	})
 }

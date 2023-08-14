@@ -141,32 +141,4 @@ func Test_reader(t *testing.T) {
 			t.Error("expected stream to be filled instead of receiving timeout")
 		}
 	})
-
-	t.Run("it can read stream straight after write", func(t *testing.T) {
-		streamName := "Foo/" + uuid.NewString()
-		request := v1.AppendRequest{
-			StreamName: streamName,
-			EventId:    uuid.New().String(),
-			EventType:  "SomeThing",
-			Payload:    []byte("{\"foo\": 123}"),
-		}
-
-		r, err := c.AppendEvent(context.Background(), &request)
-
-		assert.Nil(t, err)
-		assert.Equal(t, int64(1), r.StreamPosition)
-
-		stream, err := c.ReadStream(context.Background(), &v1.ReadStreamRequest{
-			StreamName: streamName,
-		})
-		assert.Nil(t, err)
-
-		sumStreamResponse, err := stream.Recv()
-		assert.Nil(t, err)
-		assert.Equal(t, sumStreamResponse.EventId, request.EventId)
-		assert.Equal(t, request.Payload, sumStreamResponse.Payload)
-		assert.Equal(t, int64(1), sumStreamResponse.StreamPosition)
-	})
-
-	t.Skip("returns an error when stream does not exist")
 }

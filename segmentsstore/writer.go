@@ -12,6 +12,7 @@ func (w *SegmentStore) Write(commands []streamstore.AppendToStream) ([]streamsto
 	writeCommands := make([]streamstore.AppendToStream, len(commands))
 	copy(writeCommands, commands)
 
+	// TODO: deal with each command concurrently :)
 	for _, command := range commands {
 		segment, err := w.locator.GetSegmentToWriteInto(command.Stream)
 		if err != nil {
@@ -40,7 +41,6 @@ func (w *SegmentStore) Write(commands []streamstore.AppendToStream) ([]streamsto
 			//       we need to refetch the head position from the stream and retry.
 			ExpectedPosition: &segmentPosition,
 		})
-
 	}
 
 	result, err := w.ss.Write(writeCommands)

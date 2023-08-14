@@ -5,22 +5,26 @@ import (
 	"fmt"
 	"github.com/heimdalr/dag"
 	"github.com/sroze/fossil/eskit"
+	"github.com/sroze/fossil/eskit/codec"
+	"github.com/sroze/fossil/livetail"
 	"github.com/sroze/fossil/segments"
 )
 
 type Manager struct {
+	topologySubscription *eskit.LiveProjection[GraphState]
+	tail                 *livetail.LiveTail
 	stream               string
 	writer               eskit.Writer
-	topologySubscription *eskit.SubscribedProjection[GraphState]
 }
 
-func NewManager(rw *eskit.ReaderWriter, stream string) *Manager {
+func NewManager(tail *livetail.LiveTail, codec codec.Codec, writer eskit.Writer, stream string) *Manager {
 	return &Manager{
+		tail:   tail,
 		stream: stream,
-		writer: rw,
-		topologySubscription: eskit.NewSubscribedProjection(
-			rw,
-			stream,
+		writer: writer,
+		topologySubscription: eskit.NewLiveProjection(
+			tail,
+			codec,
 			initialGraphState(),
 			EvolveGraphState,
 		),
@@ -47,7 +51,7 @@ func (m *Manager) Create(s segments.Segment) (*segments.Segment, error) {
 		return nil, err
 	}
 
-	// wait for the subscription to be caught up.
+	// wait for the livetail to be caught up.
 	m.topologySubscription.WaitForPosition(
 		context.Background(),
 		r[0].Position,
@@ -80,7 +84,7 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 		return nil, err
 	}
 
-	// wait for the subscription to be caught up.
+	// wait for the livetail to be caught up.
 	m.topologySubscription.WaitForPosition(
 		context.Background(),
 		r[0].Position,
@@ -90,7 +94,9 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 }
 
 func (m *Manager) Start() error {
-	return m.topologySubscription.Start()
+	m.topologySubscription.Start()
+
+	return nil
 }
 
 func (m *Manager) WaitReady() {

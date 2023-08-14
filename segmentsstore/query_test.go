@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/eskit"
+	"github.com/sroze/fossil/livetail"
 	multi_writer "github.com/sroze/fossil/multi-writer"
 	"github.com/sroze/fossil/segments"
 	"github.com/sroze/fossil/streamstore"
@@ -18,7 +19,14 @@ func Test_Query(t *testing.T) {
 	rw := eskit.NewReaderWriter(ss, multi_writer.RootCodec)
 
 	t.Run("streams written in multiple segments over time", func(t *testing.T) {
-		segmentManager := topology.NewManager(rw, "topology/"+uuid.NewString())
+		stream := "topology/" + uuid.NewString()
+		segmentManager := topology.NewManager(
+			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
+			multi_writer.RootCodec,
+			rw,
+			stream,
+		)
+
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
 		defer segmentManager.Stop()
@@ -34,7 +42,7 @@ func Test_Query(t *testing.T) {
 		samples := 4
 		numberOfEventsPerStream := 3 // so it is a multiple of 3
 
-		writes, eventIdsPerStream := generateEventWriteRequests(samples, numberOfEventsPerStream, "foo/")
+		writes, eventIdsPerStream := streamstore.GenerateEventWriteRequests(samples, numberOfEventsPerStream, "foo/")
 		streams := maps.Keys(eventIdsPerStream)
 
 		// Slice the writes, so we can write them at the right point in time during our test.
@@ -165,7 +173,14 @@ func Test_Query(t *testing.T) {
 	})
 
 	t.Run("with a simple segment", func(t *testing.T) {
-		segmentManager := topology.NewManager(rw, "topology/"+uuid.NewString())
+		stream := "topology/" + uuid.NewString()
+		segmentManager := topology.NewManager(
+			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
+			multi_writer.RootCodec,
+			rw,
+			stream,
+		)
+
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
 		defer segmentManager.Stop()
@@ -178,7 +193,7 @@ func Test_Query(t *testing.T) {
 		))
 		assert.Nil(t, err)
 
-		writes, _ := generateEventWriteRequests(2, 2, "foo/") // 4 events total.
+		writes, _ := streamstore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.
 		_, err = store.Write(writes)
 		assert.Nil(t, err)
 
@@ -214,7 +229,14 @@ func Test_Query(t *testing.T) {
 	})
 
 	t.Run("with a simple split segment", func(t *testing.T) {
-		segmentManager := topology.NewManager(rw, "topology/"+uuid.NewString())
+		stream := "topology/" + uuid.NewString()
+		segmentManager := topology.NewManager(
+			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
+			multi_writer.RootCodec,
+			rw,
+			stream,
+		)
+
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
 		defer segmentManager.Stop()
@@ -230,7 +252,7 @@ func Test_Query(t *testing.T) {
 		_, err = segmentManager.Split(a.ID(), 2)
 		assert.Nil(t, err)
 
-		writes, eventsPerStream := generateEventWriteRequests(2, 2, "foo/") // 4 events total.
+		writes, eventsPerStream := streamstore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.
 		_, err = store.Write(writes)
 		assert.Nil(t, err)
 
@@ -261,34 +283,6 @@ func Test_Query(t *testing.T) {
 	})
 
 	// TODO: with 2 segments, one after the one.
-}
-
-func generateEventWriteRequests(samples int, numberOfEventsPerStream int, prefix string) ([]streamstore.AppendToStream, map[string][]string) {
-	var streams []string
-	for i := 0; i < samples; i++ {
-		streams = append(streams, prefix+uuid.NewString())
-	}
-
-	var writes []streamstore.AppendToStream
-	writtenEventsPerStream := make(map[string][]string)
-	for i := 0; i < numberOfEventsPerStream; i++ {
-		for _, stream := range streams {
-			eventId := uuid.NewString()
-			writtenEventsPerStream[stream] = append(writtenEventsPerStream[stream], eventId)
-
-			writes = append(writes, streamstore.AppendToStream{
-				Stream: stream,
-				Events: []streamstore.Event{
-					{
-						EventId:   eventId,
-						EventType: "AnEventOfTypeFoo",
-						Payload:   []byte("foo"),
-					},
-				},
-			})
-		}
-	}
-	return writes, writtenEventsPerStream
 }
 
 func collectItemsPerStreamInto(target map[string][]string, ch chan QueryItem, limit int) (*PositionCursor, error) {

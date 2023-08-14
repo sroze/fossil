@@ -23,7 +23,6 @@ type Reader interface {
 	// EndOfStreamSignal is sent when the end of the stream is reached.
 	// The channel is closed when the context is done.
 	Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem)
-	ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem)
 }
 
 type EventToWrite struct {
@@ -68,13 +67,6 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore.AppendResult
 	}
 
 	return rw.store.Write(commands)
-}
-
-func (rw *ReaderWriter) ReadAndFollow(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
-	defer close(ch)
-	intermediaryCh := make(chan streamstore.ReadItem, 10)
-	go rw.store.ReadAndFollow(ctx, stream, startingPosition, intermediaryCh)
-	rw.transformToDecodedChannel(ctx, intermediaryCh, ch)
 }
 
 func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
