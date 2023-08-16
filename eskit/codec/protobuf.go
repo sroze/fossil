@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 	"reflect"
 )
 
@@ -27,17 +27,17 @@ func NewProtobufCodec(
 	}
 }
 
-func (e *ProtobufCodec) Serialize(i interface{}) (streamstore.Event, error) {
+func (e *ProtobufCodec) Serialize(i interface{}) (simplestore.Event, error) {
 	message, ok := i.(proto.Message)
 	if !ok {
-		return streamstore.Event{}, fmt.Errorf("cannot serialize %s", reflect.TypeOf(i).String())
+		return simplestore.Event{}, fmt.Errorf("cannot serialize %s", reflect.TypeOf(i).String())
 	}
 
 	for _, pair := range e.events {
 		if reflect.TypeOf(message).String() == reflect.TypeOf(pair.ActualType).String() {
 			bytes, err := proto.Marshal(message)
 
-			return streamstore.Event{
+			return simplestore.Event{
 				EventId:   uuid.NewString(),
 				EventType: pair.TypeName,
 				Payload:   bytes,
@@ -45,10 +45,10 @@ func (e *ProtobufCodec) Serialize(i interface{}) (streamstore.Event, error) {
 		}
 	}
 
-	return streamstore.Event{}, fmt.Errorf("no event type found for %s when serializing", reflect.TypeOf(message).String())
+	return simplestore.Event{}, fmt.Errorf("no event type found for %s when serializing", reflect.TypeOf(message).String())
 }
 
-func (e *ProtobufCodec) Deserialize(event streamstore.Event) (interface{}, error) {
+func (e *ProtobufCodec) Deserialize(event simplestore.Event) (interface{}, error) {
 	for _, pair := range e.events {
 		if event.EventType == pair.TypeName {
 			message := reflect.New(reflect.TypeOf(pair.ActualType).Elem()).Interface().(proto.Message)

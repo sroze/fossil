@@ -3,7 +3,7 @@ package eskit
 import (
 	"context"
 	"github.com/sroze/fossil/eskit/codec"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 )
 
 type EventInStream struct {
@@ -14,7 +14,7 @@ type EventInStream struct {
 type ReadItem struct {
 	Error             error
 	EventInStream     *EventInStream
-	EndOfStreamSignal *streamstore.EndOfStreamSignal
+	EndOfStreamSignal *simplestore.EndOfStreamSignal
 }
 
 type Reader interface {
@@ -33,16 +33,16 @@ type EventToWrite struct {
 
 type Writer interface {
 	// Write writes the events to the stream.
-	Write(events []EventToWrite) ([]streamstore.AppendResult, error)
+	Write(events []EventToWrite) ([]simplestore.AppendResult, error)
 }
 
 type ReaderWriter struct {
-	store streamstore.Store
+	store simplestore.Store
 	codec codec.Codec
 }
 
 func NewReaderWriter(
-	store streamstore.Store,
+	store simplestore.Store,
 	codec codec.Codec,
 ) *ReaderWriter {
 	return &ReaderWriter{
@@ -51,17 +51,17 @@ func NewReaderWriter(
 	}
 }
 
-func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore.AppendResult, error) {
-	commands := make([]streamstore.AppendToStream, len(events))
+func (rw *ReaderWriter) Write(events []EventToWrite) ([]simplestore.AppendResult, error) {
+	commands := make([]simplestore.AppendToStream, len(events))
 	for i, event := range events {
 		serializedEvent, err := rw.codec.Serialize(event.Event)
 		if err != nil {
 			return nil, err
 		}
 
-		commands[i] = streamstore.AppendToStream{
+		commands[i] = simplestore.AppendToStream{
 			Stream:           event.Stream,
-			Events:           []streamstore.Event{serializedEvent},
+			Events:           []simplestore.Event{serializedEvent},
 			ExpectedPosition: event.ExpectedPosition,
 		}
 	}
@@ -71,12 +71,12 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]streamstore.AppendResult
 
 func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
-	intermediaryCh := make(chan streamstore.ReadItem, 10)
+	intermediaryCh := make(chan simplestore.ReadItem, 10)
 	go rw.store.Read(ctx, stream, startingPosition, intermediaryCh)
 	rw.transformToDecodedChannel(ctx, intermediaryCh, ch)
 }
 
-func (rw *ReaderWriter) transformToDecodedChannel(ctx context.Context, source chan streamstore.ReadItem, target chan ReadItem) {
+func (rw *ReaderWriter) transformToDecodedChannel(ctx context.Context, source chan simplestore.ReadItem, target chan ReadItem) {
 	for item := range source {
 		if item.Error != nil {
 			target <- ReadItem{

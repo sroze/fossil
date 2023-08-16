@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/sroze/fossil/eskit/codec"
 	"github.com/sroze/fossil/livetail"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 )
 
 type LiveProjection[T any] struct {
@@ -49,7 +49,7 @@ func (sp *LiveProjection[T]) WaitForPosition(ctx context.Context, position int64
 }
 
 func (sp *LiveProjection[T]) Start() {
-	ch := make(chan streamstore.ReadItem)
+	ch := make(chan simplestore.ReadItem)
 	go func() {
 		for item := range ch {
 

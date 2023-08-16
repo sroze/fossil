@@ -34,9 +34,10 @@ func (s *Store) Get(key []byte) ([]byte, error) {
 	return value, nil
 }
 
-func (s *Store) Scan(keyRange kv.KeyRange, withValues bool, backwards bool) ([]kv.KeyPair, error) {
+func (s *Store) Scan(keyRange kv.KeyRange, options kv.ScanOptions) ([]kv.KeyPair, error) {
 	var keyPairs []kv.KeyPair
 
+	// FIXME: oblige to `options`
 	iter := s.db.NewIter(&pebble.IterOptions{
 		LowerBound: keyRange.Start,
 		UpperBound: keyRange.End,

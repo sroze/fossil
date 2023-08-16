@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	v1 "github.com/sroze/fossil/api/v1"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 )
 
 type Server struct {
-	streamStore *streamstore.SegmentStore
+	streamStore *simplestore.SimpleStore
 
 	v1.UnimplementedWriterServer
 }
@@ -24,7 +24,7 @@ func NewServer(db fdb.Database, port int) (error, *grpc.Server, *net.TCPAddr) {
 
 	addr := lis.Addr().(*net.TCPAddr)
 	s := grpc.NewServer()
-	ss := streamstore.NewSegmentStore(db)
+	ss := simplestore.NewStore(db)
 	v1.RegisterWriterServer(s, &Server{
 		streamStore: ss,
 	})

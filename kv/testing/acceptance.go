@@ -11,11 +11,7 @@ import (
 func RunAcceptanceTest(t *testing.T, s kv.KV) {
 	prefix := []byte("tests/" + uuid.NewString() + "/")
 	prefixedKey := func(key []byte) []byte {
-		concat := make([]byte, len(prefix)+len(key))
-		copy(concat, prefix)
-		copy(concat[len(prefix):], key)
-
-		return concat
+		return kv.ConcatBytes(prefix, key)
 	}
 
 	t.Run("write, get and scan", func(t *testing.T) {
@@ -25,24 +21,47 @@ func RunAcceptanceTest(t *testing.T, s kv.KV) {
 			{Key: prefixedKey([]byte("z/bar")), Value: []byte("bar")},
 		})
 		assert.Nil(t, err)
-		kvs, err := s.Scan(kv.KeyRange{
-			Start: prefixedKey([]byte{'s', 0x00}),
-			End:   prefixedKey([]byte{'s', 0xFF}),
-		}, true, false)
-		assert.Nil(t, err)
 
-		assert.Equal(t, []kv.KeyPair{
-			{Key: prefixedKey([]byte("s/bar")), Value: []byte("bar")},
-			{Key: prefixedKey([]byte("s/foo")), Value: []byte("foo")},
-		}, kvs)
+		t.Run("it can scan keys in a given range", func(t *testing.T) {
+			scanCh := make(chan kv.KeyPair, 2)
+			err = s.Scan(kv.KeyRange{
+				Start: prefixedKey([]byte{'s', 0x00}),
+				End:   prefixedKey([]byte{'s', 0xFF}),
+			}, kv.ScanOptions{}, scanCh)
+			assert.Nil(t, err)
+			assert.Equal(t, kv.KeyPair{Key: prefixedKey([]byte("s/bar")), Value: []byte("bar")}, <-scanCh)
+			assert.Equal(t, kv.KeyPair{Key: prefixedKey([]byte("s/foo")), Value: []byte("foo")}, <-scanCh)
+			_, more := <-scanCh
+			assert.False(t, more)
+		})
 
-		value, err := s.Get(prefixedKey([]byte("z/bar")))
-		assert.Nil(t, err)
-		assert.Equal(t, []byte("bar"), value)
+		t.Run("it can scan backwards, with a limit", func(t *testing.T) {
+			scanCh := make(chan kv.KeyPair, 2)
+			err = s.Scan(kv.KeyRange{
+				Start: prefixedKey([]byte{'s', 0x00}),
+				End:   prefixedKey([]byte{'s', 0xFF}),
+			}, kv.ScanOptions{
+				Backwards: true,
+				Limit:     1,
+			}, scanCh)
 
-		value, err = s.Get(prefixedKey([]byte("z/foo")))
-		assert.Nil(t, err)
-		assert.Nil(t, value)
+			assert.Nil(t, err)
+			assert.Equal(t, kv.KeyPair{Key: prefixedKey([]byte("s/foo")), Value: []byte("foo")}, <-scanCh)
+			_, more := <-scanCh
+			assert.False(t, more)
+		})
+
+		t.Run("it get keys", func(t *testing.T) {
+			value, err := s.Get(prefixedKey([]byte("z/bar")))
+			assert.Nil(t, err)
+			assert.Equal(t, []byte("bar"), value)
+		})
+
+		t.Run("it return nil for non-existing keys", func(t *testing.T) {
+			value, err := s.Get(prefixedKey([]byte("z/foo")))
+			assert.Nil(t, err)
+			assert.Nil(t, value)
+		})
 	})
 
 	t.Run("it handles conditional writes", func(t *testing.T) {

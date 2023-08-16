@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_KV(t *testing.T) {
+func Test_FoundationDBStore(t *testing.T) {
 	fdb.MustAPIVersion(720)
 	s := NewStore(fdb.MustOpenDatabase("../../fdb.cluster"))
 

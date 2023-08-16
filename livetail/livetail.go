@@ -3,7 +3,7 @@ package livetail
 import (
 	"context"
 	"fmt"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 	"strconv"
 	"sync"
 	"time"
@@ -32,15 +32,15 @@ func NewLiveTail(
 	}
 }
 
-func (a *LiveTail) Start(startingPosition string, ch chan streamstore.ReadItem) {
+func (a *LiveTail) Start(startingPosition string, ch chan simplestore.ReadItem) {
 	if a.ctx != nil {
-		ch <- streamstore.ReadItem{Error: fmt.Errorf("livetail is already started")}
+		ch <- simplestore.ReadItem{Error: fmt.Errorf("livetail is already started")}
 
 		return
 	}
 
 	a.ctx, a.ctxCancel = context.WithCancel(context.Background())
-	chEvents := make(chan streamstore.ReadItem)
+	chEvents := make(chan simplestore.ReadItem)
 	defer close(chEvents)
 
 	// Loop through all received events, handle our internal logic and
@@ -66,7 +66,7 @@ func (a *LiveTail) Start(startingPosition string, ch chan streamstore.ReadItem) 
 
 	position := startingPosition
 	for {
-		readChannel := make(chan streamstore.ReadItem)
+		readChannel := make(chan simplestore.ReadItem)
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 
@@ -86,8 +86,8 @@ func (a *LiveTail) Start(startingPosition string, ch chan streamstore.ReadItem) 
 							panic(err)
 						}
 
-						chEvents <- streamstore.ReadItem{
-							EndOfStreamSignal: &streamstore.EndOfStreamSignal{
+						chEvents <- simplestore.ReadItem{
+							EndOfStreamSignal: &simplestore.EndOfStreamSignal{
 								StreamPosition: i - 1,
 							},
 						}

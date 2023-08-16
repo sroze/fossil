@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 	"github.com/sroze/fossil/api/v1"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 )
 
 func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_ReadStreamServer) error {
-	ch := make(chan streamstore.ReadItem, 10)
+	ch := make(chan simplestore.ReadItem, 10)
 	if request.Subscribe {
 		// FIXME: We need to implement this with LiveTail, the store itself
 		//        doesn't support "read & follow" anymore.

@@ -5,7 +5,7 @@ import (
 	"github.com/sroze/fossil/eskit"
 	"github.com/sroze/fossil/eskit/codec"
 	"github.com/sroze/fossil/livetail"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 )
 
 type WatcherState struct {
@@ -26,7 +26,7 @@ func initialPresenceWatcherState() WatcherState {
 }
 
 func NewWatcher(
-	ss streamstore.Store,
+	ss simplestore.Store,
 	stream string,
 	presence NodePresence,
 ) *Watcher {

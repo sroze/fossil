@@ -34,7 +34,11 @@ func (s *Store) Write(operations []kv.Write) error {
 					value := transaction.Get(fdb.Key(operation.Key)).MustGet()
 
 					if value != nil {
-						return nil, kv.ErrConditionalWriteFails
+						return nil, kv.ErrConditionalWriteFails{
+							Condition:  operation.Condition,
+							Key:        operation.Key,
+							FoundValue: value,
+						}
 					}
 				}
 			}
@@ -52,13 +56,17 @@ func (s *Store) Write(operations []kv.Write) error {
 	return err
 }
 
-func (s *Store) Scan(keyRange kv.KeyRange, withValues bool, backwards bool) ([]kv.KeyPair, error) {
-	var keyPairs []kv.KeyPair
+func (s *Store) Scan(keyRange kv.KeyRange, options kv.ScanOptions, ch chan kv.KeyPair) error {
+	defer close(ch)
+
 	_, err := s.db.ReadTransact(func(t fdb.ReadTransaction) (interface{}, error) {
 		ri := t.GetRange(fdb.KeyRange{
 			Begin: fdb.Key(keyRange.Start),
 			End:   fdb.Key(keyRange.End),
-		}, fdb.RangeOptions{}).Iterator()
+		}, fdb.RangeOptions{
+			Reverse: options.Backwards,
+			Limit:   options.Limit,
+		}).Iterator()
 
 		for ri.Advance() {
 			row := ri.MustGet()
@@ -69,15 +77,14 @@ func (s *Store) Scan(keyRange kv.KeyRange, withValues bool, backwards bool) ([]k
 			// 	break
 			// default:
 			// }
-
-			keyPairs = append(keyPairs, kv.KeyPair{
+			ch <- kv.KeyPair{
 				Key:   row.Key,
 				Value: row.Value,
-			})
+			}
 		}
 
 		return nil, nil
 	})
 
-	return keyPairs, err
+	return err
 }

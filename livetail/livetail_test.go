@@ -3,23 +3,23 @@ package livetail
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/streamstore"
+	"github.com/sroze/fossil/simplestore"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func Test_LiveTail(t *testing.T) {
 	fdb.MustAPIVersion(720)
-	ss := streamstore.NewSegmentStore(fdb.MustOpenDatabase("../fdb.cluster"))
+	ss := simplestore.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
 
 	t.Run("sends a message when end-of-stream is being hit", func(t *testing.T) {
 		stream := "Foo/" + uuid.NewString()
 
 		// Add one event to the stream.
-		_, err := ss.Write([]streamstore.AppendToStream{
+		_, err := ss.Write([]simplestore.AppendToStream{
 			{
 				Stream: stream,
-				Events: []streamstore.Event{
+				Events: []simplestore.Event{
 					{
 						EventId:   uuid.NewString(),
 						EventType: "Foo",
@@ -30,7 +30,7 @@ func Test_LiveTail(t *testing.T) {
 		})
 		assert.Nil(t, err)
 
-		ch := make(chan streamstore.ReadItem, 10)
+		ch := make(chan simplestore.ReadItem, 10)
 
 		subscription := NewLiveTail(
 			NewStreamReader(ss, stream),
@@ -49,10 +49,10 @@ func Test_LiveTail(t *testing.T) {
 		assert.Equal(t, int64(0), item.EndOfStreamSignal.StreamPosition)
 
 		// Add another event, it should still continue follwing the stream.
-		_, err = ss.Write([]streamstore.AppendToStream{
+		_, err = ss.Write([]simplestore.AppendToStream{
 			{
 				Stream: stream,
-				Events: []streamstore.Event{
+				Events: []simplestore.Event{
 					{
 						EventId:   uuid.NewString(),
 						EventType: "Bar",
@@ -81,4 +81,6 @@ func Test_LiveTail(t *testing.T) {
 		_, ok := <-ch
 		assert.False(t, ok)
 	})
+
+	t.Skip("TODO: live tail while a segment is closed + split")
 }

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/sroze/fossil/streamstore/api/v1";
+option go_package = "github.com/sroze/fossil/simplestore/api/v1";
 
 package fossil;
 
