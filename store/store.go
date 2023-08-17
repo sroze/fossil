@@ -16,7 +16,7 @@ type Store struct {
 	segmentStoresMutex sync.Mutex
 }
 
-func NewSegmentStore(
+func NewStore(
 	locator topology.SegmentLocator,
 	kv kv.KV,
 ) *Store {

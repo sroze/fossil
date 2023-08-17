@@ -42,12 +42,13 @@ func Test_Store_Append(t *testing.T) {
 
 	t.Run("expects the write stream position", func(t *testing.T) {
 		t.Run("successfully expects an empty stream then fails expecting it to be empty", func(t *testing.T) {
-			emptyStreamPosition := int64(-1)
 			stream := "Foo/" + uuid.NewString()
 
 			_, err := s.Write([]AppendToStream{{
-				Stream:           stream,
-				ExpectedPosition: &emptyStreamPosition,
+				Stream: stream,
+				Condition: &AppendCondition{
+					StreamIsEmpty: true,
+				},
 				Events: []Event{{
 					EventId:   uuid.New().String(),
 					EventType: "AnEventType",
@@ -57,8 +58,27 @@ func Test_Store_Append(t *testing.T) {
 			assert.Nil(t, err)
 
 			_, err = s.Write([]AppendToStream{{
-				Stream:           stream,
-				ExpectedPosition: &emptyStreamPosition,
+				Stream: stream,
+				Condition: &AppendCondition{
+					StreamIsEmpty: true,
+				},
+				Events: []Event{{
+					EventId:   uuid.New().String(),
+					EventType: "AnEventType",
+					Payload:   []byte("{\"foo\": 123}"),
+				}},
+			}})
+			assert.NotNil(t, err)
+		})
+
+		t.Run("rejects invalid stream position", func(t *testing.T) {
+			stream := "Foo/" + uuid.NewString()
+
+			_, err := s.Write([]AppendToStream{{
+				Stream: stream,
+				Condition: &AppendCondition{
+					WriteAtPosition: -1,
+				},
 				Events: []Event{{
 					EventId:   uuid.New().String(),
 					EventType: "AnEventType",
@@ -74,10 +94,11 @@ func Test_Store_Append(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Writes an event at the expected position.
-			expectedVersion := int64(19)
 			_, err = s.Write([]AppendToStream{{
-				Stream:           stream,
-				ExpectedPosition: &expectedVersion,
+				Stream: stream,
+				Condition: &AppendCondition{
+					WriteAtPosition: 20,
+				},
 				Events: []Event{{
 					EventId:   uuid.New().String(),
 					EventType: "AnEventType",
@@ -89,8 +110,10 @@ func Test_Store_Append(t *testing.T) {
 
 			// Fails to write an event at the expected position.
 			_, err = s.Write([]AppendToStream{{
-				Stream:           stream,
-				ExpectedPosition: &expectedVersion,
+				Stream: stream,
+				Condition: &AppendCondition{
+					WriteAtPosition: 20,
+				},
 				Events: []Event{{
 					EventId:   uuid.New().String(),
 					EventType: "AnEventType",
@@ -103,7 +126,6 @@ func Test_Store_Append(t *testing.T) {
 	})
 
 	t.Run("only one of multiple concurrent writes succeeds", func(t *testing.T) {
-		emptyStreamPosition := int64(-1)
 		stream := "Foo/" + uuid.NewString()
 
 		numberOfConcurrentRequests := 5
@@ -112,8 +134,10 @@ func Test_Store_Append(t *testing.T) {
 		for i := 0; i < numberOfConcurrentRequests; i++ {
 			go func() {
 				_, err := s.Write([]AppendToStream{{
-					Stream:           stream,
-					ExpectedPosition: &emptyStreamPosition,
+					Stream: stream,
+					Condition: &AppendCondition{
+						WriteAtPosition: 0,
+					},
 					Events: []Event{{
 						EventId:   uuid.New().String(),
 						EventType: "AnEventType",
@@ -139,5 +163,53 @@ func Test_Store_Append(t *testing.T) {
 
 		assert.Equal(t, 1, numberOfSuccesses)
 		assert.Equal(t, numberOfConcurrentRequests-1, numberOfFailures)
+	})
+
+	t.Run("it can start a stream at a specific position", func(t *testing.T) {
+		stream := "Foo/" + uuid.NewString()
+		r, err := s.Write([]AppendToStream{
+			{
+				Stream: stream,
+				Events: []Event{
+					{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
+				},
+				Condition: &AppendCondition{
+					StreamIsEmpty:   true,
+					WriteAtPosition: int64(4),
+				},
+			},
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, int64(4), r[0].Position)
+
+		t.Run("subsequent writes will take the following positions", func(t *testing.T) {
+			results, err := s.Write([]AppendToStream{
+				{
+					Stream: stream,
+					Events: []Event{
+						{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
+					},
+				},
+			})
+
+			assert.Nil(t, err)
+			assert.Equal(t, int64(5), results[0].Position)
+		})
+
+		t.Run("it won't be able to write before the first position", func(t *testing.T) {
+			_, err := s.Write([]AppendToStream{
+				{
+					Stream: stream,
+					Events: []Event{
+						{EventId: uuid.NewString(), EventType: "Baz", Payload: []byte("baz")},
+					},
+					Condition: &AppendCondition{
+						WriteAtPosition: int64(2),
+					},
+				},
+			})
+
+			assert.NotNil(t, err)
+		})
 	})
 }

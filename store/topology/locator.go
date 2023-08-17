@@ -17,5 +17,8 @@ type SegmentLocator interface {
 	GetSegmentToWriteInto(stream string) (segments.Segment, error)
 
 	// For a given stream prefix (e.g. "user-"), return the list of segments to read from.
-	GetSegmentsToReadFrom(streamPrefix string) (*dag.DAG, error)
+	GetSegmentsToReadFromPrefix(streamPrefix string) (*dag.DAG, error)
+
+	// For a given stream, return the list of segments to read from.
+	GetSegmentsToReadFromStream(stream string) (*dag.DAG, error)
 }

@@ -12,13 +12,14 @@ import (
 	"github.com/sroze/fossil/store/topology"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
+	"math"
 	"testing"
 )
 
 func Test_Query(t *testing.T) {
 	fdb.MustAPIVersion(720)
 	kv := foundationdb.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
-	ss := eskit.NewInMemoryStore()
+	ss := simplestore.NewStore(kv, uuid.NewString())
 	rw := eskit.NewReaderWriter(ss, RootCodec)
 
 	t.Run("streams written in multiple segments over time", func(t *testing.T) {
@@ -33,7 +34,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
 		defer segmentManager.Stop()
-		store := NewSegmentStore(segmentManager, kv)
+		store := NewStore(segmentManager, kv)
 
 		// Given the following segments:
 		// - a ('foo') --> b (#1/2)
@@ -43,13 +44,12 @@ func Test_Query(t *testing.T) {
 		// We'll generate a bunch of streams with events (prefixed with `foo`) and insert their
 		// first third in `a`, second third between `b` and `c`, and last third between `b`, `d` and `e`.
 		samples := 4
-		numberOfEventsPerStream := 3 // so it is a multiple of 3
-
+		numberOfEventsPerStream := 3
 		writes, eventIdsPerStream := simplestore.GenerateEventWriteRequests(samples, numberOfEventsPerStream, "foo/")
 		streams := maps.Keys(eventIdsPerStream)
 
 		// Slice the writes, so we can write them at the right point in time during our test.
-		writeSlices := chunkSlice(writes, (numberOfEventsPerStream*samples)/3)
+		writeSlices := mergeAndSplitWritesIntoChunks(writes, 3)
 		assert.Equal(t, 3, len(writeSlices))
 
 		// We'll evolve the segment topology and append segments.
@@ -175,62 +175,6 @@ func Test_Query(t *testing.T) {
 		})
 	})
 
-	t.Run("with a simple segment", func(t *testing.T) {
-		stream := "topology/" + uuid.NewString()
-		segmentManager := topology.NewManager(
-			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
-			RootCodec,
-			rw,
-			stream,
-		)
-
-		assert.Nil(t, segmentManager.Start())
-		segmentManager.WaitReady()
-		defer segmentManager.Stop()
-		store := NewSegmentStore(segmentManager, kv)
-
-		// Given the following segments:
-		// - a ('foo')
-		_, err := segmentManager.Create(segments.NewSegment(
-			segments.NewPrefixRange("foo"),
-		))
-		assert.Nil(t, err)
-
-		writes, _ := simplestore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.
-		_, err = store.Write(writes)
-		assert.Nil(t, err)
-
-		t.Run("it can query and paginate through results in order", func(t *testing.T) {
-			firstChannel := make(chan QueryItem)
-			go store.Query(context.Background(), "foo", "0", firstChannel)
-			item := <-firstChannel
-			assert.Nil(t, item.Error)
-			assert.Equal(t, writes[0].Events[0].EventId, item.EventInStream.Event.EventId)
-			item = <-firstChannel
-			assert.Nil(t, item.Error)
-			assert.Equal(t, writes[1].Events[0].EventId, item.EventInStream.Event.EventId)
-			assert.NotNil(t, item.Position)
-
-			secondChannel := make(chan QueryItem)
-			go store.Query(context.Background(), "foo", *item.Position, secondChannel)
-			item = <-secondChannel
-			assert.Nil(t, item.Error)
-			assert.Equal(t, writes[2].Events[0].EventId, item.EventInStream.Event.EventId)
-			assert.NotNil(t, item.Position)
-			item = <-secondChannel
-			assert.Nil(t, item.Error)
-			assert.Equal(t, writes[3].Events[0].EventId, item.EventInStream.Event.EventId)
-			assert.NotNil(t, item.Position)
-
-			lastChannel := make(chan QueryItem)
-			go store.Query(context.Background(), "foo", *item.Position, lastChannel)
-			item, more := <-lastChannel
-			assert.Nil(t, item.Error)
-			assert.Nil(t, item.EventInStream)
-			assert.False(t, more)
-		})
-	})
-
 	t.Run("with a simple split segment", func(t *testing.T) {
 		stream := "topology/" + uuid.NewString()
 		segmentManager := topology.NewManager(
@@ -243,7 +187,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
 		defer segmentManager.Stop()
-		store := NewSegmentStore(segmentManager, kv)
+		store := NewStore(segmentManager, kv)
 
 		// Given the following segments:
 		// - a ('foo') --> b (#1/2)
@@ -256,7 +200,9 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		writes, eventsPerStream := simplestore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.
-		_, err = store.Write(writes)
+		mergedWrites, err := mergeCommandsPerStream(writes)
+		assert.Nil(t, err)
+		_, err = store.Write(mergedWrites)
 		assert.Nil(t, err)
 
 		t.Run("it can query and paginate through results in order", func(t *testing.T) {
@@ -313,6 +259,23 @@ func collectItemsPerStream(ch chan QueryItem) (map[string][]string, error) {
 	readEventsPerStream := make(map[string][]string)
 	_, err := collectItemsPerStreamInto(readEventsPerStream, ch, 0)
 	return readEventsPerStream, err
+}
+
+func mergeAndSplitWritesIntoChunks(writes []simplestore.AppendToStream, count int) [][]simplestore.AppendToStream {
+	chunkCount := math.Ceil(float64(len(writes)) / float64(count))
+	chunks := chunkSlice(writes, int(chunkCount))
+
+	mergedChunks := make([][]simplestore.AppendToStream, len(chunks))
+	for i, chunk := range chunks {
+		merged, err := mergeCommandsPerStream(chunk)
+		if err != nil {
+			panic(err)
+		}
+
+		mergedChunks[i] = merged
+	}
+
+	return mergedChunks
 }
 
 func chunkSlice[T any](slice []T, chunkSize int) [][]T {

@@ -4,7 +4,7 @@ import "context"
 
 type Store interface {
 	Write(commands []AppendToStream) ([]AppendResult, error)
-	Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem)
+	Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions)
 	Query(ctx context.Context, prefix string, startingPosition int64, ch chan QueryItem)
 }
 
@@ -18,6 +18,17 @@ type QueryItem struct {
 	EventInStream *EventInStream
 	Position      int64 // global, within the segment.
 	Error         error
+}
+
+type ReadOptions struct {
+	// The position at which to start reading.
+	StartingPosition int64
+
+	// The maximum number of events to read.
+	Limit int
+
+	// Whether to read the events in reverse order.
+	Backwards bool
 }
 
 type EventInStream struct {

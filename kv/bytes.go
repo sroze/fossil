@@ -47,3 +47,23 @@ func IndexOf(bytes []byte, separator []byte) int {
 	}
 	return -1
 }
+
+type ByteSlices [][]byte
+
+func (b ByteSlices) Len() int {
+	return len(b)
+}
+
+func (b ByteSlices) Less(i, j int) bool {
+	for x := 0; x < len(b[i]) && x < len(b[j]); x++ {
+		if b[i][x] == b[j][x] {
+			continue
+		}
+		return b[i][x] < b[j][x]
+	}
+	return len(b[i]) < len(b[j]) // In case all bytes are equal, the shorter length should be considered less.
+}
+
+func (b ByteSlices) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}

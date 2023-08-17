@@ -60,9 +60,12 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]simplestore.AppendResult
 		}
 
 		commands[i] = simplestore.AppendToStream{
-			Stream:           event.Stream,
-			Events:           []simplestore.Event{serializedEvent},
-			ExpectedPosition: event.ExpectedPosition,
+			Stream: event.Stream,
+			Events: []simplestore.Event{serializedEvent},
+			Condition: &simplestore.AppendCondition{
+				// FIXME: can we remove this need?
+				WriteAtPosition: *event.ExpectedPosition + 1,
+			},
 		}
 	}
 
@@ -72,7 +75,9 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]simplestore.AppendResult
 func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
 	defer close(ch)
 	intermediaryCh := make(chan simplestore.ReadItem, 10)
-	go rw.store.Read(ctx, stream, startingPosition, intermediaryCh)
+	go rw.store.Read(ctx, stream, intermediaryCh, simplestore.ReadOptions{
+		StartingPosition: startingPosition,
+	})
 	rw.transformToDecodedChannel(ctx, intermediaryCh, ch)
 }
 

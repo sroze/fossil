@@ -27,7 +27,7 @@ func Test_Query(t *testing.T) {
 
 		// Expects all the events to be streamed.
 		collectedEventsPerStream := make(map[string][]string)
-		collectItemsPerStreamInto(collectedEventsPerStream, ch)
+		collectQueryItemsPerStreamInto(collectedEventsPerStream, ch)
 
 		assert.Equal(t, eventsPerStream, collectedEventsPerStream)
 	})
@@ -35,7 +35,7 @@ func Test_Query(t *testing.T) {
 	t.Skip("TODO: end of segment signal")
 }
 
-func collectItemsPerStreamInto(target map[string][]string, ch chan QueryItem) {
+func collectQueryItemsPerStreamInto(target map[string][]string, ch chan QueryItem) {
 	for item := range ch {
 		if item.EventInStream != nil {
 			target[item.EventInStream.Stream] = append(target[item.EventInStream.Stream], item.EventInStream.Event.EventId)

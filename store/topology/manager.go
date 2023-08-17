@@ -111,6 +111,10 @@ func (m *Manager) GetSegmentToWriteInto(stream string) (segments.Segment, error)
 	return m.topologySubscription.GetState().GetSegmentToWriteInto(stream)
 }
 
-func (m *Manager) GetSegmentsToReadFrom(streamPrefix string) (*dag.DAG, error) {
-	return m.topologySubscription.GetState().GetSegmentsToReadFrom(streamPrefix)
+func (m *Manager) GetSegmentsToReadFromPrefix(streamPrefix string) (*dag.DAG, error) {
+	return m.topologySubscription.GetState().GetSegmentsToReadFromPrefix(streamPrefix)
+}
+
+func (m *Manager) GetSegmentsToReadFromStream(stream string) (*dag.DAG, error) {
+	return m.topologySubscription.GetState().GetSegmentsToReadFromStream(stream)
 }

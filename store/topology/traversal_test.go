@@ -1,6 +1,7 @@
 package topology
 
 import (
+	"context"
 	"github.com/heimdalr/dag"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
@@ -33,6 +34,21 @@ func dummyDagShapedWithReplacementsOneSplitAndOneMerge() *dag.DAG {
 	return d
 }
 
+// The graph looks like this:
+//
+//	a --> aa --> aaa
+func dummyDagShapedWithReplacements() *dag.DAG {
+	d := dag.NewDAG()
+
+	addVertexOrPanic(d, newTestVertex("a"))
+	addVertexOrPanic(d, newTestVertex("aa"))
+	addVertexOrPanic(d, newTestVertex("aaa"))
+	addEdgeOrPanic(d, "a", "aa")
+	addEdgeOrPanic(d, "aa", "aaa")
+
+	return d
+}
+
 func Test_FilterForwardDag(t *testing.T) {
 	t.Run("filters out vertices", func(t *testing.T) {
 		d := dummyDagShapedWithReplacementsOneSplitAndOneMerge()
@@ -55,9 +71,34 @@ func Test_FilterForwardDag(t *testing.T) {
 	})
 }
 
-func Test_FilterBackwardDag(t *testing.T) {
-	t.Run("it filters out vertices and include relevant ones", func(t *testing.T) {
+func Test_WalkBackwardsDag(t *testing.T) {
+	t.Run("it walks in backward order through parents", func(t *testing.T) {
+		d := dummyDagShapedWithReplacements()
+		var visited []string
 
+		err := WalkBackwardsDag(context.Background(), d, func(v dag.IDInterface) error {
+			visited = append(visited, v.ID())
+			return nil
+		})
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"aaa", "aa", "a"}, visited)
+	})
+
+	t.Run("it can be cancelled through the context", func(t *testing.T) {
+		var visited []string
+
+		ctx, cancel := context.WithCancel(context.Background())
+		err := WalkBackwardsDag(ctx, dummyDagShapedWithReplacements(), func(v dag.IDInterface) error {
+			visited = append(visited, v.ID())
+
+			if v.ID() == "aa" {
+				cancel()
+			}
+			return nil
+		})
+
+		assert.Nil(t, err)
+		assert.Equal(t, []string{"aaa", "aa"}, visited)
 	})
 }
 

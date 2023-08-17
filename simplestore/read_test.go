@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv/foundationdb"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slices"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func Test_Read(t *testing.T) {
 
 	t.Run("stream all events and closes the stream at the end", func(t *testing.T) {
 		ch := make(chan ReadItem)
-		go s.Read(context.Background(), stream, 0, ch)
+		go s.Read(context.Background(), stream, ch, ReadOptions{})
 
 		// Expects all the events to be streamed.
 		i := 0
@@ -48,7 +49,9 @@ func Test_Read(t *testing.T) {
 		assert.Greater(t, len(dummyEventIds), 5)
 
 		ch := make(chan ReadItem)
-		go s.Read(context.Background(), stream, 4, ch)
+		go s.Read(context.Background(), stream, ch, ReadOptions{
+			StartingPosition: 4,
+		})
 
 		// Expects all the events to be streamed.
 		expectedEvents := dummyEventIds[4:]
@@ -82,12 +85,27 @@ func Test_Read(t *testing.T) {
 		assert.Equal(t, int64(0), r[0].Position)
 
 		ch := make(chan ReadItem)
-		go s.Read(context.Background(), streamName, 0, ch)
+		go s.Read(context.Background(), streamName, ch, ReadOptions{})
 
 		item := <-ch
 		assert.Nil(t, item.Error)
 		assert.Equal(t, eventId, item.EventInStream.Event.EventId)
 	})
 
-	t.Skip("returns an error when stream does not exist")
+	t.Run("it can read a stream backwards and with a limit", func(t *testing.T) {
+		ch := make(chan ReadItem)
+		go s.Read(context.Background(), stream, ch, ReadOptions{
+			Backwards: true,
+			Limit:     5,
+		})
+
+		eventIds := make([]string, 0)
+		for item := range ch {
+			eventIds = append(eventIds, item.EventInStream.Event.EventId)
+		}
+
+		expectedEvents := dummyEventIds[len(dummyEventIds)-5:]
+		slices.Reverse(expectedEvents)
+		assert.Equal(t, expectedEvents, eventIds)
+	})
 }

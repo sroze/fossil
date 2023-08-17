@@ -1,6 +1,7 @@
 package simplestore
 
 import (
+	"github.com/sroze/fossil/kv"
 	"github.com/stretchr/testify/assert"
 	"sort"
 	"testing"
@@ -58,7 +59,7 @@ func Test_StreamIndexEventKey(t *testing.T) {
 			factory.Bytes("Foo/Bar/10", 12),
 		}
 
-		sort.Sort(byteSlices(bytes))
+		sort.Sort(kv.ByteSlices(bytes))
 
 		assert.Equal(t, bytes[0], factory.Bytes("Bar/1234", 0))
 		assert.Equal(t, bytes[1], factory.Bytes("Foo/Bar/10", 1))

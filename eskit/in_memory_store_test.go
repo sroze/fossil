@@ -25,7 +25,7 @@ func Test_InMemoryStore(t *testing.T) {
 		assert.Equal(t, int64(0), result[0].Position)
 
 		ch := make(chan simplestore.ReadItem)
-		go s.Read(context.Background(), stream, 0, ch)
+		go s.Read(context.Background(), stream, ch, simplestore.ReadOptions{})
 
 		item := <-ch
 		assert.Equal(t, eventId, item.EventInStream.Event.EventId)
@@ -41,27 +41,24 @@ func Test_InMemoryStore(t *testing.T) {
 	t.Run("conflict on writes", func(t *testing.T) {
 		stream := "test" + uuid.NewString()
 
-		position := int64(0)
 		_, err := s.Write([]simplestore.AppendToStream{
 			{Stream: stream, Events: []simplestore.Event{
 				{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
-			}, ExpectedPosition: &position},
+			}, Condition: &simplestore.AppendCondition{WriteAtPosition: 1}},
 		})
 		assert.NotNil(t, err)
 
-		position = int64(-1)
 		_, err = s.Write([]simplestore.AppendToStream{
 			{Stream: stream, Events: []simplestore.Event{
 				{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
-			}, ExpectedPosition: &position},
+			}, Condition: &simplestore.AppendCondition{WriteAtPosition: 0}},
 		})
 		assert.Nil(t, err)
 
-		position = int64(0)
 		_, err = s.Write([]simplestore.AppendToStream{
 			{Stream: stream, Events: []simplestore.Event{
 				{EventId: uuid.NewString(), EventType: "Baz", Payload: []byte("baz")},
-			}, ExpectedPosition: &position},
+			}, Condition: &simplestore.AppendCondition{WriteAtPosition: 1}},
 		})
 		assert.Nil(t, err)
 	})

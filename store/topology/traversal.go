@@ -1,7 +1,10 @@
 package topology
 
 import (
+	"context"
+	"fmt"
 	"github.com/heimdalr/dag"
+	"golang.org/x/exp/maps"
 )
 
 type FilterResult int
@@ -48,9 +51,9 @@ func FilterBackwardDag(d *dag.DAG, filter func(v dag.IDInterface) FilterResult) 
 	return filtered
 }
 
-// FlowThroughDag walks the DAG in order from the roots to the leaves (in parallel when possible), calling the callback
+// WalkForwardDag walks the DAG in order from the roots to the leaves (in parallel when possible), calling the callback
 // for each vertex. It stops walking if the callback returns an error.
-func FlowThroughDag(d *dag.DAG, callback func(v dag.IDInterface) error) error {
+func WalkForwardDag(d *dag.DAG, callback func(v dag.IDInterface) error) error {
 	flowCallback := func(d *dag.DAG, id string, parentResults []dag.FlowResult) (interface{}, error) {
 		v, err := d.GetVertex(id)
 		if err != nil {
@@ -83,6 +86,67 @@ func FlowThroughDag(d *dag.DAG, callback func(v dag.IDInterface) error) error {
 		err := <-results
 		if err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+// WalkBackwardsDag walks the DAG in order from the leaves to the roots.
+// It stops walking if the callback returns an error.
+// The current implementation does not parallelize the walk and does not support
+// multiple leaves, through it is expected to be possible and a possible future improvement.
+func WalkBackwardsDag(ctx context.Context, d *dag.DAG, callback func(v dag.IDInterface) error) error {
+	leaves := d.GetLeaves()
+	if len(leaves) > 1 {
+		return fmt.Errorf("multiple leaves are not supported yet, found %d", len(leaves))
+	} else if len(leaves) == 0 {
+		// dag is empty, return early
+		return nil
+	}
+
+	leafId := maps.Keys(leaves)
+	visited := make(map[string]bool)
+
+	return walkParents(ctx, d, leaves[leafId[0]].(dag.IDInterface), callback, visited)
+}
+
+func walkParents(ctx context.Context, d *dag.DAG, v dag.IDInterface, callback func(v dag.IDInterface) error, visited map[string]bool) error {
+	if visited[v.ID()] {
+		return nil
+	}
+
+	visited[v.ID()] = true
+
+	err := callback(v)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil
+	default:
+	}
+
+	parents, err := d.GetParents(v.ID())
+	if err != nil {
+		return err
+	} else if len(parents) > 1 {
+		return fmt.Errorf("multiple parents are not supported yet, found %d", len(parents))
+	}
+
+	for _, parent := range parents {
+		err = walkParents(ctx, d, parent.(dag.IDInterface), callback, visited)
+		if err != nil {
+			return err
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			continue
 		}
 	}
 

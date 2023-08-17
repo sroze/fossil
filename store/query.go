@@ -10,8 +10,8 @@ import (
 )
 
 // TODO: implement batching?
-func (w *Store) Query(ctx context.Context, prefix string, positionCursor PositionCursor, ch chan QueryItem) {
-	segmentsRelevantToPrefix, err := w.locator.GetSegmentsToReadFrom(prefix)
+func (s *Store) Query(ctx context.Context, prefix string, positionCursor PositionCursor, ch chan QueryItem) {
+	segmentsRelevantToPrefix, err := s.locator.GetSegmentsToReadFromPrefix(prefix)
 	if err != nil {
 		ch <- QueryItem{Error: fmt.Errorf("could not get segments to read from: %w", err)}
 		return
@@ -52,10 +52,10 @@ func (w *Store) Query(ctx context.Context, prefix string, positionCursor Positio
 		}
 	}(ch, startingPosition.Clone())
 
-	err = topology.FlowThroughDag(
+	err = topology.WalkForwardDag(
 		segmentsToRead,
 		func(segment dag.IDInterface) error {
-			return w.readSegment(ctx, segment, startingPosition, prefix, eventAggregator)
+			return s.readSegment(ctx, segment, startingPosition, prefix, eventAggregator)
 		},
 	)
 
@@ -72,9 +72,9 @@ type EventInSegment struct {
 	eventInStream   simplestore.EventInStream
 }
 
-func (w *Store) readSegment(ctx context.Context, segment dag.IDInterface, startingPosition *topology.Position, prefix string, ch chan EventInSegment) error {
+func (s *Store) readSegment(ctx context.Context, segment dag.IDInterface, startingPosition *topology.Position, prefix string, ch chan EventInSegment) error {
 	segmentId := uuid.MustParse(segment.ID())
-	store := w.storeForSegment(segmentId)
+	store := s.storeForSegment(segmentId)
 
 	segmentCh := make(chan simplestore.QueryItem)
 	go store.Query(ctx, prefix, startingPosition.PositionInSegment(segmentId), segmentCh)

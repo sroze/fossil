@@ -32,5 +32,7 @@ func (sr *StreamReader) Read(ctx context.Context, startingPosition string, ch ch
 		return
 	}
 
-	sr.store.Read(ctx, sr.stream, i, ch)
+	sr.store.Read(ctx, sr.stream, ch, simplestore.ReadOptions{
+		StartingPosition: i,
+	})
 }

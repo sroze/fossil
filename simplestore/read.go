@@ -6,7 +6,7 @@ import (
 )
 
 // FIXME: use `ctx` to cancel the scan
-func (ss SimpleStore) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {
+func (ss SimpleStore) Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions) {
 	keyCh := make(chan kv.KeyPair)
 	go func() {
 		defer close(ch)
@@ -34,7 +34,14 @@ func (ss SimpleStore) Read(ctx context.Context, stream string, startingPosition 
 		}
 	}()
 
-	err := ss.kv.Scan(ss.streamIndexedKeyFactory.RangeStartingAt(stream, startingPosition), kv.ScanOptions{}, keyCh)
+	err := ss.kv.Scan(
+		ss.streamIndexedKeyFactory.RangeStartingAt(stream, options.StartingPosition),
+		kv.ScanOptions{
+			Backwards: options.Backwards,
+			Limit:     options.Limit,
+		},
+		keyCh,
+	)
 
 	if err != nil {
 		ch <- ReadItem{Error: err}

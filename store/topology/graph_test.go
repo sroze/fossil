@@ -26,7 +26,7 @@ func Test_Graph(t *testing.T) {
 		assert.Equal(t, c, s)
 
 		// Expects all segments to be given for read
-		d, err := g.GetSegmentsToReadFrom("foo")
+		d, err := g.GetSegmentsToReadFromPrefix("foo")
 		assert.Nil(t, err)
 		assert.Equal(t, d.GetRoots(), g.d.GetRoots())
 
@@ -69,7 +69,7 @@ func Test_Graph(t *testing.T) {
 		assert.True(t, s.ID() == iAndiAndj[2].ID() || s.ID() == iAndiAndj[1].ID() || s.ID() == iAndiAndj[0].ID() || s.ID() == fAndg[0].ID())
 
 		// Expects the relevant segments to be given for read
-		d, err := g.GetSegmentsToReadFrom("foo/")
+		d, err := g.GetSegmentsToReadFromPrefix("foo/")
 		assert.Nil(t, err)
 
 		assert.Equal(t, maps.Keys(d.GetRoots()), []string{a.ID()})
@@ -80,7 +80,7 @@ func Test_Graph(t *testing.T) {
 		assert.True(t, descendants[1] == cAndd[0].ID() || descendants[1] == cAndd[1].ID())
 		assert.True(t, descendants[2] == cAndd[0].ID() || descendants[2] == cAndd[1].ID())
 
-		d, err = g.GetSegmentsToReadFrom("bar/")
+		d, err = g.GetSegmentsToReadFromPrefix("bar/")
 		assert.Nil(t, err)
 		descendants, err = d.GetOrderedDescendants(e.ID())
 		assert.Nil(t, err)

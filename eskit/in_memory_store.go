@@ -40,8 +40,8 @@ func (s *InMemoryStore) Write(commands []simplestore.AppendToStream) ([]simplest
 		}
 
 		positionOfFirstEvent := int64(len(s.byStream[command.Stream]) - 1)
-		if command.ExpectedPosition != nil && *command.ExpectedPosition != positionOfFirstEvent {
-			return nil, fmt.Errorf("expected position %d, but got %d", *command.ExpectedPosition, positionOfFirstEvent)
+		if command.Condition != nil && command.Condition.WriteAtPosition != (positionOfFirstEvent+1) {
+			return nil, fmt.Errorf("expected position %d, but got %d", command.Condition.WriteAtPosition, positionOfFirstEvent)
 		}
 
 		for _, event := range command.Events {
@@ -66,16 +66,16 @@ func (s *InMemoryStore) Write(commands []simplestore.AppendToStream) ([]simplest
 	return results, nil
 }
 
-func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPosition int64, ch chan simplestore.ReadItem) {
+func (s *InMemoryStore) Read(ctx context.Context, stream string, ch chan simplestore.ReadItem, options simplestore.ReadOptions) {
 	defer close(ch)
 	s.mu.Lock()
 
-	if len(s.byStream[stream]) < int(startingPosition) {
+	if len(s.byStream[stream]) < int(options.StartingPosition) {
 		s.mu.Unlock()
 		return
 	}
 
-	eventsToBeSent := s.byStream[stream][startingPosition:]
+	eventsToBeSent := s.byStream[stream][options.StartingPosition:]
 	s.mu.Unlock()
 
 	for i, event := range eventsToBeSent {
@@ -83,7 +83,7 @@ func (s *InMemoryStore) Read(ctx context.Context, stream string, startingPositio
 			EventInStream: &simplestore.EventInStream{
 				Stream:   stream,
 				Event:    event,
-				Position: startingPosition + int64(i),
+				Position: options.StartingPosition + int64(i),
 			},
 		}
 

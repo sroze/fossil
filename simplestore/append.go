@@ -9,10 +9,21 @@ type AppendResult struct {
 	Position int64
 }
 
+type AppendCondition struct {
+	// Expects the stream to be empty.
+	StreamIsEmpty bool
+
+	// The expected position where the first event should be written. If the stream is empty,
+	// `0` would mean at the beginning.
+	// When using `StreamIsEmpty` and `WriteAtPosition` together, the expected position is
+	// this means starting a stream with a specific position.
+	WriteAtPosition int64
+}
+
 type AppendToStream struct {
-	Stream           string
-	Events           []Event
-	ExpectedPosition *int64
+	Stream    string
+	Events    []Event
+	Condition *AppendCondition
 }
 
 func (ss SimpleStore) Write(commands []AppendToStream) ([]AppendResult, error) {
@@ -45,35 +56,54 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 	results := make([]AppendResult, len(commands))
 
 	// TODO: cache + mutex!
-	segmentPosition, err := ss.getSegmentPosition()
+	segmentPosition, err := ss.fetchSegmentPosition()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get segment position: %w", err)
 	}
 
 	// TODO: cache + mutex!
-	streamPositions := make(map[string]int64)
+	lastKnownStreamPositions := make(map[string]int64)
+
+	// TODO: instead, merge commands for the same stream
+	streamPositionCursors := make(map[string]int64)
 
 	// 1. Generate the write requests with templates.
 	var writes []kv.Write
 	for i, command := range commands {
-		_, exists := streamPositions[command.Stream]
+		// TODO: do we really need to fetch the position here or could we just use the `kv.Write` condition
+		//       and handle the error properly?
+		_, exists := lastKnownStreamPositions[command.Stream]
 		if !exists {
-			position, err := ss.getStreamPosition(command.Stream)
+			position, err := ss.fetchStreamPosition(command.Stream)
 			if err != nil {
 				return nil, nil, err
 			}
 
-			streamPositions[command.Stream] = position
+			lastKnownStreamPositions[command.Stream] = position
+			streamPositionCursors[command.Stream] = position
 		}
 
-		if command.ExpectedPosition != nil {
-			if streamPositions[command.Stream] != *command.ExpectedPosition {
-				return nil, nil, fmt.Errorf("expected stream position %d, but got %d", *command.ExpectedPosition, streamPositions[command.Stream])
+		if command.Condition != nil {
+			if command.Condition.WriteAtPosition < 0 {
+				return nil, nil, fmt.Errorf("expected write position to be positive, got %d", command.Condition.WriteAtPosition)
+			}
+
+			if lastKnownStreamPositions[command.Stream] == -1 {
+				// The stream is empty, but the client expects to write at a specific position.
+				if command.Condition.WriteAtPosition > 0 {
+					streamPositionCursors[command.Stream] = command.Condition.WriteAtPosition - 1
+				}
+			} else {
+				if command.Condition.StreamIsEmpty {
+					return nil, nil, fmt.Errorf("stream %s is not empty, found position is %d", command.Stream, lastKnownStreamPositions[command.Stream])
+				} else if command.Condition.WriteAtPosition > 0 && (lastKnownStreamPositions[command.Stream]+1) != command.Condition.WriteAtPosition {
+					return nil, nil, fmt.Errorf("expected stream position %d, but got %d", command.Condition.WriteAtPosition, lastKnownStreamPositions[command.Stream])
+				}
 			}
 		}
 
 		for _, event := range command.Events {
-			streamPositions[command.Stream]++
+			streamPositionCursors[command.Stream]++
 			segmentPosition++
 
 			encodedEvent, err := EncodeEvent(event)
@@ -84,7 +114,7 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 			encodedEventInStream, err := EncodeEventInStream(EventInStream{
 				Event:    event,
 				Stream:   command.Stream,
-				Position: streamPositions[command.Stream],
+				Position: streamPositionCursors[command.Stream],
 			})
 			if err != nil {
 				return nil, nil, err
@@ -101,7 +131,7 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 				{
 					Key: ss.streamIndexedKeyFactory.Bytes(
 						command.Stream,
-						streamPositions[command.Stream],
+						streamPositionCursors[command.Stream],
 					),
 					Value: encodedEvent,
 					Condition: &kv.Condition{
@@ -112,14 +142,14 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 		}
 
 		results[i] = AppendResult{
-			Position: streamPositions[command.Stream],
+			Position: streamPositionCursors[command.Stream],
 		}
 	}
 
 	return writes, results, nil
 }
 
-func (ss SimpleStore) getStreamPosition(stream string) (int64, error) {
+func (ss SimpleStore) fetchStreamPosition(stream string) (int64, error) {
 	kf := StreamIndexEventKeyFactory{keySpace: ss.keySpace}
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
@@ -144,7 +174,7 @@ func (ss SimpleStore) getStreamPosition(stream string) (int64, error) {
 	return position, err
 }
 
-func (ss SimpleStore) getSegmentPosition() (int64, error) {
+func (ss SimpleStore) fetchSegmentPosition() (int64, error) {
 	kf := PositionIndexedEventKeyFactory{keySpace: ss.keySpace}
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(

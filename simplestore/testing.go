@@ -1,6 +1,8 @@
 package simplestore
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 // GenerateStreamWriteRequests generates write requests for a specific stream
 func GenerateStreamWriteRequests(stream string, count int) []AppendToStream {

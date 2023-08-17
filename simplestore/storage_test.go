@@ -61,25 +61,4 @@ func Test_EventRow(t *testing.T) {
 	})
 }
 
-// Define a type for a slice of byte slices.
-type byteSlices [][]byte
-
 // Implement the three methods for sort.Interface.
-
-func (b byteSlices) Len() int {
-	return len(b)
-}
-
-func (b byteSlices) Less(i, j int) bool {
-	for x := 0; x < len(b[i]) && x < len(b[j]); x++ {
-		if b[i][x] == b[j][x] {
-			continue
-		}
-		return b[i][x] < b[j][x]
-	}
-	return len(b[i]) < len(b[j]) // In case all bytes are equal, the shorter length should be considered less.
-}
-
-func (b byteSlices) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
-}
