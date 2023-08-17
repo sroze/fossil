@@ -8,7 +8,7 @@ import (
 	"github.com/sroze/fossil/simplestore"
 )
 
-func (s *Store) Write(commands []simplestore.AppendToStream) ([]simplestore.AppendResult, error) {
+func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream) ([]simplestore.AppendResult, error) {
 	commandsBySegment := make(map[uuid.UUID]map[int]simplestore.AppendToStream)
 
 	// TODO: deal with each command concurrently
@@ -49,21 +49,23 @@ func (s *Store) Write(commands []simplestore.AppendToStream) ([]simplestore.Appe
 
 	err := s.kv.Write(writes)
 	if err != nil {
-		keys := make([][]byte, len(writes))
-		for i, write := range writes {
-			keys[i] = write.Key
-		}
-
-		for i, key := range keys {
-			duplicate := false
-			for j, otherKey := range keys {
-				if i != j && string(key) == string(otherKey) {
-					duplicate = true
-					break
-				}
+		_, isConditionFailed := err.(kv.ErrConditionalWriteFails)
+		if isConditionFailed {
+			// Given the current implementation, this means that another writer has written in the stream too, because we currently fetch
+			// the positions in the application before writing. As such, we should retry, within reasonable limits.
+			retryCount := ctx.Value("retryCount")
+			if retryCount == nil {
+				retryCount = 0
 			}
 
-			fmt.Printf("%s -- dup: %t\n", string(key), duplicate)
+			if retryCount.(int) > 5 {
+				return nil, fmt.Errorf("failed multiple times: %w", err)
+			}
+
+			return s.Write(
+				context.WithValue(ctx, "retryCount", retryCount.(int)+1),
+				commands,
+			)
 		}
 
 		return nil, err

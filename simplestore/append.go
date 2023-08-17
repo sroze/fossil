@@ -33,22 +33,6 @@ func (ss SimpleStore) Write(commands []AppendToStream) ([]AppendResult, error) {
 	}
 
 	err = ss.kv.Write(writes)
-	if err != nil {
-		if conditionFailed, isConditionFailed := err.(kv.ErrConditionalWriteFails); isConditionFailed {
-			// ...
-
-			if p, err := ss.positionIndexedKeyFactory.Reverse(conditionFailed.Key); err == nil {
-				// TODO: It means something else has been written in this segment in the meantime, let's retry
-				//       the whole command.
-				return results, fmt.Errorf("expected empty segment key position #%d found something instead", p)
-			} else if s, p, err := ss.streamIndexedKeyFactory.Reverse(conditionFailed.Key); err == nil {
-				// TODO: It's either a concurrency issue, or a wrong client expectation. We need to identify
-				// 	     which one it is, and act accordingly.
-				return results, fmt.Errorf("expected empty position %d for stream %s but found something", p, s)
-			}
-		}
-	}
-
 	return results, err
 }
 
@@ -64,14 +48,10 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 	// TODO: cache + mutex!
 	lastKnownStreamPositions := make(map[string]int64)
 
-	// TODO: instead, merge commands for the same stream
 	streamPositionCursors := make(map[string]int64)
 
-	// 1. Generate the write requests with templates.
 	var writes []kv.Write
 	for i, command := range commands {
-		// TODO: do we really need to fetch the position here or could we just use the `kv.Write` condition
-		//       and handle the error properly?
 		_, exists := lastKnownStreamPositions[command.Stream]
 		if !exists {
 			position, err := ss.fetchStreamPosition(command.Stream)

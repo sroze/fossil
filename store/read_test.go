@@ -34,7 +34,7 @@ func Test_Read(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the third of the events (they should go to `a`).
-		_, err = ctx.store.Write(writeSlices[0])
+		_, err = ctx.store.Write(context.Background(), writeSlices[0])
 		assert.Nil(t, err)
 
 		// We split `a` into `b` and `c`.
@@ -42,7 +42,7 @@ func Test_Read(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the 2nd third of events:
-		_, err = ctx.store.Write(writeSlices[1])
+		_, err = ctx.store.Write(context.Background(), writeSlices[1])
 		assert.Nil(t, err)
 
 		// We split `c` into `d` and `e`.
@@ -50,7 +50,7 @@ func Test_Read(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the last third of events:
-		_, err = ctx.store.Write(writeSlices[2])
+		_, err = ctx.store.Write(context.Background(), writeSlices[2])
 		assert.Nil(t, err)
 
 		t.Run("reads streams across 3 segments", func(t *testing.T) {

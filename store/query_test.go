@@ -59,7 +59,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the third of the events (they should go to `a`).
-		_, err = store.Write(writeSlices[0])
+		_, err = store.Write(context.Background(), writeSlices[0])
 		assert.Nil(t, err)
 
 		// We split `a` into `b` and `c`.
@@ -67,7 +67,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the 2nd third of events:
-		_, err = store.Write(writeSlices[1])
+		_, err = store.Write(context.Background(), writeSlices[1])
 		assert.Nil(t, err)
 
 		// We split `c` into `d` and `e`.
@@ -75,7 +75,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We write the last third of events:
-		_, err = store.Write(writeSlices[2])
+		_, err = store.Write(context.Background(), writeSlices[2])
 		assert.Nil(t, err)
 
 		// We'll then assert that the query returns the events in order, for each stream.
@@ -202,7 +202,7 @@ func Test_Query(t *testing.T) {
 		writes, eventsPerStream := simplestore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.
 		mergedWrites, err := mergeCommandsPerStream(writes)
 		assert.Nil(t, err)
-		_, err = store.Write(mergedWrites)
+		_, err = store.Write(context.Background(), mergedWrites)
 		assert.Nil(t, err)
 
 		t.Run("it can query and paginate through results in order", func(t *testing.T) {

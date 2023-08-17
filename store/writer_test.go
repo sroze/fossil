@@ -1,10 +1,12 @@
 package store
 
 import (
+	"context"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/simplestore"
 	"github.com/sroze/fossil/store/segments"
 	"github.com/stretchr/testify/assert"
+	"sync"
 	"testing"
 )
 
@@ -18,7 +20,7 @@ func Test_Writer(t *testing.T) {
 		t.Run("a writer can restart and pick up the last segment's position", func(t *testing.T) {
 			stream := "foo" + uuid.NewString()
 			writer1 := NewStore(ctx.segmentManager, ctx.kv)
-			_, err := writer1.Write([]simplestore.AppendToStream{
+			_, err := writer1.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
 					Events: []simplestore.Event{
@@ -32,7 +34,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			writer2 := NewStore(ctx.segmentManager, ctx.kv)
-			_, err = writer2.Write([]simplestore.AppendToStream{
+			_, err = writer2.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
 					Events: []simplestore.Event{
@@ -50,7 +52,7 @@ func Test_Writer(t *testing.T) {
 		t.Run("writes multiple events in a stream at once", func(t *testing.T) {
 			stream := "foo/" + uuid.NewString()
 
-			r, err := ctx.store.Write([]simplestore.AppendToStream{
+			r, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 				{Stream: stream, Events: []simplestore.Event{
 					{EventId: uuid.NewString(), EventType: "Baz1", Payload: []byte("bar")},
 					{EventId: uuid.NewString(), EventType: "Baz2", Payload: []byte("bar")},
@@ -72,7 +74,7 @@ func Test_Writer(t *testing.T) {
 
 			// Write an event on the stream (in the first segment)
 			stream := "foo/" + uuid.NewString()
-			_, err = ctx.store.Write([]simplestore.AppendToStream{
+			_, err = ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
 					Events: []simplestore.Event{
@@ -87,7 +89,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			t.Run("fails on expecting the wrong stream position with no stream event in the segment", func(t *testing.T) {
-				_, err := ctx.store.Write([]simplestore.AppendToStream{
+				_, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 					{
 						Stream: stream,
 						Events: []simplestore.Event{
@@ -112,7 +114,7 @@ func Test_Writer(t *testing.T) {
 
 			// Write an event on the stream (in the first segment)
 			stream := "foo/" + uuid.NewString()
-			_, err = ctx.store.Write([]simplestore.AppendToStream{
+			_, err = ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
 					Events: []simplestore.Event{
@@ -128,7 +130,7 @@ func Test_Writer(t *testing.T) {
 
 			t.Run("automatically increment the stream position across segments", func(t *testing.T) {
 				// Write an event on the stream (in the second segment)
-				r, err := ctx.store.Write([]simplestore.AppendToStream{
+				r, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 					{
 						Stream: stream,
 						Events: []simplestore.Event{
@@ -151,7 +153,7 @@ func Test_Writer(t *testing.T) {
 
 			// Write an event on the stream (in the first segment)
 			stream := "foo/" + uuid.NewString()
-			_, err = ctx.store.Write([]simplestore.AppendToStream{
+			_, err = ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
 					Events: []simplestore.Event{
@@ -166,7 +168,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			t.Run("writes multiple events in a stream at once", func(t *testing.T) {
-				r, err := ctx.store.Write([]simplestore.AppendToStream{
+				r, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 					{Stream: stream, Events: []simplestore.Event{
 						{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
 						{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
@@ -179,7 +181,50 @@ func Test_Writer(t *testing.T) {
 		})
 	})
 
-	// t.Skip("TODO: 2 concurrent writers will compete for the same segment but work")
+	t.Run("2 concurrent writers will compete for the same segment but work", func(t *testing.T) {
+		withFreshStore(t, func(ctx testingContext) {
+			// Create a segment for `foo`
+			_, err := ctx.segmentManager.Create(segments.NewSegment(
+				segments.NewPrefixRange("foo"),
+			))
+			assert.Nil(t, err)
+
+			// We create 2 store instances, pretending they are 2 different processes running on different machines.
+			w1 := NewStore(ctx.segmentManager, ctx.kv)
+			w2 := NewStore(ctx.segmentManager, ctx.kv)
+
+			wg := sync.WaitGroup{}
+			wg.Add(2)
+
+			go func() {
+				_, err := w1.Write(context.Background(), []simplestore.AppendToStream{
+					{
+						Stream: "foo/" + uuid.NewString(),
+						Events: []simplestore.Event{
+							{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
+						},
+					},
+				})
+				assert.Nil(t, err)
+				wg.Done()
+			}()
+
+			go func() {
+				_, err := w2.Write(context.Background(), []simplestore.AppendToStream{
+					{
+						Stream: "foo/" + uuid.NewString(),
+						Events: []simplestore.Event{
+							{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
+						},
+					},
+				})
+				assert.Nil(t, err)
+				wg.Done()
+			}()
+
+			wg.Wait()
+		})
+	})
 
 	// t.Skip("TODO: eventually consistent topology view does not cause out-of-order writes")
 	// i.e. when 2 writers process requests concurrently, with different view of the world after a topology change (i.e. split or replace).
