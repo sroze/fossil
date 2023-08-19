@@ -6,7 +6,10 @@ import (
 	"github.com/heimdalr/dag"
 	"github.com/sroze/fossil/eskit"
 	"github.com/sroze/fossil/eskit/codec"
+	"github.com/sroze/fossil/kv"
 	"github.com/sroze/fossil/livetail"
+	"github.com/sroze/fossil/simplestore"
+	"github.com/sroze/fossil/store/pool"
 	"github.com/sroze/fossil/store/segments"
 )
 
@@ -14,20 +17,34 @@ type Manager struct {
 	topologySubscription *eskit.LiveProjection[GraphState]
 	tail                 *livetail.LiveTail
 	stream               string
-	writer               eskit.Writer
+	pool                 *pool.SimpleStorePool
+	ss                   *simplestore.SimpleStore
+	codec                codec.Codec
+	kv                   kv.KV
 }
 
-func NewManager(tail *livetail.LiveTail, codec codec.Codec, writer eskit.Writer, stream string) *Manager {
+func NewManager(
+	ss *simplestore.SimpleStore,
+	stream string,
+	codec codec.Codec,
+	pool *pool.SimpleStorePool,
+	kv kv.KV,
+) *Manager {
+	tail := livetail.NewLiveTail(livetail.NewStreamReader(ss, stream))
+
 	return &Manager{
+		kv:     kv,
 		tail:   tail,
 		stream: stream,
-		writer: writer,
+		ss:     ss,
+		codec:  codec,
 		topologySubscription: eskit.NewLiveProjection(
 			tail,
 			codec,
 			initialGraphState(),
 			EvolveGraphState,
 		),
+		pool: pool,
 	}
 }
 
@@ -37,16 +54,18 @@ func (m *Manager) Create(s segments.Segment) (*segments.Segment, error) {
 	// TODO: validates that no other root can contain the same range.
 	// 		 (we might need to implement a `Overlaps()` method on the ranges)
 
-	r, err := m.writer.Write([]eskit.EventToWrite{
-		{
-			Stream: m.stream,
-			Event: SegmentCreatedEvent{
-				Segment: s,
-			},
-			ExpectedPosition: &position,
-		},
+	event, err := m.codec.Serialize(SegmentCreatedEvent{
+		Segment: s,
 	})
+	if err != nil {
+		return nil, err
+	}
 
+	r, err := m.ss.Write([]simplestore.AppendToStream{{
+		Stream:    m.stream,
+		Events:    []simplestore.Event{event},
+		Condition: &simplestore.AppendCondition{WriteAtPosition: position + 1},
+	}})
 	if err != nil {
 		return nil, err
 	}
@@ -69,17 +88,31 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 	}
 
 	splitSegmentParts := segment.Split(chunkCount)
-	r, err := m.writer.Write([]eskit.EventToWrite{
-		{
-			Stream: m.stream,
-			Event: SegmentSplitEvent{
-				SegmentId: segment.Id,
-				Into:      splitSegmentParts,
-			},
-			ExpectedPosition: &position,
-		},
-	})
 
+	previousSegmentsStore := m.pool.GetStoreForSegment(segment.Id)
+	closeWrites, err := previousSegmentsStore.PrepareCloseKvWrites()
+	if err != nil {
+		return nil, fmt.Errorf("could not prepare writes to close the store: %w", err)
+	}
+
+	event, err := m.codec.Serialize(SegmentSplitEvent{
+		SegmentId: segment.Id,
+		Into:      splitSegmentParts,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	topologyWrites, topologyResults, err := m.ss.PrepareKvWrites([]simplestore.AppendToStream{{
+		Stream:    m.stream,
+		Events:    []simplestore.Event{event},
+		Condition: &simplestore.AppendCondition{WriteAtPosition: position + 1},
+	}})
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.kv.Write(append(closeWrites, topologyWrites...))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +120,7 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 	// wait for the livetail to be caught up.
 	m.topologySubscription.WaitForPosition(
 		context.Background(),
-		r[0].Position,
+		topologyResults[0].Position,
 	)
 
 	return splitSegmentParts, nil

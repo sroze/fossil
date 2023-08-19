@@ -119,7 +119,7 @@ func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplest
 		preparedCommands = append(preparedCommands, cmd)
 	}
 
-	return s.storeForSegment(segmentId).PrepareKvWrites(preparedCommands)
+	return s.pool.GetStoreForSegment(segmentId).PrepareKvWrites(preparedCommands)
 }
 
 func (s *Store) fetchStreamPosition(stream string) (int64, error) {
@@ -139,19 +139,4 @@ func (s *Store) fetchStreamPosition(stream string) (int64, error) {
 	}
 
 	return streamHead.EventInStream.Position, nil
-}
-
-func (s *Store) storeForSegment(segmentId uuid.UUID) *simplestore.SimpleStore {
-	s.segmentStoresMutex.Lock()
-	defer s.segmentStoresMutex.Unlock()
-
-	_, exists := s.segmentStores[segmentId]
-	if !exists {
-		s.segmentStores[segmentId] = simplestore.NewStore(
-			s.kv,
-			segmentId.String(),
-		)
-	}
-
-	return s.segmentStores[segmentId]
 }

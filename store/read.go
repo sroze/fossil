@@ -43,7 +43,7 @@ func (s *Store) Read(ctx context.Context, stream string, ch chan simplestore.Rea
 
 	// Walk the DAG forward to provide an ordered view of the events.
 	walker := func(segmentId dag.IDInterface) error {
-		segmentStore := s.storeForSegment(uuid.MustParse(segmentId.ID()))
+		segmentStore := s.pool.GetStoreForSegment(uuid.MustParse(segmentId.ID()))
 		segmentCh := make(chan simplestore.ReadItem)
 		go segmentStore.Read(ctx, stream, segmentCh, options)
 

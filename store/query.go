@@ -73,8 +73,9 @@ type EventInSegment struct {
 }
 
 func (s *Store) readSegment(ctx context.Context, segment dag.IDInterface, startingPosition *topology.Position, prefix string, ch chan EventInSegment) error {
+	// TODO (perf): remove these unnecessary `MustParse` with better typing traversing DAGs
 	segmentId := uuid.MustParse(segment.ID())
-	store := s.storeForSegment(segmentId)
+	store := s.pool.GetStoreForSegment(segmentId)
 
 	segmentCh := make(chan simplestore.QueryItem)
 	go store.Query(ctx, prefix, startingPosition.PositionInSegment(segmentId), segmentCh)

@@ -155,10 +155,9 @@ func (ss SimpleStore) fetchStreamPosition(stream string) (int64, error) {
 }
 
 func (ss SimpleStore) fetchSegmentPosition() (int64, error) {
-	kf := PositionIndexedEventKeyFactory{keySpace: ss.keySpace}
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
-		kf.Range(),
+		ss.positionIndexedKeyFactory.Range(),
 		kv.ScanOptions{
 			Backwards: true,
 			Limit:     1,
@@ -175,6 +174,23 @@ func (ss SimpleStore) fetchSegmentPosition() (int64, error) {
 		return -1, nil
 	}
 
-	position, err := kf.Reverse(kp.Key)
+	position, err := ss.positionIndexedKeyFactory.Reverse(kp.Key)
+
+	// FIXME: will `DecodeEvent` even work sometimes?
+	decoded, err := DecodeEvent(kp.Value)
+	if err != nil {
+		test, testErr := DecodeEventInStream(kp.Value)
+		if testErr != nil {
+			return position, fmt.Errorf("unable to decode head event: %w", err)
+		}
+
+		decoded = &test.Event
+		err = nil
+	}
+
+	if decoded.EventType == CloseEventType {
+		return position, StoreIsClosedErr{}
+	}
+
 	return position, err
 }

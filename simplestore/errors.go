@@ -7,6 +7,13 @@ import (
 
 var MaxRetries = 5
 
+type StoreIsClosedErr struct {
+}
+
+func (e StoreIsClosedErr) Error() string {
+	return "store is closed"
+}
+
 // shouldRetry returns true if the error is transient and the operation should be retried.
 func (ss SimpleStore) shouldRetry(ctx context.Context, err error) bool {
 	conditionFailed, isConditionFailed := err.(kv.ErrConditionalWriteFails)

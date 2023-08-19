@@ -4,10 +4,9 @@ import (
 	"context"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
-	"github.com/sroze/fossil/eskit"
 	"github.com/sroze/fossil/kv/foundationdb"
-	"github.com/sroze/fossil/livetail"
 	"github.com/sroze/fossil/simplestore"
+	"github.com/sroze/fossil/store/pool"
 	"github.com/sroze/fossil/store/segments"
 	"github.com/sroze/fossil/store/topology"
 	"github.com/stretchr/testify/assert"
@@ -20,16 +19,10 @@ func Test_Query(t *testing.T) {
 	fdb.MustAPIVersion(720)
 	kv := foundationdb.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
 	ss := simplestore.NewStore(kv, uuid.NewString())
-	rw := eskit.NewReaderWriter(ss, RootCodec)
 
 	t.Run("streams written in multiple segments over time", func(t *testing.T) {
 		stream := "topology/" + uuid.NewString()
-		segmentManager := topology.NewManager(
-			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
-			RootCodec,
-			rw,
-			stream,
-		)
+		segmentManager := topology.NewManager(ss, stream, RootCodec, pool.NewSimpleStorePool(kv), kv)
 
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
@@ -177,12 +170,7 @@ func Test_Query(t *testing.T) {
 
 	t.Run("with a simple split segment", func(t *testing.T) {
 		stream := "topology/" + uuid.NewString()
-		segmentManager := topology.NewManager(
-			livetail.NewLiveTail(livetail.NewStreamReader(ss, stream)),
-			RootCodec,
-			rw,
-			stream,
-		)
+		segmentManager := topology.NewManager(ss, stream, RootCodec, pool.NewSimpleStorePool(kv), kv)
 
 		assert.Nil(t, segmentManager.Start())
 		segmentManager.WaitReady()
