@@ -96,7 +96,10 @@ func (a *LiveTail) Start(startingPosition string, ch chan simplestore.ReadItem) 
 					}
 
 					chEvents <- item
-					nextPosition = strconv.FormatInt(item.EventInStream.Position+1, 10)
+
+					if item.EventInStream != nil {
+						nextPosition = strconv.FormatInt(item.EventInStream.Position+1, 10)
+					}
 				}
 			}
 		}()

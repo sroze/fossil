@@ -75,9 +75,17 @@ func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []
 				}
 			} else {
 				if command.Condition.StreamIsEmpty {
-					return nil, nil, fmt.Errorf("stream %s is not empty, found position is %d", command.Stream, lastKnownStreamPositions[command.Stream])
+					return nil, nil, ConditionFailed{
+						Stream:                 command.Stream,
+						ExpectedStreamPosition: -1,
+						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
+					}
 				} else if command.Condition.WriteAtPosition > 0 && (lastKnownStreamPositions[command.Stream]+1) != command.Condition.WriteAtPosition {
-					return nil, nil, fmt.Errorf("expected stream position %d, but got %d", command.Condition.WriteAtPosition, lastKnownStreamPositions[command.Stream])
+					return nil, nil, ConditionFailed{
+						Stream:                 command.Stream,
+						ExpectedStreamPosition: command.Condition.WriteAtPosition,
+						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
+					}
 				}
 			}
 		}

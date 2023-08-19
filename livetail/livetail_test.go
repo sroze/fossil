@@ -3,6 +3,7 @@ package livetail
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
+	"github.com/sroze/fossil/kv/foundationdb"
 	"github.com/sroze/fossil/simplestore"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -10,7 +11,7 @@ import (
 
 func Test_LiveTail(t *testing.T) {
 	fdb.MustAPIVersion(720)
-	ss := simplestore.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
+	ss := simplestore.NewStore(foundationdb.NewStore(fdb.MustOpenDatabase("../fdb.cluster")), uuid.NewString())
 
 	t.Run("sends a message when end-of-stream is being hit", func(t *testing.T) {
 		stream := "Foo/" + uuid.NewString()

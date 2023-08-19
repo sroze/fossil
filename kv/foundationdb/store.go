@@ -53,7 +53,11 @@ func (s *Store) Write(operations []kv.Write) error {
 		return nil, nil
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) Scan(keyRange kv.KeyRange, options kv.ScanOptions, ch chan kv.KeyPair) error {

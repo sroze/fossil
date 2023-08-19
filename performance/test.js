@@ -20,19 +20,23 @@ export const options = {
 
 export default () => {
     if (__ITER == 0) {
-        client.connect('localhost:8080', {
+        client.connect('localhost:8001', {
             plaintext: true,
         });
     }
 
-    const response = client.invoke('fossil.Writer/AppendEvent', {
+    const response = client.invoke('fossil.Writer/Append', {
         stream_name: 'Foo/Bar/'+uuidv4(),
-        event_id: '123',
-        event_type: 'Foo',
-        payload: encoding.b64encode("Hello World"),
+        events: [{
+            event_id: uuidv4(),
+            event_type: 'HelloWorld',
+            payload: encoding.b64encode("Hello World"),
+        }],
     });
 
     check(response, {
-        'status is OK': (r) => r && r.status === grpc.StatusOK,
+        'status is OK': (r) => {
+            return r && r.status === grpc.StatusOK;
+        },
     });
 };

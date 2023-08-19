@@ -6,17 +6,20 @@ package fossil;
 
 // The writer service definition.
 service Writer {
-  rpc AppendEvent (AppendRequest) returns (AppendReply) {}
+  rpc Append (AppendRequest) returns (AppendReply) {}
   rpc ReadStream (ReadStreamRequest) returns (stream ReadStreamReplyItem) {}
+}
+
+message EventToAppend {
+  string event_id = 1;
+  string event_type = 2;
+  bytes payload = 3;
 }
 
 // Appends an event to the store.
 message AppendRequest {
   string stream_name = 1;
-  string event_id = 2;
-  string event_type = 3;
-  bytes payload = 4;
-
+  repeated EventToAppend events = 2;
   optional int64 expected_position = 5;
 }
 

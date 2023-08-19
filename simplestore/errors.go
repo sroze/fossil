@@ -2,6 +2,7 @@ package simplestore
 
 import (
 	"context"
+	"fmt"
 	"github.com/sroze/fossil/kv"
 )
 
@@ -12,6 +13,16 @@ type StoreIsClosedErr struct {
 
 func (e StoreIsClosedErr) Error() string {
 	return "store is closed"
+}
+
+type ConditionFailed struct {
+	Stream                 string
+	ExpectedStreamPosition int64
+	FoundStreamPosition    int64
+}
+
+func (e ConditionFailed) Error() string {
+	return fmt.Sprintf("expected stream position #%d, found #%d instead", e.ExpectedStreamPosition, e.FoundStreamPosition)
 }
 
 // shouldRetry returns true if the error is transient and the operation should be retried.

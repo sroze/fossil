@@ -13,7 +13,9 @@ func (s *Server) ReadStream(request *v1.ReadStreamRequest, server v1.Writer_Read
 		//        doesn't support "read & follow" anymore.
 		// go s.streamStore.ReadAndFollow(server.Context(), request.StreamName, request.StartingPosition, ch)
 	} else {
-		go s.streamStore.Read(server.Context(), request.StreamName, request.StartingPosition, ch)
+		go s.store.Read(server.Context(), request.StreamName, ch, simplestore.ReadOptions{
+			StartingPosition: request.StartingPosition,
+		})
 	}
 
 	for item := range ch {

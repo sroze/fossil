@@ -20,15 +20,16 @@ func Test_writer(t *testing.T) {
 		assert.Nil(t, err)
 
 		// Writes an event at the expected position.
-		expectedVersion := int64(20)
-		_, err = c.AppendEvent(context.Background(), &v1.AppendRequest{
-			StreamName:       stream,
-			EventId:          uuid.New().String(),
-			EventType:        "AnEventType",
-			Payload:          []byte("{\"foo\": 123}"),
+		expectedVersion := int64(1)
+		_, err = c.Append(context.Background(), &v1.AppendRequest{
+			StreamName: stream,
+			Events: []*v1.EventToAppend{
+				{EventId: uuid.New().String(), EventType: "AnEventType", Payload: []byte("{\"foo\": 123}")},
+			},
 			ExpectedPosition: &expectedVersion,
 		})
 
+		assert.NotNil(t, err)
 		if e, ok := status.FromError(err); ok {
 			assert.Equal(t, codes.FailedPrecondition, e.Code())
 		} else {
@@ -43,11 +44,11 @@ func FillStreamWithDummyEvents(c v1.WriterClient, stream string, count int) ([]s
 	var eventIds = make([]string, count)
 	for i := 0; i < count; i++ {
 		eventIds[i] = uuid.New().String()
-		_, err := c.AppendEvent(context.Background(), &v1.AppendRequest{
+		_, err := c.Append(context.Background(), &v1.AppendRequest{
 			StreamName: stream,
-			EventId:    eventIds[i],
-			EventType:  "AnEventType",
-			Payload:    []byte("{\"foo\": 123}"),
+			Events: []*v1.EventToAppend{
+				{EventId: eventIds[i], EventType: "AnEventType", Payload: []byte("{\"foo\": 123}")},
+			},
 		})
 
 		if err != nil {

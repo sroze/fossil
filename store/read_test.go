@@ -28,7 +28,7 @@ func Test_Read(t *testing.T) {
 		assert.Equal(t, 3, len(writeSlices))
 
 		// We'll evolve the segment topology and append segments.
-		a, err := ctx.segmentManager.Create(segments.NewSegment(
+		a, err := ctx.store.topologyManager.Create(segments.NewSegment(
 			segments.NewPrefixRange("foo"),
 		))
 		assert.Nil(t, err)
@@ -38,7 +38,7 @@ func Test_Read(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We split `a` into `b` and `c`.
-		bAndC, err := ctx.segmentManager.Split(a.ID(), 2)
+		bAndC, err := ctx.store.topologyManager.Split(a.ID(), 2)
 		assert.Nil(t, err)
 
 		// We write the 2nd third of events:
@@ -46,7 +46,7 @@ func Test_Read(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We split `c` into `d` and `e`.
-		_, err = ctx.segmentManager.Split(bAndC[1].ID(), 2)
+		_, err = ctx.store.topologyManager.Split(bAndC[1].ID(), 2)
 		assert.Nil(t, err)
 
 		// We write the last third of events:

@@ -6,9 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv/foundationdb"
 	"github.com/sroze/fossil/simplestore"
-	"github.com/sroze/fossil/store/pool"
 	"github.com/sroze/fossil/store/segments"
-	"github.com/sroze/fossil/store/topology"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 	"math"
@@ -18,16 +16,11 @@ import (
 func Test_Query(t *testing.T) {
 	fdb.MustAPIVersion(720)
 	kv := foundationdb.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
-	ss := simplestore.NewStore(kv, uuid.NewString())
 
 	t.Run("streams written in multiple segments over time", func(t *testing.T) {
-		stream := "topology/" + uuid.NewString()
-		segmentManager := topology.NewManager(ss, stream, RootCodec, pool.NewSimpleStorePool(kv), kv)
-
-		assert.Nil(t, segmentManager.Start())
-		segmentManager.WaitReady()
-		defer segmentManager.Stop()
-		store := NewStore(segmentManager, kv)
+		store := NewStore(kv, uuid.New())
+		assert.Nil(t, store.Start())
+		defer store.Stop()
 
 		// Given the following segments:
 		// - a ('foo') --> b (#1/2)
@@ -46,7 +39,7 @@ func Test_Query(t *testing.T) {
 		assert.Equal(t, 3, len(writeSlices))
 
 		// We'll evolve the segment topology and append segments.
-		a, err := segmentManager.Create(segments.NewSegment(
+		a, err := store.topologyManager.Create(segments.NewSegment(
 			segments.NewPrefixRange("foo"),
 		))
 		assert.Nil(t, err)
@@ -56,7 +49,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We split `a` into `b` and `c`.
-		bAndC, err := segmentManager.Split(a.ID(), 2)
+		bAndC, err := store.topologyManager.Split(a.ID(), 2)
 		assert.Nil(t, err)
 
 		// We write the 2nd third of events:
@@ -64,7 +57,7 @@ func Test_Query(t *testing.T) {
 		assert.Nil(t, err)
 
 		// We split `c` into `d` and `e`.
-		_, err = segmentManager.Split(bAndC[1].ID(), 2)
+		_, err = store.topologyManager.Split(bAndC[1].ID(), 2)
 		assert.Nil(t, err)
 
 		// We write the last third of events:
@@ -169,22 +162,18 @@ func Test_Query(t *testing.T) {
 	})
 
 	t.Run("with a simple split segment", func(t *testing.T) {
-		stream := "topology/" + uuid.NewString()
-		segmentManager := topology.NewManager(ss, stream, RootCodec, pool.NewSimpleStorePool(kv), kv)
-
-		assert.Nil(t, segmentManager.Start())
-		segmentManager.WaitReady()
-		defer segmentManager.Stop()
-		store := NewStore(segmentManager, kv)
+		store := NewStore(kv, uuid.New())
+		assert.Nil(t, store.Start())
+		defer store.Stop()
 
 		// Given the following segments:
 		// - a ('foo') --> b (#1/2)
 		//             \-> c (#2/2)
-		a, err := segmentManager.Create(segments.NewSegment(
+		a, err := store.topologyManager.Create(segments.NewSegment(
 			segments.NewPrefixRange("foo"),
 		))
 		assert.Nil(t, err)
-		_, err = segmentManager.Split(a.ID(), 2)
+		_, err = store.topologyManager.Split(a.ID(), 2)
 		assert.Nil(t, err)
 
 		writes, eventsPerStream := simplestore.GenerateEventWriteRequests(2, 2, "foo/") // 4 events total.

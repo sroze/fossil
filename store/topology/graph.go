@@ -7,6 +7,13 @@ import (
 	"reflect"
 )
 
+type NoSegmentToWriteIntoError struct {
+}
+
+func (e NoSegmentToWriteIntoError) Error() string {
+	return "no segment to write into"
+}
+
 type GraphState struct {
 	// `dag` is a directed acyclic graph (DAG) implementation.
 	d *dag.DAG
@@ -60,7 +67,7 @@ func (g GraphState) GetSegmentToWriteInto(stream string) (segments.Segment, erro
 		}
 	}
 
-	return segments.Segment{}, fmt.Errorf("no segment to write into")
+	return segments.Segment{}, NoSegmentToWriteIntoError{}
 }
 
 func (g GraphState) GetSegmentsToReadFromPrefix(streamPrefix string) (*dag.DAG, error) {

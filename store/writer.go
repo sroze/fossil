@@ -14,7 +14,7 @@ func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream
 	// TODO: deal with each command concurrently
 	for commandIndex, command := range commands {
 		// TODO: cache
-		segment, err := s.locator.GetSegmentToWriteInto(command.Stream)
+		segment, err := s.topologyManager.GetSegmentToWriteInto(command.Stream)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +99,11 @@ func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplest
 					StreamIsEmpty: true,
 				}
 			} else if cmd.Condition.WriteAtPosition > 0 {
-				return nil, nil, fmt.Errorf("expected to write at position %d but stream is empty", cmd.Condition.WriteAtPosition)
+				return nil, nil, simplestore.ConditionFailed{
+					Stream:                 cmd.Stream,
+					ExpectedStreamPosition: cmd.Condition.WriteAtPosition,
+					FoundStreamPosition:    -1,
+				}
 			}
 		} else {
 			// The stream exists.
@@ -110,9 +114,17 @@ func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplest
 					WriteAtPosition: streamPosition + 1,
 				}
 			} else if cmd.Condition.StreamIsEmpty {
-				return nil, nil, fmt.Errorf("expected stream %s to be empty", cmd.Stream)
+				return nil, nil, simplestore.ConditionFailed{
+					Stream:                 cmd.Stream,
+					ExpectedStreamPosition: -1,
+					FoundStreamPosition:    streamPosition,
+				}
 			} else if cmd.Condition.WriteAtPosition > 0 && cmd.Condition.WriteAtPosition != (streamPosition+1) {
-				return nil, nil, fmt.Errorf("expected to write at position %d but got %d", cmd.Condition.WriteAtPosition, streamPosition+1)
+				return nil, nil, simplestore.ConditionFailed{
+					Stream:                 cmd.Stream,
+					ExpectedStreamPosition: cmd.Condition.WriteAtPosition,
+					FoundStreamPosition:    streamPosition + 1,
+				}
 			}
 		}
 

@@ -19,15 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Writer_AppendEvent_FullMethodName = "/fossil.Writer/AppendEvent"
-	Writer_ReadStream_FullMethodName  = "/fossil.Writer/ReadStream"
+	Writer_Append_FullMethodName     = "/fossil.Writer/Append"
+	Writer_ReadStream_FullMethodName = "/fossil.Writer/ReadStream"
 )
 
 // WriterClient is the client API for Writer service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type WriterClient interface {
-	AppendEvent(ctx context.Context, in *AppendRequest, opts ...grpc.CallOption) (*AppendReply, error)
+	Append(ctx context.Context, in *AppendRequest, opts ...grpc.CallOption) (*AppendReply, error)
 	ReadStream(ctx context.Context, in *ReadStreamRequest, opts ...grpc.CallOption) (Writer_ReadStreamClient, error)
 }
 
@@ -39,9 +39,9 @@ func NewWriterClient(cc grpc.ClientConnInterface) WriterClient {
 	return &writerClient{cc}
 }
 
-func (c *writerClient) AppendEvent(ctx context.Context, in *AppendRequest, opts ...grpc.CallOption) (*AppendReply, error) {
+func (c *writerClient) Append(ctx context.Context, in *AppendRequest, opts ...grpc.CallOption) (*AppendReply, error) {
 	out := new(AppendReply)
-	err := c.cc.Invoke(ctx, Writer_AppendEvent_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Writer_Append_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (x *writerReadStreamClient) Recv() (*ReadStreamReplyItem, error) {
 // All implementations must embed UnimplementedWriterServer
 // for forward compatibility
 type WriterServer interface {
-	AppendEvent(context.Context, *AppendRequest) (*AppendReply, error)
+	Append(context.Context, *AppendRequest) (*AppendReply, error)
 	ReadStream(*ReadStreamRequest, Writer_ReadStreamServer) error
 	mustEmbedUnimplementedWriterServer()
 }
@@ -93,8 +93,8 @@ type WriterServer interface {
 type UnimplementedWriterServer struct {
 }
 
-func (UnimplementedWriterServer) AppendEvent(context.Context, *AppendRequest) (*AppendReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AppendEvent not implemented")
+func (UnimplementedWriterServer) Append(context.Context, *AppendRequest) (*AppendReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Append not implemented")
 }
 func (UnimplementedWriterServer) ReadStream(*ReadStreamRequest, Writer_ReadStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method ReadStream not implemented")
@@ -112,20 +112,20 @@ func RegisterWriterServer(s grpc.ServiceRegistrar, srv WriterServer) {
 	s.RegisterService(&Writer_ServiceDesc, srv)
 }
 
-func _Writer_AppendEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Writer_Append_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AppendRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WriterServer).AppendEvent(ctx, in)
+		return srv.(WriterServer).Append(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Writer_AppendEvent_FullMethodName,
+		FullMethod: Writer_Append_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WriterServer).AppendEvent(ctx, req.(*AppendRequest))
+		return srv.(WriterServer).Append(ctx, req.(*AppendRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -159,8 +159,8 @@ var Writer_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*WriterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AppendEvent",
-			Handler:    _Writer_AppendEvent_Handler,
+			MethodName: "Append",
+			Handler:    _Writer_Append_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -2,38 +2,63 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/sroze/fossil/api/v1"
 	"github.com/sroze/fossil/simplestore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Server) AppendEvent(ctx context.Context, in *v1.AppendRequest) (*v1.AppendReply, error) {
-	if in.EventType == "" {
-		return nil, status.Errorf(codes.InvalidArgument,
+func TransformEvent(request *v1.EventToAppend) (simplestore.Event, error) {
+	if request.EventType == "" {
+		return simplestore.Event{}, status.Errorf(codes.InvalidArgument,
 			"Events must have a type.")
 	}
 
-	result, err := s.streamStore.Write([]simplestore.AppendToStream{
-		{
-			Stream:           in.StreamName,
-			ExpectedPosition: in.ExpectedPosition,
-			Events: []simplestore.Event{
-				{
-					EventId:   in.EventId,
-					EventType: in.EventType,
-					Payload:   in.Payload,
-				},
-			},
-		},
-	})
+	return simplestore.Event{
+		EventId:   request.EventId,
+		EventType: request.EventType,
+		Payload:   request.Payload,
+	}, nil
+}
 
-	// @see https://apple.github.io/foundationdb/data-modeling.html#versionstamps
-	// @see https://github.com/apple/foundationdb/pull/1187
-	// t.Set(storeSpace.Sub(tuple.IncompleteVersionstamp()), "")
-	// TODO: + the data for the poller (+ maybe heartbeat?)
+func TransformEvents(events []*v1.EventToAppend) ([]simplestore.Event, error) {
+	transformed := make([]simplestore.Event, len(events))
 
+	for i, event := range events {
+		transformEvent, err := TransformEvent(event)
+		if err != nil {
+			return nil, fmt.Errorf("error with event #%d: %w", i, err)
+		}
+
+		transformed[i] = transformEvent
+	}
+
+	return transformed, nil
+}
+
+func (s *Server) Append(ctx context.Context, in *v1.AppendRequest) (*v1.AppendReply, error) {
+	events, err := TransformEvents(in.Events)
 	if err != nil {
+		return nil, err
+	}
+
+	command := simplestore.AppendToStream{
+		Stream: in.StreamName,
+		Events: events,
+	}
+	if in.ExpectedPosition != nil {
+		command.Condition = &simplestore.AppendCondition{
+			WriteAtPosition: *in.ExpectedPosition + 1,
+		}
+	}
+
+	result, err := s.store.Write(ctx, []simplestore.AppendToStream{command})
+	if err != nil {
+		if _, cf := err.(simplestore.ConditionFailed); cf {
+			return nil, status.Errorf(codes.FailedPrecondition, err.Error())
+		}
+
 		return nil, err
 	}
 

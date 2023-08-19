@@ -63,7 +63,6 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]simplestore.AppendResult
 			Stream: event.Stream,
 			Events: []simplestore.Event{serializedEvent},
 			Condition: &simplestore.AppendCondition{
-				// FIXME: can we remove this need?
 				WriteAtPosition: *event.ExpectedPosition + 1,
 			},
 		}

@@ -11,7 +11,7 @@ import (
 
 // TODO: implement batching?
 func (s *Store) Query(ctx context.Context, prefix string, positionCursor PositionCursor, ch chan QueryItem) {
-	segmentsRelevantToPrefix, err := s.locator.GetSegmentsToReadFromPrefix(prefix)
+	segmentsRelevantToPrefix, err := s.topologyManager.GetSegmentsToReadFromPrefix(prefix)
 	if err != nil {
 		ch <- QueryItem{Error: fmt.Errorf("could not get segments to read from: %w", err)}
 		return

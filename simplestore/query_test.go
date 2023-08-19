@@ -31,8 +31,6 @@ func Test_Query(t *testing.T) {
 
 		assert.Equal(t, eventsPerStream, collectedEventsPerStream)
 	})
-
-	t.Skip("TODO: end of segment signal")
 }
 
 func collectQueryItemsPerStreamInto(target map[string][]string, ch chan QueryItem) {

@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Store) Read(ctx context.Context, stream string, ch chan simplestore.ReadItem, options simplestore.ReadOptions) {
-	segments, err := s.locator.GetSegmentsToReadFromStream(stream)
+	segments, err := s.topologyManager.GetSegmentsToReadFromStream(stream)
 	if err != nil {
 		ch <- simplestore.ReadItem{Error: err}
 		return

@@ -4,9 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/simplestore"
-	"github.com/sroze/fossil/store/pool"
 	"github.com/sroze/fossil/store/segments"
-	"github.com/sroze/fossil/store/topology"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -14,14 +12,16 @@ import (
 
 func Test_Writer(t *testing.T) {
 	withFreshStore(t, func(ctx testingContext) {
-		_, err := ctx.segmentManager.Create(segments.NewSegment(
+		_, err := ctx.store.topologyManager.Create(segments.NewSegment(
 			segments.NewPrefixRange("foo"),
 		))
 		assert.Nil(t, err)
 
 		t.Run("a writer can restart and pick up the last segment's position", func(t *testing.T) {
 			stream := "foo" + uuid.NewString()
-			writer1 := NewStore(ctx.segmentManager, ctx.kv)
+			writer1 := NewStore(ctx.kv, ctx.store.id)
+			assert.Nil(t, writer1.Start())
+			defer writer1.Stop()
 			_, err := writer1.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
@@ -35,7 +35,9 @@ func Test_Writer(t *testing.T) {
 			})
 			assert.Nil(t, err)
 
-			writer2 := NewStore(ctx.segmentManager, ctx.kv)
+			writer2 := NewStore(ctx.kv, ctx.store.id)
+			assert.Nil(t, writer2.Start())
+			defer writer2.Stop()
 			_, err = writer2.Write(context.Background(), []simplestore.AppendToStream{
 				{
 					Stream: stream,
@@ -69,7 +71,7 @@ func Test_Writer(t *testing.T) {
 	t.Run("writing in streams across segments", func(t *testing.T) {
 		withFreshStore(t, func(ctx testingContext) {
 			// Create a segment for `foo`
-			firstSegment, err := ctx.segmentManager.Create(segments.NewSegment(
+			firstSegment, err := ctx.store.topologyManager.Create(segments.NewSegment(
 				segments.NewPrefixRange("foo"),
 			))
 			assert.Nil(t, err)
@@ -87,7 +89,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Split the segment in 2
-			_, err = ctx.segmentManager.Split(firstSegment.ID(), 2)
+			_, err = ctx.store.topologyManager.Split(firstSegment.ID(), 2)
 			assert.Nil(t, err)
 
 			t.Run("fails on expecting the wrong stream position with no stream event in the segment", func(t *testing.T) {
@@ -109,7 +111,7 @@ func Test_Writer(t *testing.T) {
 
 		withFreshStore(t, func(ctx testingContext) {
 			// Create a segment for `foo`
-			firstSegment, err := ctx.segmentManager.Create(segments.NewSegment(
+			firstSegment, err := ctx.store.topologyManager.Create(segments.NewSegment(
 				segments.NewPrefixRange("foo"),
 			))
 			assert.Nil(t, err)
@@ -127,7 +129,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Split the segment in 2
-			_, err = ctx.segmentManager.Split(firstSegment.ID(), 2)
+			_, err = ctx.store.topologyManager.Split(firstSegment.ID(), 2)
 			assert.Nil(t, err)
 
 			t.Run("automatically increment the stream position across segments", func(t *testing.T) {
@@ -148,7 +150,7 @@ func Test_Writer(t *testing.T) {
 
 		withFreshStore(t, func(ctx testingContext) {
 			// Create a segment for `foo`
-			firstSegment, err := ctx.segmentManager.Create(segments.NewSegment(
+			firstSegment, err := ctx.store.topologyManager.Create(segments.NewSegment(
 				segments.NewPrefixRange("foo"),
 			))
 			assert.Nil(t, err)
@@ -166,7 +168,7 @@ func Test_Writer(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Split the segment in 2
-			_, err = ctx.segmentManager.Split(firstSegment.ID(), 2)
+			_, err = ctx.store.topologyManager.Split(firstSegment.ID(), 2)
 			assert.Nil(t, err)
 
 			t.Run("writes multiple events in a stream at once", func(t *testing.T) {
@@ -186,14 +188,18 @@ func Test_Writer(t *testing.T) {
 	t.Run("2 concurrent writers will compete for the same segment but work", func(t *testing.T) {
 		withFreshStore(t, func(ctx testingContext) {
 			// Create a segment for `foo`
-			_, err := ctx.segmentManager.Create(segments.NewSegment(
+			_, err := ctx.store.topologyManager.Create(segments.NewSegment(
 				segments.NewPrefixRange("foo"),
 			))
 			assert.Nil(t, err)
 
 			// We create 2 store instances, pretending they are 2 different processes running on different machines.
-			w1 := NewStore(ctx.segmentManager, ctx.kv)
-			w2 := NewStore(ctx.segmentManager, ctx.kv)
+			w1 := NewStore(ctx.kv, ctx.store.id)
+			assert.Nil(t, w1.Start())
+			defer w1.Stop()
+			w2 := NewStore(ctx.kv, ctx.store.id)
+			assert.Nil(t, w2.Start())
+			defer w2.Stop()
 
 			wg := sync.WaitGroup{}
 			wg.Add(2)
@@ -237,34 +243,29 @@ func Test_Writer(t *testing.T) {
 		// we might end up with out-of-order writes.
 
 		withFreshStore(t, func(ctx testingContext) {
-			topologyStream := "topology/" + uuid.NewString()
-
 			// Create two writers, each with their own topology manager.
-			manager1 := topology.NewManager(ctx.ss, topologyStream, RootCodec, pool.NewSimpleStorePool(ctx.kv), ctx.kv)
-			w1 := NewStore(manager1, ctx.kv)
-			manager2 := topology.NewManager(ctx.ss, topologyStream, RootCodec, pool.NewSimpleStorePool(ctx.kv), ctx.kv)
-			w2 := NewStore(manager2, ctx.kv)
+			sId := uuid.New()
+			s1 := NewStore(ctx.kv, sId)
+			s2 := NewStore(ctx.kv, sId)
 
 			// We create a single segment and wait for both writers to be ready.
-			assert.Nil(t, manager1.Start())
-			manager1.WaitReady()
-			firstSegment, err := manager1.Create(segments.NewSegment(
+			assert.Nil(t, s1.Start())
+			firstSegment, err := s1.topologyManager.Create(segments.NewSegment(
 				segments.NewPrefixRange("foo"),
 			))
 			assert.Nil(t, err)
-			assert.Nil(t, manager2.Start())
-			manager2.WaitReady()
+			assert.Nil(t, s2.Start())
 
 			// We stop `w1`'s topology manager, meaning it doesn't know about new topology changes.
-			manager1.Stop()
+			s1.topologyManager.Stop()
 
 			// We split the segment in two (so we have new segments)
-			_, err = manager2.Split(firstSegment.ID(), 2)
+			_, err = s2.topologyManager.Split(firstSegment.ID(), 2)
 			assert.Nil(t, err)
 
 			// We write an event ("event1" in stream `foo/123`) with `w2` that knows about the last changes and
 			// we expect it to succeed.
-			_, err = w2.Write(context.Background(), []simplestore.AppendToStream{
+			_, err = s2.Write(context.Background(), []simplestore.AppendToStream{
 				{Stream: "foo/123", Events: []simplestore.Event{
 					{EventId: uuid.NewString(), EventType: "event1", Payload: []byte("foo")},
 				}},
@@ -273,7 +274,7 @@ func Test_Writer(t *testing.T) {
 
 			// We write an event ("event2" in stream `foo/123`) with `w1` that doesn't know about the last changes.
 			// We expect an error, because the segment `w1` is trying to write to is closed.
-			_, err = w1.Write(context.Background(), []simplestore.AppendToStream{
+			_, err = s1.Write(context.Background(), []simplestore.AppendToStream{
 				{Stream: "foo/123", Events: []simplestore.Event{
 					{EventId: uuid.NewString(), EventType: "event2", Payload: []byte("foo")},
 				}},
