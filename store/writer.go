@@ -9,11 +9,40 @@ import (
 )
 
 func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream) ([]simplestore.AppendResult, error) {
-	commandsBySegment := make(map[uuid.UUID]map[int]simplestore.AppendToStream)
+	results, err := s.attemptWrite(ctx, commands)
+	if err != nil {
+		_, isConditionFailed := err.(kv.ErrConditionalWriteFails)
+		if isConditionFailed {
+			// Given the current implementation, this means that another writer has written in the stream too, because we currently fetch
+			// the positions in the application before writing. As such, we should retry, within reasonable limits.
+			retryCount := ctx.Value("retryCount")
+			if retryCount == nil {
+				retryCount = 0
+			}
 
-	// TODO: deal with each command concurrently
-	for commandIndex, command := range commands {
-		// TODO: cache
+			if retryCount.(int) > 5 {
+				return results, fmt.Errorf("failed too many times: %w", err)
+			}
+
+			return s.Write(
+				context.WithValue(ctx, "retryCount", retryCount.(int)+1),
+				commands,
+			)
+		}
+	}
+
+	return results, err
+}
+
+func (s *Store) attemptWrite(ctx context.Context, commands []simplestore.AppendToStream) ([]simplestore.AppendResult, error) {
+	preparedCommands, err := s.prepareCommands(commands)
+	if err != nil {
+		return nil, err
+	}
+
+	// Group commands by segment
+	commandsBySegment := make(map[uuid.UUID]map[int]simplestore.AppendToStream)
+	for commandIndex, command := range preparedCommands {
 		segment, err := s.topologyManager.GetSegmentToWriteInto(command.Stream)
 		if err != nil {
 			return nil, err
@@ -26,7 +55,8 @@ func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream
 		commandsBySegment[segment.Id][commandIndex] = command
 	}
 
-	var writes []kv.Write
+	// Prepare KV kvWrites and append (optimistic) results, in the same order as original commands.
+	preparedWritesPerSegment := make(map[uuid.UUID][]simplestore.PreparedWrite)
 	results := make([]simplestore.AppendResult, len(commands))
 	for segmentId, segmentCommands := range commandsBySegment {
 		var commands []simplestore.AppendToStream
@@ -36,62 +66,57 @@ func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream
 			indexes = append(indexes, index)
 		}
 
-		segmentWrites, segmentResults, err := s.prepareWritesForSegment(segmentId, commands)
+		// Note(perf): we could parallelize this.
+		segmentWrites, segmentResults, err := s.pool.GetStoreForSegment(segmentId).PrepareKvWrites(commands)
 		if err != nil {
 			return nil, err
 		}
 
-		writes = append(writes, segmentWrites...)
+		preparedWritesPerSegment[segmentId] = segmentWrites
 		for i, index := range indexes {
 			results[index] = segmentResults[i]
 		}
 	}
 
-	err := s.kv.Write(writes)
-	if err != nil {
-		_, isConditionFailed := err.(kv.ErrConditionalWriteFails)
-		if isConditionFailed {
-			// Given the current implementation, this means that another writer has written in the stream too, because we currently fetch
-			// the positions in the application before writing. As such, we should retry, within reasonable limits.
-			retryCount := ctx.Value("retryCount")
-			if retryCount == nil {
-				retryCount = 0
-			}
+	// Lock and transform each write then send to KV.
+	var kvWrites []kv.Write
+	for segmentId, segmentWrites := range preparedWritesPerSegment {
+		w, unlock, err := s.pool.GetStoreForSegment(segmentId).TransformWritesAndAcquirePositionLock(segmentWrites)
+		defer unlock()
 
-			if retryCount.(int) > 5 {
-				return nil, fmt.Errorf("failed multiple times: %w", err)
-			}
-
-			return s.Write(
-				context.WithValue(ctx, "retryCount", retryCount.(int)+1),
-				commands,
-			)
+		if err != nil {
+			return results, err
 		}
 
-		return nil, err
+		kvWrites = append(kvWrites, w...)
 	}
 
-	return results, nil
+	err = s.kv.Write(kvWrites)
+	// TODO: send any condition error back to the segment stores, so they clean their caches if necessary.
+
+	return results, err
 }
 
-func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplestore.AppendToStream) ([]kv.Write, []simplestore.AppendResult, error) {
+func (s *Store) prepareCommands(commands []simplestore.AppendToStream) ([]simplestore.AppendToStream, error) {
+	// Validates that we don't have multiple commands for the same stream.
 	commandsByStream := make(map[string][]simplestore.AppendToStream)
 	for _, command := range commands {
 		commandsByStream[command.Stream] = append(commandsByStream[command.Stream], command)
+
+		if len(commandsByStream[command.Stream]) > 1 {
+			return nil, fmt.Errorf("cannot have multiple commands for the same stream in the same write: use a single command with multiple events")
+		}
 	}
 
-	var preparedCommands []simplestore.AppendToStream
-	for stream, streamCommands := range commandsByStream {
-		if len(streamCommands) > 1 {
-			return nil, nil, fmt.Errorf("cannot have multiple commands for the same stream in the same write: use a single command with multiple events")
-		}
-
-		streamPosition, err := s.fetchStreamPosition(stream)
+	// Prepare commands by setting the expected stream position, based on the position across
+	// segments.
+	preparedCommands := make([]simplestore.AppendToStream, len(commands))
+	for i, cmd := range commands {
+		streamPosition, err := s.fetchStreamPosition(cmd.Stream)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		cmd := streamCommands[0]
 		if streamPosition == -1 {
 			// The stream does not exist yet.
 			if cmd.Condition == nil {
@@ -99,7 +124,7 @@ func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplest
 					StreamIsEmpty: true,
 				}
 			} else if cmd.Condition.WriteAtPosition > 0 {
-				return nil, nil, simplestore.ConditionFailed{
+				return nil, simplestore.ConditionFailed{
 					Stream:                 cmd.Stream,
 					ExpectedStreamPosition: cmd.Condition.WriteAtPosition,
 					FoundStreamPosition:    -1,
@@ -114,24 +139,24 @@ func (s *Store) prepareWritesForSegment(segmentId uuid.UUID, commands []simplest
 					WriteAtPosition: streamPosition + 1,
 				}
 			} else if cmd.Condition.StreamIsEmpty {
-				return nil, nil, simplestore.ConditionFailed{
+				return nil, simplestore.ConditionFailed{
 					Stream:                 cmd.Stream,
 					ExpectedStreamPosition: -1,
 					FoundStreamPosition:    streamPosition,
 				}
 			} else if cmd.Condition.WriteAtPosition > 0 && cmd.Condition.WriteAtPosition != (streamPosition+1) {
-				return nil, nil, simplestore.ConditionFailed{
+				return nil, simplestore.ConditionFailed{
 					Stream:                 cmd.Stream,
-					ExpectedStreamPosition: cmd.Condition.WriteAtPosition,
-					FoundStreamPosition:    streamPosition + 1,
+					ExpectedStreamPosition: cmd.Condition.WriteAtPosition - 1,
+					FoundStreamPosition:    streamPosition,
 				}
 			}
 		}
 
-		preparedCommands = append(preparedCommands, cmd)
+		preparedCommands[i] = cmd
 	}
 
-	return s.pool.GetStoreForSegment(segmentId).PrepareKvWrites(preparedCommands)
+	return preparedCommands, nil
 }
 
 func (s *Store) fetchStreamPosition(stream string) (int64, error) {

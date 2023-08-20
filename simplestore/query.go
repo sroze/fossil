@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (ss SimpleStore) Query(ctx context.Context, prefix string, startingPosition int64, ch chan QueryItem) {
+func (ss *SimpleStore) Query(ctx context.Context, prefix string, startingPosition int64, ch chan QueryItem) {
 	keyCh := make(chan kv.KeyPair)
 	go func() {
 		defer close(ch)

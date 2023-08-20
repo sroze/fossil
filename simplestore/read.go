@@ -6,7 +6,7 @@ import (
 )
 
 // FIXME: use `ctx` to cancel the scan
-func (ss SimpleStore) Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions) {
+func (ss *SimpleStore) Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions) {
 	keyCh := make(chan kv.KeyPair)
 	go func() {
 		defer close(ch)

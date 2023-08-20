@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/EagleChen/mapmutex"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv"
 	"github.com/sroze/fossil/simplestore"
@@ -14,6 +15,7 @@ type Store struct {
 	topologyManager *topology.Manager
 	kv              kv.KV
 	pool            *pool.SimpleStorePool
+	segmentLock     *mapmutex.Mutex
 }
 
 func NewStore(
@@ -34,6 +36,7 @@ func NewStore(
 		topologyManager: topologyManager,
 		kv:              kv,
 		pool:            pool.NewSimpleStorePool(kv),
+		segmentLock:     mapmutex.NewMapMutex(),
 	}
 }
 

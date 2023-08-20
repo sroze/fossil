@@ -26,7 +26,7 @@ func (e ConditionFailed) Error() string {
 }
 
 // shouldRetry returns true if the error is transient and the operation should be retried.
-func (ss SimpleStore) shouldRetry(ctx context.Context, err error) bool {
+func (ss *SimpleStore) shouldRetry(ctx context.Context, err error) bool {
 	conditionFailed, isConditionFailed := err.(kv.ErrConditionalWriteFails)
 
 	// If the error is not a conditional write failure, we don't know what to do and as such

@@ -8,7 +8,7 @@ import (
 
 var CloseEventType = "$close"
 
-func (ss SimpleStore) PrepareCloseKvWrites() ([]kv.Write, error) {
+func (ss *SimpleStore) PrepareCloseKvWrites() ([]kv.Write, error) {
 	segmentPosition, err := ss.fetchSegmentPosition()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get segment position: %w", err)

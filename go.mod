@@ -3,6 +3,7 @@ module github.com/sroze/fossil
 go 1.20
 
 require (
+	github.com/EagleChen/mapmutex v0.0.0-20200716162114-c133e97096b7
 	github.com/apple/foundationdb/bindings/go v0.0.0-20230525024711-1da3568cbcea
 	github.com/cockroachdb/pebble v0.0.0-20230811190520-77e81e806c8b
 	github.com/dustin/go-broadcast v0.0.0-20211018055107-71439988bd91

@@ -36,6 +36,9 @@ export default () => {
 
     check(response, {
         'status is OK': (r) => {
+            if (r.status !== grpc.StatusOK) {
+                console.log(r)
+            }
             return r && r.status === grpc.StatusOK;
         },
     });

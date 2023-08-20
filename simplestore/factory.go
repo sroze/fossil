@@ -2,6 +2,7 @@ package simplestore
 
 import (
 	"github.com/sroze/fossil/kv"
+	"sync"
 )
 
 type SimpleStore struct {
@@ -10,6 +11,8 @@ type SimpleStore struct {
 
 	positionIndexedKeyFactory *PositionIndexedEventKeyFactory
 	streamIndexedKeyFactory   *StreamIndexEventKeyFactory
+
+	positionMutex sync.Mutex
 }
 
 func NewStore(kv kv.KV, keySpace string) *SimpleStore {

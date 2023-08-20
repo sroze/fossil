@@ -112,7 +112,13 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 		return nil, err
 	}
 
-	err = m.kv.Write(append(closeWrites, topologyWrites...))
+	kvWrites, unlock, err := m.ss.TransformWritesAndAcquirePositionLock(topologyWrites)
+	defer unlock()
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.kv.Write(append(closeWrites, kvWrites...))
 	if err != nil {
 		return nil, err
 	}

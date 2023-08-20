@@ -26,118 +26,22 @@ type AppendToStream struct {
 	Condition *AppendCondition
 }
 
-func (ss SimpleStore) Write(commands []AppendToStream) ([]AppendResult, error) {
-	writes, results, err := ss.PrepareKvWrites(commands)
+func (ss *SimpleStore) Write(commands []AppendToStream) ([]AppendResult, error) {
+	preparedWrites, results, err := ss.PrepareKvWrites(commands)
 	if err != nil {
 		return results, err
 	}
 
-	err = ss.kv.Write(writes)
-	return results, err
-}
-
-func (ss SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]kv.Write, []AppendResult, error) {
-	results := make([]AppendResult, len(commands))
-
-	// TODO: cache + mutex!
-	segmentPosition, err := ss.fetchSegmentPosition()
+	writes, unlock, err := ss.TransformWritesAndAcquirePositionLock(preparedWrites)
+	defer unlock()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get segment position: %w", err)
+		return results, err
 	}
-
-	// TODO: cache + mutex!
-	lastKnownStreamPositions := make(map[string]int64)
-
-	streamPositionCursors := make(map[string]int64)
-
-	var writes []kv.Write
-	for i, command := range commands {
-		_, exists := lastKnownStreamPositions[command.Stream]
-		if !exists {
-			position, err := ss.fetchStreamPosition(command.Stream)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			lastKnownStreamPositions[command.Stream] = position
-			streamPositionCursors[command.Stream] = position
-		}
-
-		if command.Condition != nil {
-			if command.Condition.WriteAtPosition < 0 {
-				return nil, nil, fmt.Errorf("expected write position to be positive, got %d", command.Condition.WriteAtPosition)
-			}
-
-			if lastKnownStreamPositions[command.Stream] == -1 {
-				// The stream is empty, but the client expects to write at a specific position.
-				if command.Condition.WriteAtPosition > 0 {
-					streamPositionCursors[command.Stream] = command.Condition.WriteAtPosition - 1
-				}
-			} else {
-				if command.Condition.StreamIsEmpty {
-					return nil, nil, ConditionFailed{
-						Stream:                 command.Stream,
-						ExpectedStreamPosition: -1,
-						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
-					}
-				} else if command.Condition.WriteAtPosition > 0 && (lastKnownStreamPositions[command.Stream]+1) != command.Condition.WriteAtPosition {
-					return nil, nil, ConditionFailed{
-						Stream:                 command.Stream,
-						ExpectedStreamPosition: command.Condition.WriteAtPosition,
-						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
-					}
-				}
-			}
-		}
-
-		for _, event := range command.Events {
-			streamPositionCursors[command.Stream]++
-			segmentPosition++
-
-			encodedEvent, err := EncodeEvent(event)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			encodedEventInStream, err := EncodeEventInStream(EventInStream{
-				Event:    event,
-				Stream:   command.Stream,
-				Position: streamPositionCursors[command.Stream],
-			})
-			if err != nil {
-				return nil, nil, err
-			}
-
-			writes = append(writes, []kv.Write{
-				{
-					Key:   ss.positionIndexedKeyFactory.Bytes(segmentPosition),
-					Value: encodedEventInStream,
-					Condition: &kv.Condition{
-						MustBeEmpty: true,
-					},
-				},
-				{
-					Key: ss.streamIndexedKeyFactory.Bytes(
-						command.Stream,
-						streamPositionCursors[command.Stream],
-					),
-					Value: encodedEvent,
-					Condition: &kv.Condition{
-						MustBeEmpty: true,
-					},
-				},
-			}...)
-		}
-
-		results[i] = AppendResult{
-			Position: streamPositionCursors[command.Stream],
-		}
-	}
-
-	return writes, results, nil
+	
+	return results, ss.kv.Write(writes)
 }
 
-func (ss SimpleStore) fetchStreamPosition(stream string) (int64, error) {
+func (ss *SimpleStore) fetchStreamPosition(stream string) (int64, error) {
 	kf := StreamIndexEventKeyFactory{keySpace: ss.keySpace}
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
@@ -162,7 +66,7 @@ func (ss SimpleStore) fetchStreamPosition(stream string) (int64, error) {
 	return position, err
 }
 
-func (ss SimpleStore) fetchSegmentPosition() (int64, error) {
+func (ss *SimpleStore) fetchSegmentPosition() (int64, error) {
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
 		ss.positionIndexedKeyFactory.Range(),
