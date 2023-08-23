@@ -55,7 +55,7 @@ func (s *Server) Append(ctx context.Context, in *v1.AppendRequest) (*v1.AppendRe
 
 	result, err := s.store.Write(ctx, []simplestore.AppendToStream{command})
 	if err != nil {
-		if _, cf := err.(simplestore.ConditionFailed); cf {
+		if _, cf := err.(simplestore.StreamConditionFailed); cf {
 			return nil, status.Errorf(codes.FailedPrecondition, err.Error())
 		}
 

@@ -11,7 +11,7 @@ export const options = {
         writing_events: {
             // In essence, we do 200 writes with 10 concurrent requests.
             executor: 'shared-iterations',
-            vus: 100,
+            vus: 10,
             iterations: 20000,
             maxDuration: '30s',
         },

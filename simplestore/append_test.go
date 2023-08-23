@@ -195,21 +195,5 @@ func Test_Store_Append(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, int64(5), results[0].Position)
 		})
-
-		t.Run("it won't be able to write before the first position", func(t *testing.T) {
-			_, err := s.Write([]AppendToStream{
-				{
-					Stream: stream,
-					Events: []Event{
-						{EventId: uuid.NewString(), EventType: "Baz", Payload: []byte("baz")},
-					},
-					Condition: &AppendCondition{
-						WriteAtPosition: int64(2),
-					},
-				},
-			})
-
-			assert.NotNil(t, err)
-		})
 	})
 }

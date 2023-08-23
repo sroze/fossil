@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv"
@@ -11,8 +12,18 @@ import (
 func (s *Store) Write(ctx context.Context, commands []simplestore.AppendToStream) ([]simplestore.AppendResult, error) {
 	results, err := s.attemptWrite(ctx, commands)
 	if err != nil {
-		_, isConditionFailed := err.(kv.ErrConditionalWriteFails)
-		if isConditionFailed {
+		shouldRetry := false
+		if errors.Is(err, simplestore.SegmentConcurrentWriteErr) {
+			shouldRetry = true
+		}
+
+		_, isStreamConditionFailed := err.(simplestore.StreamConditionFailed)
+		if isStreamConditionFailed {
+			// TODO: if it was a user-set condition, there's not even a point retrying.
+			shouldRetry = true
+		}
+
+		if shouldRetry {
 			// Given the current implementation, this means that another writer has written in the stream too, because we currently fetch
 			// the positions in the application before writing. As such, we should retry, within reasonable limits.
 			retryCount := ctx.Value("retryCount")
@@ -92,7 +103,15 @@ func (s *Store) attemptWrite(ctx context.Context, commands []simplestore.AppendT
 	}
 
 	err = s.kv.Write(kvWrites)
-	// TODO: send any condition error back to the segment stores, so they clean their caches if necessary.
+	if err != nil {
+		for segmentId, _ := range preparedWritesPerSegment {
+			handled, transformed := s.pool.GetStoreForSegment(segmentId).HandleError(err)
+			if handled {
+				err = transformed
+				break
+			}
+		}
+	}
 
 	return results, err
 }
@@ -124,10 +143,9 @@ func (s *Store) prepareCommands(commands []simplestore.AppendToStream) ([]simple
 					StreamIsEmpty: true,
 				}
 			} else if cmd.Condition.WriteAtPosition > 0 {
-				return nil, simplestore.ConditionFailed{
+				return nil, simplestore.StreamConditionFailed{
 					Stream:                 cmd.Stream,
 					ExpectedStreamPosition: cmd.Condition.WriteAtPosition,
-					FoundStreamPosition:    -1,
 				}
 			}
 		} else {
@@ -139,16 +157,14 @@ func (s *Store) prepareCommands(commands []simplestore.AppendToStream) ([]simple
 					WriteAtPosition: streamPosition + 1,
 				}
 			} else if cmd.Condition.StreamIsEmpty {
-				return nil, simplestore.ConditionFailed{
+				return nil, simplestore.StreamConditionFailed{
 					Stream:                 cmd.Stream,
 					ExpectedStreamPosition: -1,
-					FoundStreamPosition:    streamPosition,
 				}
 			} else if cmd.Condition.WriteAtPosition > 0 && cmd.Condition.WriteAtPosition != (streamPosition+1) {
-				return nil, simplestore.ConditionFailed{
+				return nil, simplestore.StreamConditionFailed{
 					Stream:                 cmd.Stream,
 					ExpectedStreamPosition: cmd.Condition.WriteAtPosition - 1,
-					FoundStreamPosition:    streamPosition,
 				}
 			}
 		}

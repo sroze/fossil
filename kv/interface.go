@@ -1,5 +1,7 @@
 package kv
 
+import "context"
+
 type Condition struct {
 	MustBeEmpty bool
 	// MustExist        bool
@@ -44,9 +46,7 @@ type ScanOptions struct {
 }
 
 type KV interface {
-	// TODO: add `ctx`
 	Write(operations []Write) error
 	Get(key []byte) ([]byte, error)
-	// TODO: add `ctx`
-	Scan(keyRange KeyRange, options ScanOptions, ch chan KeyPair) error
+	Scan(ctx context.Context, keyRange KeyRange, options ScanOptions, ch chan KeyPair) error
 }

@@ -13,52 +13,31 @@ import (
 // Transform these "prepared statements" into real statements (with the positioning), and execute them.
 
 func (ss *SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]PreparedWrite, []AppendResult, error) {
-	// TODO: cache
-	lastKnownStreamPositions := make(map[string]int64)
+	// TODO: cache (https://github.com/coocood/freecache)
 	streamPositionCursors := make(map[string]int64)
 
 	results := make([]AppendResult, len(commands))
 	var writes []PreparedWrite
 	for i, command := range commands {
-
-		// TODO: with a condition, do we really need to fetch the stream position? Can we do without?
-		// If expected to be empty, we DEFINITELY don't need.
-		_, exists := lastKnownStreamPositions[command.Stream]
-		if !exists {
-			position, err := ss.fetchStreamPosition(command.Stream)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			lastKnownStreamPositions[command.Stream] = position
-			streamPositionCursors[command.Stream] = position
-		}
-
 		if command.Condition != nil {
 			if command.Condition.WriteAtPosition < 0 {
 				return nil, nil, fmt.Errorf("expected write position to be positive, got %d", command.Condition.WriteAtPosition)
 			}
 
-			if lastKnownStreamPositions[command.Stream] == -1 {
-				// The stream is empty, but the client expects to write at a specific position.
-				if command.Condition.WriteAtPosition > 0 {
-					streamPositionCursors[command.Stream] = command.Condition.WriteAtPosition - 1
-				}
+			if command.Condition.WriteAtPosition >= 0 {
+				streamPositionCursors[command.Stream] = command.Condition.WriteAtPosition - 1
+			} else if command.Condition.StreamIsEmpty {
+				streamPositionCursors[command.Stream] = -1
 			} else {
-				if command.Condition.StreamIsEmpty {
-					return nil, nil, ConditionFailed{
-						Stream:                 command.Stream,
-						ExpectedStreamPosition: -1,
-						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
-					}
-				} else if command.Condition.WriteAtPosition > 0 && (lastKnownStreamPositions[command.Stream]+1) != command.Condition.WriteAtPosition {
-					return nil, nil, ConditionFailed{
-						Stream:                 command.Stream,
-						ExpectedStreamPosition: command.Condition.WriteAtPosition,
-						FoundStreamPosition:    lastKnownStreamPositions[command.Stream],
-					}
-				}
+				return nil, nil, fmt.Errorf("expected write position or stream empty condition to be set")
 			}
+		} else if _, exists := streamPositionCursors[command.Stream]; !exists {
+			fetchedPosition, err := ss.fetchStreamPosition(command.Stream)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			streamPositionCursors[command.Stream] = fetchedPosition
 		}
 
 		for _, event := range command.Events {
@@ -107,20 +86,20 @@ func (ss *SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]PreparedWri
 	return writes, results, nil
 }
 
+// TODO: add a pipeline here to allow for concurrent writes within the single segment while keeping
+// TODO: the same architecture (i.e. one Fossil -> KV store roundtrip at a time)
 func (ss *SimpleStore) TransformWritesAndAcquirePositionLock(prepared []PreparedWrite) ([]kv.Write, func(), error) {
 	ss.positionMutex.Lock()
-
-	// TODO: cache!
-	segmentPosition, err := ss.fetchSegmentPosition()
-	if err != nil {
-		return nil, func() {}, fmt.Errorf("failed to get segment position: %w", err)
-	}
 
 	var writes []kv.Write
 	for _, preparedWrite := range prepared {
 		if bytes.Equal(preparedWrite.Key, SegmentPositionPlaceholderMagicBytes) {
-			segmentPosition++
-			preparedWrite.Key = ss.positionIndexedKeyFactory.Bytes(segmentPosition)
+			position, err := ss.getIncrementedSegmentPosition()
+			if err != nil {
+				return nil, func() {}, fmt.Errorf("failed to get incremented segment position: %w", err)
+			}
+
+			preparedWrite.Key = ss.positionIndexedKeyFactory.Bytes(position)
 		}
 
 		writes = append(writes, kv.Write{
@@ -129,8 +108,6 @@ func (ss *SimpleStore) TransformWritesAndAcquirePositionLock(prepared []Prepared
 			Condition: preparedWrite.Condition,
 		})
 	}
-
-	// TODO: increment cached segment position
 
 	// TODO: we want to add a timeout here, so that if the client routine crashes,
 	//       we don't keep the lock forever.

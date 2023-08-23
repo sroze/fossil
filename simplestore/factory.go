@@ -13,6 +13,7 @@ type SimpleStore struct {
 	streamIndexedKeyFactory   *StreamIndexEventKeyFactory
 
 	positionMutex sync.Mutex
+	positionCache *int64
 }
 
 func NewStore(kv kv.KV, keySpace string) *SimpleStore {

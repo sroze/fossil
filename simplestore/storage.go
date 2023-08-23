@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 )
 
-// TODO: Move to shared types with client.
 type Event struct {
 	EventId   string
 	EventType string

@@ -1,7 +1,7 @@
 package simplestore
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"github.com/sroze/fossil/kv"
 )
@@ -15,39 +15,38 @@ func (e StoreIsClosedErr) Error() string {
 	return "store is closed"
 }
 
-type ConditionFailed struct {
+type StreamConditionFailed struct {
 	Stream                 string
 	ExpectedStreamPosition int64
-	FoundStreamPosition    int64
 }
 
-func (e ConditionFailed) Error() string {
-	return fmt.Sprintf("expected stream position #%d, found #%d instead", e.ExpectedStreamPosition, e.FoundStreamPosition)
+func (e StreamConditionFailed) Error() string {
+	return fmt.Sprintf("failed expectation to find stream %s at position #%d", e.Stream, e.ExpectedStreamPosition)
 }
 
-// shouldRetry returns true if the error is transient and the operation should be retried.
-func (ss *SimpleStore) shouldRetry(ctx context.Context, err error) bool {
+var SegmentConcurrentWriteErr = errors.New("concurrent write on segment")
+
+func (ss *SimpleStore) HandleError(err error) (bool, error) {
 	conditionFailed, isConditionFailed := err.(kv.ErrConditionalWriteFails)
 
-	// If the error is not a conditional write failure, we don't know what to do and as such
-	// should not retry.
+	// If the error is not a conditional write failure, we don't know what to do.
 	if !isConditionFailed {
-		return false
+		return false, err
+	}
+
+	if stream, position, err := ss.streamIndexedKeyFactory.Reverse(conditionFailed.Key); err == nil {
+		// A stream has been written in the meantime.
+		return true, StreamConditionFailed{
+			Stream:                 stream,
+			ExpectedStreamPosition: position,
+		}
 	}
 
 	if _, err := ss.positionIndexedKeyFactory.Reverse(conditionFailed.Key); err == nil {
 		// This means that something else has been written in this segment in the meantime. This might be
-		// competing writers (which is expected while the topology is changing). As such, we
-		// should retry if we didn't exhaust the retry budget.
-		// TODO: error budget, with the `ctx`
-		return true
-	} else if _, _, err := ss.streamIndexedKeyFactory.Reverse(conditionFailed.Key); err == nil {
-		// A stream has been written in the meantime. Given the current implementation, this
-		// means that another writer has written in the stream too, because we currently fetch
-		// the position in the application before writing again.
-		return true
+		// competing writers (which is expected while the topology is changing).
+		return true, SegmentConcurrentWriteErr
 	}
 
-	// We don't know what to do with this error, so we don't retry.
-	return false
+	return false, err
 }

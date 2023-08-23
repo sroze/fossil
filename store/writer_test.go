@@ -83,6 +83,8 @@ func Test_Writer(t *testing.T) {
 					Stream: stream,
 					Events: []simplestore.Event{
 						{EventId: uuid.NewString(), EventType: "Foo", Payload: []byte("foo")},
+						{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
+						{EventId: uuid.NewString(), EventType: "Baz", Payload: []byte("baz")},
 					},
 				},
 			})
@@ -92,7 +94,7 @@ func Test_Writer(t *testing.T) {
 			_, err = ctx.store.topologyManager.Split(firstSegment.ID(), 2)
 			assert.Nil(t, err)
 
-			t.Run("fails on expecting the wrong stream position with no stream event in the segment", func(t *testing.T) {
+			t.Run("fails on expecting the wrong stream position ahead with no stream event in the segment", func(t *testing.T) {
 				_, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
 					{
 						Stream: stream,
@@ -100,7 +102,23 @@ func Test_Writer(t *testing.T) {
 							{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
 						},
 						Condition: &simplestore.AppendCondition{
-							WriteAtPosition: 3,
+							WriteAtPosition: 6,
+						},
+					},
+				})
+
+				assert.NotNil(t, err)
+			})
+
+			t.Run("fails on expecting the wrong stream position in the past with no stream event in the segment", func(t *testing.T) {
+				_, err := ctx.store.Write(context.Background(), []simplestore.AppendToStream{
+					{
+						Stream: stream,
+						Events: []simplestore.Event{
+							{EventId: uuid.NewString(), EventType: "Bar", Payload: []byte("bar")},
+						},
+						Condition: &simplestore.AppendCondition{
+							WriteAtPosition: 1,
 						},
 					},
 				})
@@ -215,6 +233,8 @@ func Test_Writer(t *testing.T) {
 				})
 				assert.Nil(t, err)
 				wg.Done()
+
+				// TODO: add another one, to see if position cache is well cleared
 			}()
 
 			go func() {

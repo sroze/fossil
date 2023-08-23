@@ -1,6 +1,7 @@
 package foundationdb
 
 import (
+	"context"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/sroze/fossil/kv"
 )
@@ -60,7 +61,7 @@ func (s *Store) Write(operations []kv.Write) error {
 	return nil
 }
 
-func (s *Store) Scan(keyRange kv.KeyRange, options kv.ScanOptions, ch chan kv.KeyPair) error {
+func (s *Store) Scan(ctx context.Context, keyRange kv.KeyRange, options kv.ScanOptions, ch chan kv.KeyPair) error {
 	defer close(ch)
 
 	_, err := s.db.ReadTransact(func(t fdb.ReadTransaction) (interface{}, error) {
@@ -75,15 +76,16 @@ func (s *Store) Scan(keyRange kv.KeyRange, options kv.ScanOptions, ch chan kv.Ke
 		for ri.Advance() {
 			row := ri.MustGet()
 
-			// Check that the context is not done before continuing.
-			// select {
-			// case <-ctx.Done():
-			// 	break
-			// default:
-			// }
 			ch <- kv.KeyPair{
 				Key:   row.Key,
 				Value: row.Value,
+			}
+
+			select {
+			case <-ctx.Done():
+				return nil, nil
+			default:
+				continue
 			}
 		}
 

@@ -5,7 +5,6 @@ import (
 	"github.com/sroze/fossil/kv"
 )
 
-// FIXME: use `ctx` to cancel the scan
 func (ss *SimpleStore) Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions) {
 	keyCh := make(chan kv.KeyPair)
 	go func() {
@@ -35,6 +34,7 @@ func (ss *SimpleStore) Read(ctx context.Context, stream string, ch chan ReadItem
 	}()
 
 	err := ss.kv.Scan(
+		ctx,
 		ss.streamIndexedKeyFactory.RangeStartingAt(stream, options.StartingPosition),
 		kv.ScanOptions{
 			Backwards: options.Backwards,
