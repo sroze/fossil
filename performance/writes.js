@@ -11,7 +11,7 @@ export const options = {
         writing_events: {
             // In essence, we do 200 writes with 10 concurrent requests.
             executor: 'shared-iterations',
-            vus: 10,
+            vus: 200,
             iterations: 20000,
             maxDuration: '30s',
         },
@@ -36,9 +36,6 @@ export default () => {
 
     check(response, {
         'status is OK': (r) => {
-            if (r.status !== grpc.StatusOK) {
-                console.log(r)
-            }
             return r && r.status === grpc.StatusOK;
         },
     });
