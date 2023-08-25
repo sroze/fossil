@@ -68,7 +68,7 @@ func (rw *ReaderWriter) Write(events []EventToWrite) ([]simplestore.AppendResult
 		}
 	}
 
-	return rw.store.Write(commands)
+	return rw.store.Write(context.Background(), commands)
 }
 
 func (rw *ReaderWriter) Read(ctx context.Context, stream string, startingPosition int64, ch chan ReadItem) {

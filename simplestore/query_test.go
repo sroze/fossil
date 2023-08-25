@@ -18,7 +18,7 @@ func Test_Query(t *testing.T) {
 
 	fooWriteRequests, eventsPerStream := GenerateEventWriteRequests(10, 20, "foo/")
 	barWriteRequests, _ := GenerateEventWriteRequests(10, 20, "bar/")
-	_, err := s.Write(append(fooWriteRequests, barWriteRequests...))
+	_, err := s.Write(context.Background(), append(fooWriteRequests, barWriteRequests...))
 	assert.Nil(t, err)
 
 	t.Run("returns events across streams in order", func(t *testing.T) {

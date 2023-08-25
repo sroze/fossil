@@ -3,7 +3,7 @@ package simplestore
 import "context"
 
 type Store interface {
-	Write(commands []AppendToStream) ([]AppendResult, error)
+	Write(ctx context.Context, commands []AppendToStream) ([]AppendResult, error)
 	Read(ctx context.Context, stream string, ch chan ReadItem, options ReadOptions)
 	Query(ctx context.Context, prefix string, startingPosition int64, ch chan QueryItem)
 }

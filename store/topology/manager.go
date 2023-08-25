@@ -61,7 +61,7 @@ func (m *Manager) Create(s segments.Segment) (*segments.Segment, error) {
 		return nil, err
 	}
 
-	r, err := m.ss.Write([]simplestore.AppendToStream{{
+	r, err := m.ss.Write(context.Background(), []simplestore.AppendToStream{{
 		Stream:    m.stream,
 		Events:    []simplestore.Event{event},
 		Condition: &simplestore.AppendCondition{WriteAtPosition: position + 1},
@@ -90,7 +90,7 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 	splitSegmentParts := segment.Split(chunkCount)
 
 	previousSegmentsStore := m.pool.GetStoreForSegment(segment.Id)
-	closeWrites, err := previousSegmentsStore.PrepareCloseKvWrites()
+	closeWrites, err := previousSegmentsStore.PrepareCloseKvWrites(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("could not prepare writes to close the store: %w", err)
 	}
@@ -103,7 +103,7 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 		return nil, err
 	}
 
-	topologyWrites, topologyResults, err := m.ss.PrepareKvWrites([]simplestore.AppendToStream{{
+	topologyWrites, topologyResults, err := m.ss.PrepareKvWrites(context.Background(), []simplestore.AppendToStream{{
 		Stream:    m.stream,
 		Events:    []simplestore.Event{event},
 		Condition: &simplestore.AppendCondition{WriteAtPosition: position + 1},
@@ -112,7 +112,7 @@ func (m *Manager) Split(segmentId string, chunkCount int) ([]segments.Segment, e
 		return nil, err
 	}
 
-	kvWrites, unlock, err := m.ss.TransformWritesAndAcquirePositionLock(topologyWrites)
+	kvWrites, unlock, err := m.ss.TransformWritesAndAcquirePositionLock(context.Background(), topologyWrites)
 	defer unlock()
 	if err != nil {
 		return nil, err

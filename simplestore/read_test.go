@@ -19,7 +19,7 @@ func Test_Read(t *testing.T) {
 
 	stream := "Foo/" + uuid.NewString()
 	writeRequests := GenerateStreamWriteRequests(stream, 20)
-	_, err := s.Write(writeRequests)
+	_, err := s.Write(context.Background(), writeRequests)
 	assert.Nil(t, err)
 
 	dummyEventIds := make([]string, len(writeRequests))
@@ -73,7 +73,7 @@ func Test_Read(t *testing.T) {
 	t.Run("it can read stream straight after write", func(t *testing.T) {
 		streamName := "Foo/" + uuid.NewString()
 		eventId := uuid.NewString()
-		r, err := s.Write([]AppendToStream{{
+		r, err := s.Write(context.Background(), []AppendToStream{{
 			Stream: streamName,
 			Events: []Event{{
 				EventId:   eventId,

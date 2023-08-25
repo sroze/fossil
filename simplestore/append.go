@@ -1,5 +1,7 @@
 package simplestore
 
+import "context"
+
 type AppendResult struct {
 	Position int64
 }
@@ -21,13 +23,13 @@ type AppendToStream struct {
 	Condition *AppendCondition
 }
 
-func (ss *SimpleStore) Write(commands []AppendToStream) ([]AppendResult, error) {
-	preparedWrites, results, err := ss.PrepareKvWrites(commands)
+func (ss *SimpleStore) Write(ctx context.Context, commands []AppendToStream) ([]AppendResult, error) {
+	preparedWrites, results, err := ss.PrepareKvWrites(ctx, commands)
 	if err != nil {
 		return results, err
 	}
 
-	writes, unlock, err := ss.TransformWritesAndAcquirePositionLock(preparedWrites)
+	writes, unlock, err := ss.TransformWritesAndAcquirePositionLock(ctx, preparedWrites)
 	defer unlock()
 	if err != nil {
 		return results, err

@@ -1,6 +1,7 @@
 package simplestore
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv"
@@ -8,8 +9,8 @@ import (
 
 var CloseEventType = "$close"
 
-func (ss *SimpleStore) PrepareCloseKvWrites() ([]kv.Write, error) {
-	segmentPosition, err := ss.fetchSegmentPosition()
+func (ss *SimpleStore) PrepareCloseKvWrites(ctx context.Context) ([]kv.Write, error) {
+	segmentPosition, err := ss.fetchSegmentPosition(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get segment position: %w", err)
 	}

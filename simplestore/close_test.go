@@ -1,6 +1,7 @@
 package simplestore
 
 import (
+	"context"
 	"errors"
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/google/uuid"
@@ -15,12 +16,12 @@ func Test_Close(t *testing.T) {
 	t.Run("a closed store cannot be written to", func(t *testing.T) {
 		kvs := foundationdb.NewStore(fdb.MustOpenDatabase("../fdb.cluster"))
 		storeToBeClosed := NewStore(kvs, uuid.NewString())
-		writes, err := storeToBeClosed.PrepareCloseKvWrites()
+		writes, err := storeToBeClosed.PrepareCloseKvWrites(context.Background())
 		assert.Nil(t, err)
 		err = kvs.Write(writes)
 		assert.Nil(t, err)
 
-		_, err = storeToBeClosed.Write([]AppendToStream{
+		_, err = storeToBeClosed.Write(context.Background(), []AppendToStream{
 			{
 				Stream: "Foo/" + uuid.NewString(),
 				Events: []Event{

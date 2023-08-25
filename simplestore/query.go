@@ -36,6 +36,7 @@ func (ss *SimpleStore) Query(ctx context.Context, prefix string, startingPositio
 	}()
 
 	err := ss.kv.Scan(
+		ctx,
 		ss.positionIndexedKeyFactory.RangeStartingAt(startingPosition),
 		kv.ScanOptions{},
 		keyCh,

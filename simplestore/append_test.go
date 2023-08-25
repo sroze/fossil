@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sroze/fossil/kv/foundationdb"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func Test_Store_Append(t *testing.T) {
 
 	t.Run("it increments stream position by default", func(t *testing.T) {
 		stream := "Foo/" + uuid.NewString()
-		r, err := s.Write([]AppendToStream{{
+		r, err := s.Write(context.Background(), []AppendToStream{{
 			Stream: stream,
 			Events: []Event{{
 				EventId:   uuid.NewString(),
@@ -28,7 +29,7 @@ func Test_Store_Append(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, int64(0), r[0].Position)
 
-		r, err = s.Write([]AppendToStream{{
+		r, err = s.Write(context.Background(), []AppendToStream{{
 			Stream: stream,
 			Events: []Event{{
 				EventId:   uuid.NewString(),
@@ -44,7 +45,7 @@ func Test_Store_Append(t *testing.T) {
 		t.Run("successfully expects an empty stream then fails expecting it to be empty", func(t *testing.T) {
 			stream := "Foo/" + uuid.NewString()
 
-			_, err := s.Write([]AppendToStream{{
+			_, err := s.Write(context.Background(), []AppendToStream{{
 				Stream: stream,
 				Condition: &AppendCondition{
 					StreamIsEmpty: true,
@@ -57,7 +58,7 @@ func Test_Store_Append(t *testing.T) {
 			}})
 			assert.Nil(t, err)
 
-			_, err = s.Write([]AppendToStream{{
+			_, err = s.Write(context.Background(), []AppendToStream{{
 				Stream: stream,
 				Condition: &AppendCondition{
 					StreamIsEmpty: true,
@@ -74,7 +75,7 @@ func Test_Store_Append(t *testing.T) {
 		t.Run("rejects invalid stream position", func(t *testing.T) {
 			stream := "Foo/" + uuid.NewString()
 
-			_, err := s.Write([]AppendToStream{{
+			_, err := s.Write(context.Background(), []AppendToStream{{
 				Stream: stream,
 				Condition: &AppendCondition{
 					WriteAtPosition: -1,
@@ -90,11 +91,11 @@ func Test_Store_Append(t *testing.T) {
 
 		t.Run("expects a specific stream version", func(t *testing.T) {
 			stream := "Foo/" + uuid.NewString()
-			_, err := s.Write(GenerateStreamWriteRequests(stream, 20))
+			_, err := s.Write(context.Background(), GenerateStreamWriteRequests(stream, 20))
 			assert.Nil(t, err)
 
 			// Writes an event at the expected position.
-			_, err = s.Write([]AppendToStream{{
+			_, err = s.Write(context.Background(), []AppendToStream{{
 				Stream: stream,
 				Condition: &AppendCondition{
 					WriteAtPosition: 20,
@@ -109,7 +110,7 @@ func Test_Store_Append(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Fails to write an event at the expected position.
-			_, err = s.Write([]AppendToStream{{
+			_, err = s.Write(context.Background(), []AppendToStream{{
 				Stream: stream,
 				Condition: &AppendCondition{
 					WriteAtPosition: 20,
@@ -133,7 +134,7 @@ func Test_Store_Append(t *testing.T) {
 
 		for i := 0; i < numberOfConcurrentRequests; i++ {
 			go func() {
-				_, err := s.Write([]AppendToStream{{
+				_, err := s.Write(context.Background(), []AppendToStream{{
 					Stream: stream,
 					Condition: &AppendCondition{
 						WriteAtPosition: 0,
@@ -167,7 +168,7 @@ func Test_Store_Append(t *testing.T) {
 
 	t.Run("it can start a stream at a specific position", func(t *testing.T) {
 		stream := "Foo/" + uuid.NewString()
-		r, err := s.Write([]AppendToStream{
+		r, err := s.Write(context.Background(), []AppendToStream{
 			{
 				Stream: stream,
 				Events: []Event{
@@ -183,7 +184,7 @@ func Test_Store_Append(t *testing.T) {
 		assert.Equal(t, int64(4), r[0].Position)
 
 		t.Run("subsequent writes will take the following positions", func(t *testing.T) {
-			results, err := s.Write([]AppendToStream{
+			results, err := s.Write(context.Background(), []AppendToStream{
 				{
 					Stream: stream,
 					Events: []Event{

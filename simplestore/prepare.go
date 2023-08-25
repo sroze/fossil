@@ -2,6 +2,7 @@ package simplestore
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/sroze/fossil/kv"
 )
@@ -12,7 +13,7 @@ import (
 // Then we need to be able to "get a segment position and lock"
 // Transform these "prepared statements" into real statements (with the positioning), and execute them.
 
-func (ss *SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]PreparedWrite, []AppendResult, error) {
+func (ss *SimpleStore) PrepareKvWrites(ctx context.Context, commands []AppendToStream) ([]PreparedWrite, []AppendResult, error) {
 	// TODO: cache (https://github.com/coocood/freecache)
 	streamPositionCursors := make(map[string]int64)
 
@@ -32,7 +33,7 @@ func (ss *SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]PreparedWri
 				return nil, nil, fmt.Errorf("expected write position or stream empty condition to be set")
 			}
 		} else if _, exists := streamPositionCursors[command.Stream]; !exists {
-			fetchedPosition, err := ss.fetchStreamPosition(command.Stream)
+			fetchedPosition, err := ss.fetchStreamPosition(ctx, command.Stream)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -88,13 +89,14 @@ func (ss *SimpleStore) PrepareKvWrites(commands []AppendToStream) ([]PreparedWri
 
 // TODO: add a pipeline here to allow for concurrent writes within the single segment while keeping
 // TODO: the same architecture (i.e. one Fossil -> KV store roundtrip at a time)
-func (ss *SimpleStore) TransformWritesAndAcquirePositionLock(prepared []PreparedWrite) ([]kv.Write, func(), error) {
+// TODO: cancel the lock if context is cancelled.
+func (ss *SimpleStore) TransformWritesAndAcquirePositionLock(ctx context.Context, prepared []PreparedWrite) ([]kv.Write, func(), error) {
 	ss.positionMutex.Lock()
 
 	var writes []kv.Write
 	for _, preparedWrite := range prepared {
 		if bytes.Equal(preparedWrite.Key, SegmentPositionPlaceholderMagicBytes) {
-			position, err := ss.getIncrementedSegmentPosition()
+			position, err := ss.getIncrementedSegmentPosition(ctx)
 			if err != nil {
 				return nil, func() {}, fmt.Errorf("failed to get incremented segment position: %w", err)
 			}

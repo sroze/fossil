@@ -78,7 +78,7 @@ func (s *Store) attemptWrite(ctx context.Context, commands []simplestore.AppendT
 		}
 
 		// Note(perf): we could parallelize this.
-		segmentWrites, segmentResults, err := s.pool.GetStoreForSegment(segmentId).PrepareKvWrites(commands)
+		segmentWrites, segmentResults, err := s.pool.GetStoreForSegment(segmentId).PrepareKvWrites(ctx, commands)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func (s *Store) attemptWrite(ctx context.Context, commands []simplestore.AppendT
 	// Lock and transform each write then send to KV.
 	var kvWrites []kv.Write
 	for segmentId, segmentWrites := range preparedWritesPerSegment {
-		w, unlock, err := s.pool.GetStoreForSegment(segmentId).TransformWritesAndAcquirePositionLock(segmentWrites)
+		w, unlock, err := s.pool.GetStoreForSegment(segmentId).TransformWritesAndAcquirePositionLock(ctx, segmentWrites)
 		defer unlock()
 
 		if err != nil {

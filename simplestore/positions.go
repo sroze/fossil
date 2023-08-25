@@ -1,13 +1,14 @@
 package simplestore
 
 import (
+	"context"
 	"fmt"
 	"github.com/sroze/fossil/kv"
 )
 
-func (ss *SimpleStore) getIncrementedSegmentPosition() (int64, error) {
+func (ss *SimpleStore) getIncrementedSegmentPosition(ctx context.Context) (int64, error) {
 	if ss.positionCache == nil {
-		position, err := ss.fetchSegmentPosition()
+		position, err := ss.fetchSegmentPosition(ctx)
 		if err != nil {
 			return 0, err
 		}
@@ -19,10 +20,11 @@ func (ss *SimpleStore) getIncrementedSegmentPosition() (int64, error) {
 	return *ss.positionCache, nil
 }
 
-func (ss *SimpleStore) fetchStreamPosition(stream string) (int64, error) {
+func (ss *SimpleStore) fetchStreamPosition(ctx context.Context, stream string) (int64, error) {
 	kf := StreamIndexEventKeyFactory{keySpace: ss.keySpace}
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
+		ctx,
 		kf.Range(stream),
 		kv.ScanOptions{
 			Backwards: true,
@@ -44,9 +46,10 @@ func (ss *SimpleStore) fetchStreamPosition(stream string) (int64, error) {
 	return position, err
 }
 
-func (ss *SimpleStore) fetchSegmentPosition() (int64, error) {
+func (ss *SimpleStore) fetchSegmentPosition(ctx context.Context) (int64, error) {
 	kpChan := make(chan kv.KeyPair, 1)
 	err := ss.kv.Scan(
+		ctx,
 		ss.positionIndexedKeyFactory.Range(),
 		kv.ScanOptions{
 			Backwards: true,
