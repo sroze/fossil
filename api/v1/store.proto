@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "github.com/sroze/fossil/simplestore/api/v1";
+
+package fossil;
+
+// The writer service definition.
+service Writer {
+  rpc Append (AppendRequest) returns (AppendReply) {}
+  rpc ReadStream (ReadStreamRequest) returns (stream ReadStreamReplyItem) {}
+}
+
+message EventToAppend {
+  string event_id = 1;
+  string event_type = 2;
+  bytes payload = 3;
+}
+
+// Appends an event to the store.
+message AppendRequest {
+  string stream_name = 1;
+  repeated EventToAppend events = 2;
+  optional int64 expected_position = 5;
+}
+
+// The response message after successfully appending an event to the store.
+message AppendReply {
+  int64 stream_position = 1;
+}
+
+message ReadStreamRequest {
+  string stream_name = 1;
+
+  // Allows to set a starting position. When set at `0`, the starting position is the beginning of the stream.
+  int64 starting_position = 2;
+
+  // If true, subscribe to the stream and receive new events as they are appended.
+  bool subscribe = 3;
+}
+
+message ReadStreamReplyItem {
+  string event_id = 1;
+  string event_type = 2;
+  int64 stream_position = 3;
+
+  bytes payload = 4;
+}
