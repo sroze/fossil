@@ -10,6 +10,8 @@ import (
 )
 
 // TODO: implement batching?
+// TODO: it should always return a cursor, even if the results are empty, so that the client can keep track of the position
+// TODO: and don't force us to read many empty segments again.
 func (s *Store) Query(ctx context.Context, prefix string, positionCursor PositionCursor, ch chan QueryItem) {
 	segmentsRelevantToPrefix, err := s.topologyManager.GetSegmentsToReadFromPrefix(prefix)
 	if err != nil {
