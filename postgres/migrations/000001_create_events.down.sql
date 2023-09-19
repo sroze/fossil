@@ -1,4 +1,0 @@
-drop trigger automatically_generate_stream_sequence_number ON events;
-drop function generate_stream_sequence_number_for_new_event;
-drop function generate_stream_sequence_number;
-drop table events;

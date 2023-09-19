@@ -1,5 +1,0 @@
-export SERVER_PORT=8080
-export DATABASE_URL=postgres://fossil:fossil@127.0.0.1/fossil
-export KAFKA_BROKERS={change}
-export KAFKA_USERNAME={change}
-export KAFKA_PASSWORD={change}
