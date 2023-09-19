@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  postgres:
+    image: 'postgres:15'
+    environment:
+      POSTGRES_DB: fossil
+      POSTGRES_USER: fossil
+      POSTGRES_PASSWORD: fossil
+    volumes:
+      - ./devops/local/pg-init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./devops/local/prometheus.yml:/etc/prometheus/prometheus.yml
+  prom-pushgateway:
+    image: prom/pushgateway
+    ports:
+      - "9091:9091"
